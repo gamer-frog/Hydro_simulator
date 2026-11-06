@@ -3,44 +3,71 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#f3f4ee" />
-  <title>Verde — Biblioteca viva de cannabis</title>
-  <meta name="description" content="Biblioteca, oráculo y simulador de cultivo de cannabis. Presupuestá tu temporada de principio a fin." />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%231f392b'/%3E%3Cpath d='M9 22c1-7 5-11 13-13-1 7-5 11-13 13Z' fill='%23d4ed93'/%3E%3Cpath d='M10 23c4-5 7-8 11-10' stroke='%236f9254' stroke-width='1.3' fill='none'/%3E%3C/svg%3E" />
+  <meta name="theme-color" content="#0a0c08" />
+  <title>Verde — Cultivo con criterio</title>
+  <meta name="description" content="Simulador, diario de cultivo, catálogo de cepas, biblioteca y oráculo para autocultivo de cannabis en Argentina." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230d110b'/%3E%3Cpath d='M8 23c1-8 6-12 16-14-1 8-6 12-16 14Z' fill='%23d8f26b'/%3E%3Cpath d='M9 24c4-6 8-9 13-11' stroke='%23516b32' stroke-width='1.4' fill='none'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="views.css" />
+  <link rel="stylesheet" href="panels.css" />
 </head>
 <body>
   <div class="app">
     <aside class="sidebar">
-      <a class="brand" href="#" data-nav="panel" aria-label="Verde, panel">
-        <span class="brand-mark">v.</span>
-        <span class="brand-type">VERDE<span class="brand-slash">/</span><small>BIBLIOTECA VIVA</small></span>
+      <a class="brand" href="#" data-nav="panel" aria-label="Verde, inicio">
+        <span class="brand-mark">
+          <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 31c1.6-11 8.8-17.4 24-20-1.6 11-8.8 17.4-24 20Z" fill="currentColor"/><path d="M10 32c5.6-8 11.6-13 19.4-16.4" stroke="#0d110b" stroke-width="1.7" fill="none"/></svg>
+        </span>
+        <span class="brand-type">verde<small>cultivo con criterio</small></span>
       </a>
-      <div class="side-label">ESPACIO DE TRABAJO</div>
-      <nav class="side-nav" aria-label="Navegación principal">
-        <button class="nav-item active" data-nav="panel"><span class="nav-ico">⌂</span><span>Panel</span></button>
-        <button class="nav-item" data-nav="sim"><span class="nav-ico">✳</span><span>Simulador</span><em id="navDay">D01</em></button>
-        <button class="nav-item" data-nav="library"><span class="nav-ico">▤</span><span>Biblioteca</span><em id="navDocs">28</em></button>
-        <button class="nav-item" data-nav="oracle"><span class="nav-ico">◈</span><span>Oráculo IA</span><i class="beta">beta</i></button>
-        <button class="nav-item" data-nav="budget"><span class="nav-ico">▧</span><span>Presupuesto</span></button>
-        <button class="nav-item" data-nav="process"><span class="nav-ico">◷</span><span>Proceso</span></button>
-      </nav>
-      <div class="side-label side-label-spaced">TU MARCO LEGAL</div>
+
+      <div class="side-scroll">
+        <p class="side-label">Explorar</p>
+        <nav class="side-nav" aria-label="Explorar">
+          <button class="nav-item active" data-nav="panel"><span class="nav-ico">◐</span><span>Inicio</span></button>
+          <button class="nav-item" data-nav="strains"><span class="nav-ico">❧</span><span>Cepas</span><em>14</em></button>
+          <button class="nav-item" data-nav="journal"><span class="nav-ico">▤</span><span>Diario</span><em id="navWeek">S1</em></button>
+        </nav>
+
+        <p class="side-label">Cultivar</p>
+        <nav class="side-nav" aria-label="Cultivar">
+          <button class="nav-item" data-nav="sim"><span class="nav-ico">✳</span><span>Simulador</span><em id="navDay">D01</em></button>
+          <button class="nav-item" data-nav="library"><span class="nav-ico">▦</span><span>Biblioteca</span><em id="navDocs">28</em></button>
+          <button class="nav-item" data-nav="oracle"><span class="nav-ico">◈</span><span>Oráculo</span><i class="beta">IA</i></button>
+        </nav>
+
+        <p class="side-label">Planificar</p>
+        <nav class="side-nav" aria-label="Planificar">
+          <button class="nav-item" data-nav="budget"><span class="nav-ico">◫</span><span>Costos</span></button>
+          <button class="nav-item" data-nav="process"><span class="nav-ico">◷</span><span>Proceso</span></button>
+        </nav>
+      </div>
+
       <div class="legal-mini">
-        <div class="legal-mini-top"><span class="live-dot"></span><b>Autocultivo · AR</b></div>
+        <div class="legal-mini-top"><span class="live-dot"></span><b>Autocultivo · AR</b><span class="legal-mini-year">2026</span></div>
         <div class="legal-mini-space"><strong>15</strong><span>m² máx.<br>3 × 5 m</span></div>
         <div class="legal-mini-plants"><span>9 plantas autoflorecientes</span><span class="legal-check">✓</span></div>
-        <p>REPROCANN vigente. La normativa puede cambiar: verificá siempre tu situación registral.</p>
+        <p>Marco educativo. Verificá tu inscripción REPROCANN y la normativa vigente.</p>
       </div>
-      <div class="side-user"><span class="avatar">MB</span><span><b>mbole</b><small>Espacio personal</small></span><button class="dots" aria-label="Opciones">•••</button></div>
+
+      <div class="side-user">
+        <span class="avatar">MB</span>
+        <span class="side-user-copy"><b>mbole</b><small>Espacio personal</small></span>
+        <button class="dots" aria-label="Opciones">•••</button>
+      </div>
     </aside>
 
     <div class="main">
       <header class="topbar">
-        <div class="crumb"><span>VERDE</span><i>/</i><b id="crumbCurrent">PANEL</b></div>
+        <div class="topbar-left">
+          <a class="mobile-brand" href="#" data-nav="panel" aria-label="Verde"><span>v.</span>verde</a>
+          <div class="crumb"><span>VERDE</span><i>/</i><b id="crumbCurrent">INICIO</b></div>
+        </div>
         <div class="topbar-actions">
+          <button class="search-pill" data-nav="strains"><span>⌕</span> Buscar cepas, temas, fuentes <kbd>⌘K</kbd></button>
           <span class="legal-pill"><span class="live-dot"></span>ARGENTINA · 2026</span>
           <button class="icon-btn" id="guideBtn" aria-label="Guía rápida" title="Guía rápida">?</button>
           <button class="icon-btn" id="soundBtn" aria-label="Activar sonido" title="Sonido">◖</button>
@@ -49,70 +76,228 @@
       </header>
 
       <main class="views">
-        <!-- ============ PANEL ============ -->
+        <!-- ============================================================ INICIO -->
         <section class="view active" id="view-panel">
-          <div class="view-head panel-head">
-            <div><div class="eyebrow"><span class="live-dot"></span>TU ESPACIO DE CULTIVO <i>/</i> <span>DÍA <b id="panelDay">01</b> DE 75</span></div><h1>Todo el cultivo,<br><em>en un solo lugar.</em></h1><p class="lead">De la biblioteca al presupuesto, y de la semilla a la cosecha. Entendé el proceso completo antes de tomar decisiones.</p></div>
-            <div class="head-actions"><button class="btn btn-ghost" data-nav="library">Explorar biblioteca <span>→</span></button><button class="btn btn-primary" data-nav="sim">Ir al simulador <span>→</span></button></div>
+          <div class="dash-hero">
+            <div class="dash-hero-media">
+              <img src="assets/hero-bud.jpg" alt="Cogollo de cannabis iluminado en interior" />
+              <div class="dash-hero-shade"></div>
+              <div class="dash-hero-copy">
+                <div class="hero-eyebrow"><span class="live-dot"></span>TEMPORADA 2026 <i>/</i> 9 AUTOS · 15 M²</div>
+                <h1>Cultivá con<br><em>criterio.</em></h1>
+                <p>Del primer riego al último frasco: simulá, registrá y entendé cada decisión. Con la biblioteca de tus diplomaturas siempre a mano.</p>
+                <div class="hero-actions">
+                  <button class="btn btn-lime" data-nav="sim">Continuar el día <span id="heroCtaDay">01</span> <i>→</i></button>
+                  <button class="btn btn-glass" data-nav="strains">Explorar cepas</button>
+                </div>
+                <div class="hero-meta">
+                  <span><b id="heroHealth">91%</b> salud media</span>
+                  <span><b id="heroDays">74</b> días restantes</span>
+                  <span><b id="heroHarvest">0</b> cosechas</span>
+                </div>
+              </div>
+              <div class="hero-credit">IMAGEN · UNSPLASH</div>
+            </div>
+
+            <aside class="season-card">
+              <div class="season-card-head">
+                <span class="section-kicker">TEMPORADA EN CURSO</span>
+                <span class="phase-pill" id="panelPhase">PLÁNTULA</span>
+              </div>
+              <div class="season-day">
+                <span class="season-day-label">DÍA</span>
+                <b id="heroDay">01</b>
+                <span class="season-day-total">/ 75</span>
+                <div class="season-ring" aria-hidden="true"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="19"></circle><circle class="ring-fill" id="heroRing" cx="22" cy="22" r="19"></circle></svg></div>
+              </div>
+              <div class="season-phase-line"><b id="heroPhase">Plántula</b><span id="panelMilestone">Próximo: día 12 · Crecimiento</span></div>
+              <div class="season-progress"><i id="heroProgress"></i></div>
+              <div class="mini-greenhouse">
+                <div class="mini-lamp"></div>
+                <div class="mini-grid" id="miniPlants"></div>
+                <div class="mini-caption"><span>INVERNADERO 3 × 5</span><span><i></i> ESTABLE</span></div>
+              </div>
+              <p class="season-insight" id="heroInsight">Nueve plantas, 15 m² y una rutina por construir. Hoy conviene observar el sustrato y no regar de más.</p>
+              <button class="btn btn-soft full" data-nav="sim">Abrir la jornada <span>→</span></button>
+            </aside>
           </div>
 
           <div class="stat-strip">
-            <div class="stat"><span class="stat-ico green">✳</span><div><span class="stat-label">PLANTAS ACTIVAS</span><b><span id="statPlants">9</span><small>/ 9 legales</small></b></div><span class="stat-trend">AUTO</span></div>
-            <div class="stat"><span class="stat-ico">▤</span><div><span class="stat-label">BIBLIOTECA</span><b><span id="statDocs">28</span><small>recursos</small></b></div><span class="stat-trend">6 DIPLOMATURAS</span></div>
-            <div class="stat"><span class="stat-ico">▧</span><div><span class="stat-label">PRESUPUESTO ESTIMADO</span><b>$<span id="statBudget">406.890</span><small>ARS</small></b></div><span class="stat-trend">TEMPORADA</span></div>
-            <div class="stat"><span class="stat-ico">◈</span><div><span class="stat-label">CONSULTAS AL ORÁCULO</span><b><span id="statQueries">0</span><small>registradas</small></b></div><span class="stat-trend">LOCAL</span></div>
+            <div class="stat">
+              <span class="stat-ico green">✳</span>
+              <div><span class="stat-label">PLANTAS ACTIVAS</span><b><span id="statPlants">9</span><small>/ 9 legales</small></b></div>
+              <div class="stat-bar"><i style="width:100%"></i></div>
+            </div>
+            <div class="stat">
+              <span class="stat-ico">▦</span>
+              <div><span class="stat-label">BIBLIOTECA</span><b><span id="statDocs">28</span><small>recursos</small></b></div>
+              <span class="stat-trend">6 DIPLOMATURAS</span>
+            </div>
+            <div class="stat">
+              <span class="stat-ico">◫</span>
+              <div><span class="stat-label">COSTO DE TEMPORADA</span><b>$<span id="statBudget">406.890</span><small>ARS</small></b></div>
+              <span class="stat-trend" id="statPerGram">$822 / g</span>
+            </div>
+            <div class="stat">
+              <span class="stat-ico">◈</span>
+              <div><span class="stat-label">CONSULTAS AL ORÁCULO</span><b><span id="statQueries">0</span><small>registradas</small></b></div>
+              <span class="stat-trend">LOCAL</span>
+            </div>
           </div>
 
-          <div class="panel-hero-grid">
-            <section class="hero-grow">
-              <div class="hero-grow-top"><div><span class="section-kicker">TEMPORADA EN CURSO</span><h2>Día <span id="heroDay">01</span> · <span id="heroPhase">Plántula</span></h2></div><span class="phase-pill" id="panelPhase">PLÁNTULA</span></div>
-              <p class="hero-grow-copy" id="heroInsight">Nueve plantas, 15 m² y una rutina por construir. Hoy conviene observar el sustrato y no regar de más.</p>
-              <div class="hero-mini">
-                <div class="hero-mini-lamp"></div>
-                <div class="hero-mini-grid" id="miniPlants"></div>
-                <div class="hero-mini-caption"><span>INVERNADERO 3 × 5</span><span><i></i> CONDICIONES ESTABLES</span></div>
+          <div class="section-row">
+            <div>
+              <span class="section-kicker">COLECCIÓN</span>
+              <h2>Tu genética, <em>en foco.</em></h2>
+            </div>
+            <button class="text-link" data-nav="strains">Ver las 14 cepas <span>→</span></button>
+          </div>
+          <div class="strain-rail" id="strainRail"></div>
+
+          <div class="dash-columns">
+            <section class="card journal-preview">
+              <div class="card-head">
+                <div><span class="section-kicker">DIARIO DE CULTIVO</span><h2>La temporada, semana a semana</h2></div>
+                <button class="text-link" data-nav="journal">Abrir diario <span>→</span></button>
               </div>
-              <div class="hero-grow-foot"><div class="hero-metric"><span>SALUD MEDIA</span><b id="heroHealth">91%</b><i class="bar"><i id="heroHealthBar"></i></i></div><div class="hero-metric"><span>DÍAS RESTANTES</span><b id="heroDays">74</b></div><div class="hero-metric"><span>COSECHAS</span><b id="heroHarvest">0</b></div><button class="round-arrow" data-nav="sim" aria-label="Abrir simulador">→</button></div>
+              <div class="week-rail" id="dashWeeks"></div>
+              <div class="season-track" id="seasonTrack"></div>
+              <div class="focus-list" id="focusList"></div>
+              <button class="btn btn-soft full" data-nav="sim">Registrar el día <span>→</span></button>
             </section>
+
             <section class="oracle-card">
-              <div class="oracle-card-head"><span class="oracle-orb">◈</span><span><span class="section-kicker">ORÁCULO VERDE</span><b>Preguntá a tu biblioteca.</b></span><i class="beta">beta</i></div>
+              <div class="oracle-glow"></div>
+              <div class="oracle-card-head">
+                <span class="oracle-orb">◈</span>
+                <span><span class="section-kicker">ORÁCULO VERDE</span><b>Preguntale a tu biblioteca.</b></span>
+                <i class="beta">IA</i>
+              </div>
               <p>Respuestas trazables, extraídas de tus diplomaturas. Sin inventar fuentes.</p>
-              <div class="oracle-suggestion"><span>“¿Cuándo conviene cosechar una autofloreciente?”</span><button data-ask="¿Cuándo conviene cosechar una autofloreciente?">→</button></div>
+              <div class="oracle-suggestion">
+                <span>“¿Cuándo conviene cosechar una autofloreciente?”</span>
+                <button data-ask="¿Cuándo conviene cosechar una autofloreciente?" aria-label="Preguntar">→</button>
+              </div>
+              <div class="oracle-chips">
+                <button data-ask="Riego y pH en autoflorecientes">Riego y pH</button>
+                <button data-ask="¿Cómo presupuesto mi temporada?">Presupuesto</button>
+                <button data-ask="Marco legal Argentina 2026">Marco legal</button>
+              </div>
               <button class="oracle-link" data-nav="oracle">Abrir el oráculo <span>↗</span></button>
             </section>
           </div>
 
-          <div class="panel-columns">
-            <section class="card timeline-card">
-              <div class="card-head"><div><span class="section-kicker">MAPA DE LA TEMPORADA</span><h2>75 días, cinco etapas</h2></div><button class="text-link" data-nav="process">Ver proceso completo →</button></div>
-              <div class="season-track" id="seasonTrack"></div>
-            </section>
-            <section class="card focus-card">
-              <div class="card-head"><div><span class="section-kicker">HOY EN EL CULTIVO</span><h2>Foco de la jornada</h2></div><span class="day-stamp" id="focusStamp">D01</span></div>
-              <div class="focus-list" id="focusList"></div>
-              <button class="btn btn-soft full" data-nav="sim">Abrir jornada en el simulador <span>→</span></button>
-            </section>
-          </div>
-
-          <div class="panel-columns panel-columns-wide">
+          <div class="dash-columns dash-columns-wide">
             <section class="card">
               <div class="card-head"><div><span class="section-kicker">RECIÉN INDEXADO</span><h2>De tus diplomaturas</h2></div><button class="text-link" data-nav="library">Ver todo →</button></div>
               <div class="recent-list" id="recentList"></div>
             </section>
             <section class="card insight-card">
-              <div class="card-head"><div><span class="section-kicker">INSIGHT AUTOMÁTICO</span><h2>Lo que se repite</h2></div><span class="insight-count" id="insightCount">12</span></div>
-              <p class="insight-copy">Hay <b id="dupCount">12</b> recursos duplicados entre diplomaturas. Unificarlos te ahorra tiempo de estudio y evita contradicciones.</p>
+              <div class="card-head"><div><span class="section-kicker">INSIGHT AUTOMÁTICO</span><h2>Lo que se repite</h2></div><span class="insight-count" id="insightCount">5</span></div>
+              <p class="insight-copy">Hay <b id="dupCount">12</b> recursos duplicados entre diplomaturas. Verde los vincula sin borrar el original: sabés de dónde viene cada versión.</p>
               <div class="insight-pair" id="insightPair"></div>
               <button class="text-link" data-nav="library" data-filter-dup="1">Revisar duplicados →</button>
             </section>
           </div>
         </section>
 
-        <!-- ============ SIMULADOR ============ -->
+        <!-- ============================================================ CEPAS -->
+        <section class="view" id="view-strains">
+          <div class="view-head">
+            <div>
+              <div class="eyebrow"><span class="live-dot"></span>CATÁLOGO <i>/</i> <span>14 AUTOFLORECIENTES</span></div>
+              <h1>El catálogo,<br><em>curado.</em></h1>
+              <p class="lead">Perfiles, terpenos, efectos y tiempos reales de cultivo. Toda ficha es una síntesis educativa: contrastá siempre con la información del banco de semillas.</p>
+            </div>
+            <div class="head-actions"><button class="btn btn-ghost" data-nav="journal">Ver diario <span>→</span></button><button class="btn btn-lime" id="askStrainBtn">Preguntar al oráculo <span>◈</span></button></div>
+          </div>
+
+          <div class="strain-featured" id="strainFeatured"></div>
+
+          <div class="strain-toolbar">
+            <label class="search-field"><span>⌕</span><input id="strainSearch" type="search" placeholder="Buscar por nombre, efecto, aroma o terpeno…" /></label>
+            <select id="strainDifficulty" class="select"><option value="all">Toda dificultad</option><option>Fácil</option><option>Media</option><option>Alta</option></select>
+            <select id="strainEffect" class="select"><option value="all">Todo efecto</option></select>
+            <select id="strainSort" class="select"><option value="thc">Mayor THC</option><option value="fast">Ciclo más corto</option><option value="yield">Mayor rendimiento</option><option value="az">Nombre A–Z</option></select>
+          </div>
+
+          <div class="strain-count-row"><span id="strainCount">14 cepas</span><span class="legend-inline"><i class="dot easy"></i>Fácil <i class="dot mid"></i>Media <i class="dot hard"></i>Alta</span></div>
+          <div class="strain-grid" id="strainGrid"></div>
+        </section>
+
+        <!-- ============================================================ DIARIO -->
+        <section class="view" id="view-journal">
+          <div class="view-head">
+            <div>
+              <div class="eyebrow"><span class="live-dot"></span>DIARIO <i>/</i> <span>75 DÍAS · 11 SEMANAS</span></div>
+              <h1>La temporada,<br><em>semana a semana.</em></h1>
+              <p class="lead">El registro que convierte una cosecha en aprendizaje: ambiente, tareas, decisiones y resultado final. Cada semana conserva su contexto.</p>
+            </div>
+            <div class="head-actions"><button class="btn btn-ghost" id="exportJournalBtn">Exportar diario <span>↓</span></button><button class="btn btn-lime" data-nav="sim">Registrar hoy <span>→</span></button></div>
+          </div>
+
+          <div class="journal-hero">
+            <img src="assets/greenhouse.jpg" alt="Invernadero de cannabis" />
+            <div class="journal-hero-shade"></div>
+            <div class="journal-hero-copy">
+              <span class="section-kicker light">SEMANA EN CURSO</span>
+              <h2 id="journalHeroTitle">Semana 1 · Plántula</h2>
+              <p id="journalHeroCopy">Nueve semillas, un sustrato y una regla simple: observar antes de intervenir.</p>
+              <div class="journal-hero-stats">
+                <span><b id="journalHeroDay">Día 1</b> de 75</span>
+                <span><b id="journalHeroTemp">24 °C</b> media</span>
+                <span><b id="journalHeroHum">62%</b> humedad</span>
+              </div>
+            </div>
+            <div class="journal-hero-badge"><span id="journalHeroWeek">S1</span><small>EN CURSO</small></div>
+          </div>
+
+          <div class="journal-timeline" id="journalTimeline" role="tablist" aria-label="Semanas de cultivo"></div>
+
+          <div class="journal-grid">
+            <section class="card week-panel">
+              <div class="week-panel-head">
+                <div><span class="section-kicker" id="weekKicker">SEMANA 01 · DÍAS 1–7</span><h2 id="weekTitle">La siembra</h2></div>
+                <span class="phase-pill" id="weekPhase">PLÁNTULA</span>
+              </div>
+              <p class="week-note" id="weekNote"></p>
+              <div class="env-chart-head">
+                <span class="section-kicker">AMBIENTE REGISTRADO</span>
+                <div class="chart-legend"><span><i class="temp"></i>Temperatura</span><span><i class="hum"></i>Humedad</span><span><i class="vpd"></i>VPD</span></div>
+              </div>
+              <div class="env-chart" id="envChart"></div>
+              <div class="env-readings" id="envReadings"></div>
+              <div class="week-events" id="weekEvents"></div>
+            </section>
+
+            <aside class="journal-side">
+              <section class="card harvest-card" id="harvestCard"></section>
+              <section class="card week-tasks">
+                <div class="card-head"><div><span class="section-kicker">CHECKLIST DE LA SEMANA</span><h2>Tareas</h2></div><span class="task-count" id="weekTaskCount">0/4</span></div>
+                <div class="task-list" id="weekTasks"></div>
+              </section>
+              <section class="card photo-strip" id="photoStrip"></section>
+              <section class="card season-history">
+                <div class="card-head"><div><span class="section-kicker">ARCHIVO</span><h2>Temporadas</h2></div><span class="task-count" id="seasonCount">0</span></div>
+                <div class="season-history-list" id="seasonHistoryList"></div>
+              </section>
+            </aside>
+          </div>
+        </section>
+
+        <!-- ============================================================ SIMULADOR -->
         <section class="view" id="view-sim">
           <div class="view-head sim-head">
-            <div><div class="eyebrow"><span class="live-dot"></span>SIMULADOR <i>/</i> <span>15 M² · 9 AUTOS</span></div><h1>Tu pequeño <em>ecosistema.</em></h1><p class="lead">Una rutina diaria, un presupuesto real y decisiones que dejan huella. Avanzá rápido cuando ya sepas qué hacer.</p></div>
-            <div class="head-actions"><button class="btn btn-ghost" id="resetSimBtn" aria-label="Reiniciar temporada" title="Reiniciar temporada">↺</button><button class="btn btn-ghost" id="quickSimBtn">Simulación veloz <span>⚡</span></button><button class="btn btn-primary" id="advanceBtn">Avanzar un día <span>→</span></button></div>
+            <div>
+              <div class="eyebrow"><span class="live-dot"></span>SIMULADOR <i>/</i> <span>15 M² · 9 AUTOS</span></div>
+              <h1>Tu pequeño<br><em>ecosistema.</em></h1>
+              <p class="lead">Una rutina diaria, un presupuesto real y decisiones que dejan huella. Avanzá rápido cuando ya sepas qué hacer.</p>
+            </div>
+            <div class="head-actions">
+              <button class="btn btn-ghost icon-only" id="resetSimBtn" aria-label="Reiniciar temporada" title="Reiniciar temporada">↺</button>
+              <button class="btn btn-ghost" id="quickSimBtn">Simulación veloz <span>⚡</span></button>
+              <button class="btn btn-lime" id="advanceBtn">Avanzar un día <span>→</span></button>
+            </div>
           </div>
 
           <div class="sim-statusbar">
@@ -120,7 +305,7 @@
             <div class="sim-status-item"><span class="phase-pill" id="phasePill">PLÁNTULA</span><small id="dateLabel">21 MAR · 08:00</small></div>
             <div class="sim-status-item"><span class="section-kicker">SEMANA</span><b id="weekLabel">01</b></div>
             <div class="sim-status-item"><span class="section-kicker">COSECHAS</span><b id="harvestLabel">0</b></div>
-            <div class="sim-status-item"><span class="section-kicker">PRESUPUESTO USADO</span><b id="spentLabel">$0</b></div>
+            <div class="sim-status-item"><span class="section-kicker">GASTO ACUMULADO</span><b id="spentLabel">$0</b></div>
             <div class="sim-status-item wide"><span class="section-kicker">PRÓXIMO HITO</span><b id="milestoneLabel">Día 12 · Crecimiento</b></div>
           </div>
 
@@ -166,7 +351,7 @@
                 </div>
                 <div class="climate-note"><span>↗</span><span id="climateNote">Ambiente estable. Mantené una rutina constante.</span></div>
               </section>
-              <section class="panel resources-panel"><div class="panel-heading compact"><div><span class="section-kicker">DESPENSA</span><h2>Recursos</h2></div><button id="shopBtn" class="plus-button" title="Reponer recursos">+</button></div>
+              <section class="panel resources-panel"><div class="panel-heading compact"><div><span class="section-kicker">DESPENSA</span><h2>Recursos</h2></div><button id="shopBtn" class="plus-button" title="Reponer recursos" aria-label="Reponer recursos">+</button></div>
                 <div class="resource-list">
                   <div class="resource"><span class="resource-symbol water-symbol">◉</span><div class="resource-info"><b>Agua</b><div class="resource-meter"><i id="waterMeter" style="width:75%"></i></div></div><strong id="waterValue">15 <small>/ 20 L</small></strong></div>
                   <div class="resource"><span class="resource-symbol nutrient-symbol">✳</span><div class="resource-info"><b>Insumos</b><div class="resource-meter nutrient-meter"><i id="nutrientMeter" style="width:70%"></i></div></div><strong id="nutrientValue">7 <small>/ 10</small></strong></div>
@@ -180,11 +365,11 @@
           </div>
         </section>
 
-        <!-- ============ BIBLIOTECA ============ -->
+        <!-- ============================================================ BIBLIOTECA -->
         <section class="view" id="view-library">
           <div class="view-head">
-            <div><div class="eyebrow"><span class="live-dot"></span>BIBLIOTECA <i>/</i> <span>ÍNDICE MAESTRO</span></div><h1>Tu conocimiento,<br><em>puesto en orden.</em></h1><p class="lead">Cada PDF conserva su origen: diplomatura, módulo y carpeta. Los repetidos se agrupan para que puedas compararlos, no volver a estudiarlos.</p></div>
-            <div class="head-actions"><button class="btn btn-ghost" id="exportIdxBtn">Exportar índice <span>↓</span></button><button class="btn btn-primary" id="addResourceBtn">Aportar PDF <span>+</span></button></div>
+            <div><div class="eyebrow"><span class="live-dot"></span>BIBLIOTECA <i>/</i> <span>ÍNDICE MAESTRO · DATASET DEMO</span></div><h1>Tu conocimiento,<br><em>puesto en orden.</em></h1><p class="lead">Cada PDF conserva su origen: diplomatura, módulo y carpeta. Los repetidos se agrupan para que puedas compararlos, no volver a estudiarlos.</p></div>
+            <div class="head-actions"><button class="btn btn-ghost" id="exportIdxBtn">Exportar índice <span>↓</span></button><button class="btn btn-lime" id="addResourceBtn">Aportar PDF <span>+</span></button></div>
           </div>
 
           <div class="library-stats">
@@ -203,7 +388,7 @@
 
           <div class="library-layout">
             <div class="library-list-card">
-              <div class="list-head"><span id="libResultCount">24 recursos</span><span class="list-head-legend"><i></i> Origen verificado</span></div>
+              <div class="list-head"><span id="libResultCount">28 recursos</span><span class="list-head-legend"><i></i> Origen verificado</span></div>
               <div class="lib-list" id="libList"></div>
               <div class="lib-empty" id="libEmpty" hidden><b>Sin resultados.</b><p>Probá con otra búsqueda o quitá los filtros.</p><button class="text-link" id="clearFilters">Limpiar filtros</button></div>
             </div>
@@ -211,11 +396,11 @@
           </div>
         </section>
 
-        <!-- ============ ORÁCULO ============ -->
+        <!-- ============================================================ ORÁCULO -->
         <section class="view" id="view-oracle">
           <div class="view-head oracle-head">
             <div><div class="eyebrow"><span class="live-dot"></span>ORÁCULO IA <i>/</i> <span>RESPUESTAS CON FUENTES</span></div><h1>Preguntá.<br><em>Tu biblioteca responde.</em></h1><p class="lead">Un asistente que cruza tus diplomaturas, señala acuerdos y contradicciones, y te devuelve el fragmento exacto para que lo verifiques.</p></div>
-            <div class="oracle-badge-large"><span class="oracle-orb">◈</span><div><span class="section-kicker">MODO LOCAL · DEMO</span><b>24 fuentes disponibles</b><small>Sin enviar tus PDFs a terceros</small></div></div>
+            <div class="oracle-badge-large"><span class="oracle-orb">◈</span><div><span class="section-kicker">MODO LOCAL · DEMO</span><b>28 fuentes disponibles</b><small>Sin enviar tus PDFs a terceros</small></div></div>
           </div>
 
           <div class="oracle-layout">
@@ -223,7 +408,7 @@
               <div class="chat-head"><div class="chat-title"><span class="oracle-orb small">◈</span><span><b>Oráculo Verde</b><small><i class="live-dot"></i> listo · responde sobre 6 diplomaturas</small></span></div><button class="text-link" id="clearChat">Nueva consulta ↺</button></div>
               <div class="chat-log" id="chatLog"></div>
               <div class="chat-prompts" id="chatPrompts"><button>Riego y pH en autoflorecientes</button><button>¿Cómo presupuesto mi temporada?</button><button>Marco legal Argentina 2026</button><button>Secado y curado</button></div>
-              <form class="chat-input" id="chatForm"><input id="chatInput" type="text" placeholder="Escribí tu pregunta sobre cultivo, costos o normativa…" autocomplete="off" /><button type="submit" aria-label="Enviar">→</button></form>
+              <form class="chat-input" id="chatForm"><input id="chatInput" type="text" placeholder="Escribí tu pregunta sobre cultivo, cepas, costos o normativa…" autocomplete="off" /><button type="submit" aria-label="Enviar">→</button></form>
               <div class="chat-disclaimer">Las respuestas son orientativas y citan material de tu biblioteca. No reemplazan asesoramiento profesional ni la normativa vigente.</div>
             </section>
             <aside class="sources-card">
@@ -234,11 +419,11 @@
           </div>
         </section>
 
-        <!-- ============ PRESUPUESTO ============ -->
+        <!-- ============================================================ COSTOS -->
         <section class="view" id="view-budget">
           <div class="view-head">
-            <div><div class="eyebrow"><span class="live-dot"></span>PRESUPUESTO <i>/</i> <span>ARS · 2026</span></div><h1>Sabé cuánto cuesta<br><em>cultivar de verdad.</em></h1><p class="lead">Costos de una temporada legal de 9 autos en 15 m². Ajustá tus supuestos y mirá el impacto en el costo por gramo.</p></div>
-            <div class="head-actions"><button class="btn btn-ghost" id="budgetReset">Restablecer supuestos ↺</button><button class="btn btn-primary" id="saveBudgetBtn">Guardar presupuesto <span>✓</span></button></div>
+            <div><div class="eyebrow"><span class="live-dot"></span>COSTOS <i>/</i> <span>ARS · 2026</span></div><h1>Sabé cuánto cuesta<br><em>cultivar de verdad.</em></h1><p class="lead">Costos de una temporada legal de 9 autos en 15 m². Ajustá tus supuestos y mirá el impacto en el costo por gramo.</p></div>
+            <div class="head-actions"><button class="btn btn-ghost" id="budgetReset">Restablecer ↺</button><button class="btn btn-lime" id="saveBudgetBtn">Guardar escenario <span>✓</span></button></div>
           </div>
 
           <div class="budget-grid">
@@ -256,7 +441,7 @@
             <div class="budget-results">
               <section class="budget-total">
                 <div class="budget-total-top"><span class="section-kicker">COSTO TOTAL DE LA TEMPORADA</span><span class="budget-chip">ARS 2026</span></div>
-                <div class="budget-big">$<span id="bTotal">406.890</span></div>
+                <div class="budget-big"><span id="bTotal">406.890</span></div>
                 <div class="budget-sub"><span>Costo por planta <b id="bPerPlant">$45.210</b></span><span>·</span><span>Costo por gramo <b id="bPerGram">$822</b></span></div>
                 <div class="budget-highlight"><span>Valor estimado de la cosecha</span><b id="bValue">$2.227.500</b><i id="bMargin">+433%</i></div>
               </section>
@@ -270,8 +455,8 @@
                 <div class="scale-table">
                   <div class="scale-row scale-head"><span>ESCALA</span><span>INVERSIÓN</span><span>COSTO/G</span><span>ESTADO</span></div>
                   <div class="scale-row"><span><b>9 plantas</b><small>Autocultivo</small></span><span id="scale9">$406.890</span><span id="scale9g">$822</span><span class="scale-ok">HABILITADO</span></div>
-                  <div class="scale-row"><span><b>90 plantas</b><small>Micro-proyecto</small></span><span id="scale90">$4.180.000</span><span id="scale90g">$844</span><span class="scale-warn">EVALUAR</span></div>
-                  <div class="scale-row"><span><b>900 plantas</b><small>Productor</small></span><span id="scale900">$41.800.000</span><span id="scale900g">$844</span><span class="scale-warn">FUERA DE MARCO</span></div>
+                  <div class="scale-row"><span><b>90 plantas</b><small>Micro-proyecto</small></span><span id="scale90">$4.180.000</span><span id="scale90g">$822</span><span class="scale-warn">EVALUAR</span></div>
+                  <div class="scale-row"><span><b>900 plantas</b><small>Productor</small></span><span id="scale900">$41.800.000</span><span id="scale900g">$822</span><span class="scale-warn">FUERA DE MARCO</span></div>
                 </div>
                 <div class="compare-foot">Ahorro potencial por escala <b id="scaleSave">−18%</b> <span>·</span> requiere inversión y habilitación</div>
               </section>
@@ -279,16 +464,16 @@
           </div>
         </section>
 
-        <!-- ============ PROCESO ============ -->
+        <!-- ============================================================ PROCESO -->
         <section class="view" id="view-process">
           <div class="view-head">
             <div><div class="eyebrow"><span class="live-dot"></span>PROCESO <i>/</i> <span>AUTOFLORECIENTES · 75 DÍAS</span></div><h1>El cultivo completo,<br><em>sin saltarte nada.</em></h1><p class="lead">Una guía operativa de principio a fin: qué observar, qué hacer y cuánto cuesta en cada etapa. Marcá tus tareas y seguí el avance.</p></div>
-            <div class="head-actions"><button class="btn btn-ghost" data-nav="library">Abrir material <span>→</span></button><button class="btn btn-primary" data-nav="sim">Simular temporada <span>→</span></button></div>
+            <div class="head-actions"><button class="btn btn-ghost" data-nav="library">Abrir material <span>→</span></button><button class="btn btn-lime" data-nav="sim">Simular temporada <span>→</span></button></div>
           </div>
 
           <div class="process-summary">
             <div><span class="section-kicker">PROGRESO DE TAREAS</span><b id="taskProgressLabel">0 / 20 tareas</b><div class="big-progress"><i id="taskProgressBar"></i></div></div>
-            <div><span class="section-kicker">INVERSIÓN ACUMULADA</span><b id="processCost">$0</b><small>de $418.000 estimados</small></div>
+            <div><span class="section-kicker">INVERSIÓN ACUMULADA</span><b id="processCost">$0</b><small>de $406.890 estimados</small></div>
             <div><span class="section-kicker">RIESGO PRINCIPAL</span><b>Exceso de riego</b><small>3 de 4 alertas del oráculo</small></div>
             <div><span class="section-kicker">MARCO LEGAL</span><b>REPROCANN</b><small>Verificá tu registro anual</small></div>
           </div>
@@ -305,7 +490,7 @@
                 <span class="section-kicker">PRESUPUESTO RELACIONADO</span><h2>¿Cuánto cuesta este proceso?</h2>
                 <div class="teaser-amount">$<span id="processTease">406.890</span><small>ARS</small></div>
                 <p>Incluye insumos, energía y amortización para 9 plantas en 15 m².</p>
-                <button class="btn btn-soft full" data-nav="budget">Abrir presupuesto →</button>
+                <button class="btn btn-soft full" data-nav="budget">Abrir costos →</button>
               </section>
               <section class="card source-teaser">
                 <span class="section-kicker">BASE DE CONOCIMIENTO</span><h2>Este proceso cita 17 recursos</h2>
@@ -317,30 +502,44 @@
         </section>
       </main>
     </div>
-
-    <nav class="mobile-nav" aria-label="Navegación móvil">
-      <button class="active" data-nav="panel"><span>⌂</span>Panel</button>
-      <button data-nav="sim"><span>✳</span>Simular</button>
-      <button data-nav="library"><span>▤</span>Biblioteca</button>
-      <button data-nav="oracle"><span>◈</span>Oráculo</button>
-      <button data-nav="budget"><span>▧</span>Costos</button>
-      <button data-nav="process"><span>◷</span>Proceso</button>
-    </nav>
   </div>
 
-  <!-- modals -->
-  <div class="modal-backdrop" id="guideModal"><div class="modal"><button class="modal-close" data-close="guideModal" aria-label="Cerrar">×</button><span class="section-kicker">GUÍA DE CAMPO</span><h2>Un ecosistema en equilibrio.</h2><p>Tu invernadero funciona como un pequeño sistema vivo. Las condiciones cambian con el paso de los días: observá antes de actuar y evitá corregir demasiado de golpe.</p><div class="guide-list"><div><span>01</span><p><b>Observá cada planta.</b><br>Seleccioná una maceta para revisar su etapa, vitalidad y humedad.</p></div><div><span>02</span><p><b>Cuidados con medida.</b><br>Regar o nutrir ayuda si la planta lo necesita. El exceso también genera estrés.</p></div><div><span>03</span><p><b>Gestioná tus reservas.</b><br>Reponé agua, insumos o energía con el botón + de Recursos.</p></div><div><span>04</span><p><b>Aprendé de la biblioteca.</b><br>Cada recomendación del simulador está vinculada a material de tus diplomaturas.</p></div><div><span>05</span><p><b>Acelerá cuando sepas.</b><br>La simulación veloz corre la temporada completa con una estrategia y te muestra el resultado.</p></div></div><button class="btn btn-primary full" data-close="guideModal">Entendido <span>→</span></button></div></div>
+  <nav class="mobile-nav" aria-label="Navegación móvil">
+    <button class="active" data-nav="panel"><span>◐</span>Inicio</button>
+    <button data-nav="strains"><span>❧</span>Cepas</button>
+    <button data-nav="journal"><span>▤</span>Diario</button>
+    <button data-nav="sim"><span>✳</span>Cultivo</button>
+    <button id="moreBtn"><span>⋯</span>Más</button>
+  </nav>
+
+  <div class="mobile-sheet" id="moreSheet">
+    <div class="sheet-grip"></div>
+    <div class="sheet-head"><span class="section-kicker">MÁS HERRAMIENTAS</span><button id="closeMore" aria-label="Cerrar">×</button></div>
+    <div class="sheet-grid">
+      <button data-nav="library"><span>▦</span><b>Biblioteca</b><small>28 recursos</small></button>
+      <button data-nav="oracle"><span>◈</span><b>Oráculo</b><small>Con fuentes</small></button>
+      <button data-nav="budget"><span>◫</span><b>Costos</b><small>ARS 2026</small></button>
+      <button data-nav="process"><span>◷</span><b>Proceso</b><small>75 días</small></button>
+    </div>
+    <div class="sheet-legal"><span class="live-dot"></span>Autocultivo registrado · 15 m² · 9 plantas · Argentina 2026</div>
+  </div>
+
+  <!-- ============================================================ MODALES -->
+  <div class="modal-backdrop" id="guideModal"><div class="modal"><button class="modal-close" data-close="guideModal" aria-label="Cerrar">×</button><span class="section-kicker">GUÍA DE CAMPO</span><h2>Un ecosistema en equilibrio.</h2><p>Tu invernadero funciona como un pequeño sistema vivo. Las condiciones cambian con el paso de los días: observá antes de actuar y evitá corregir demasiado de golpe.</p><div class="guide-list"><div><span>01</span><p><b>Observá cada planta.</b><br>Seleccioná una maceta para revisar su etapa, vitalidad y humedad.</p></div><div><span>02</span><p><b>Cuidados con medida.</b><br>Regar o nutrir ayuda si la planta lo necesita. El exceso también genera estrés.</p></div><div><span>03</span><p><b>Gestioná tus reservas.</b><br>Reponé agua, insumos o energía con el botón + de Recursos.</p></div><div><span>04</span><p><b>Aprendé de la biblioteca.</b><br>Cada recomendación del simulador está vinculada a material de tus diplomaturas.</p></div><div><span>05</span><p><b>Acelerá cuando sepas.</b><br>La simulación veloz corre la temporada completa con una estrategia y te muestra el resultado.</p></div></div><button class="btn btn-lime full" data-close="guideModal">Entendido <span>→</span></button></div></div>
 
   <div class="modal-backdrop" id="shopModal"><div class="modal shop-modal"><button class="modal-close" data-close="shopModal" aria-label="Cerrar">×</button><span class="section-kicker">TIENDA DE SUMINISTROS</span><h2>Reponer recursos.</h2><p>Una pequeña inversión para mantener el invernadero en marcha. Los gastos se suman al presupuesto de la temporada.</p><div class="shop-items"><button data-buy="water"><span class="resource-symbol water-symbol">◉</span><span><b>Agua filtrada</b><small>+5 litros</small></span><strong>$4.000 <i>COMPRAR</i></strong></button><button data-buy="nutrient"><span class="resource-symbol nutrient-symbol">✳</span><span><b>Mezcla equilibrada</b><small>+3 dosis</small></span><strong>$8.000 <i>COMPRAR</i></strong></button><button data-buy="energy"><span class="resource-symbol energy-symbol">ϟ</span><span><b>Crédito energético</b><small>+20 unidades</small></span><strong>$6.000 <i>COMPRAR</i></strong></button></div><div class="wallet">FONDO DE TEMPORADA <b id="cashValue">$48.000</b></div></div></div>
 
-  <div class="modal-backdrop" id="quickModal"><div class="modal quick-modal"><button class="modal-close" data-close="quickModal" aria-label="Cerrar">×</button><span class="section-kicker">SIMULACIÓN VELOZ · 75 DÍAS</span><h2>Corré la temporada completa.</h2><p>El simulador aplicará una rutina diaria automática, resolverá los eventos y te devolverá un resumen de cosecha y presupuesto.</p><div class="strategy-list" id="strategyList"><button class="strategy active" data-strategy="balanced"><span class="strategy-ico">◎</span><span><b>Equilibrado</b><small>Riego y nutrición según necesidad. El mejor punto de partida.</small></span><i>RECOMENDADO</i></button><button data-strategy="minimal"><span class="strategy-ico">−</span><span><b>Mínimo</b><small>Ahorra recursos, asume más estrés y menor rendimiento.</small></span><i>BARATO</i></button><button data-strategy="intensive"><span class="strategy-ico">＋</span><span><b>Intensivo</b><small>Correcciones frecuentes y ambiente controlado. Más costo.</small></span><i>MÁXIMO</i></button></div><div class="quick-note"><span>⚡</span>Simula los días restantes hasta el día 75. No modifica tu partida hasta que confirmes.</div><button class="btn btn-primary full" id="runQuickBtn">Correr simulación <span>→</span></button></div></div>
+  <div class="modal-backdrop" id="quickModal"><div class="modal quick-modal"><button class="modal-close" data-close="quickModal" aria-label="Cerrar">×</button><span class="section-kicker">SIMULACIÓN VELOZ · 75 DÍAS</span><h2>Corré la temporada completa.</h2><p>El simulador aplicará una rutina diaria automática, resolverá los eventos y te devolverá un resumen de cosecha y presupuesto.</p><div class="strategy-list" id="strategyList"><button class="strategy active" data-strategy="balanced"><span class="strategy-ico">◎</span><span><b>Equilibrado</b><small>Riego y nutrición según necesidad. El mejor punto de partida.</small></span><i>RECOMENDADO</i></button><button data-strategy="minimal"><span class="strategy-ico">−</span><span><b>Mínimo</b><small>Ahorra recursos, asume más estrés y menor rendimiento.</small></span><i>BARATO</i></button><button data-strategy="intensive"><span class="strategy-ico">＋</span><span><b>Intensivo</b><small>Correcciones frecuentes y ambiente controlado. Más costo.</small></span><i>MÁXIMO</i></button></div><div class="quick-note"><span>⚡</span>Simula los días restantes hasta el día 75. No modifica tu partida hasta que confirmes.</div><button class="btn btn-lime full" id="runQuickBtn">Correr simulación <span>→</span></button></div></div>
 
-  <div class="modal-backdrop" id="resultModal"><div class="modal result-modal"><button class="modal-close" data-close="resultModal" aria-label="Cerrar">×</button><span class="section-kicker">RESULTADO DE TEMPORADA</span><h2 id="resultTitle">Cosecha completada.</h2><div class="result-grid"><div><span>COSECHA TOTAL</span><b id="resultYield">—</b></div><div><span>COSTO ESTIMADO</span><b id="resultCost">—</b></div><div><span>COSTO POR GRAMO</span><b id="resultPerGram">—</b></div><div><span>PLANTAS SANAS</span><b id="resultHealthy">—</b></div></div><p class="result-copy" id="resultCopy"></p><div class="result-lessons" id="resultLessons"></div><div class="result-actions"><button class="btn btn-ghost" data-close="resultModal">Seguir revisando</button><button class="btn btn-primary" id="restartFromResult">Nueva temporada <span>↺</span></button></div></div></div>
+  <div class="modal-backdrop" id="resultModal"><div class="modal result-modal"><button class="modal-close" data-close="resultModal" aria-label="Cerrar">×</button><span class="section-kicker">RESULTADO DE TEMPORADA</span><h2 id="resultTitle">Cosecha completada.</h2><div class="result-grid"><div><span>COSECHA TOTAL</span><b id="resultYield">—</b></div><div><span>COSTO ESTIMADO</span><b id="resultCost">—</b></div><div><span>COSTO POR GRAMO</span><b id="resultPerGram">—</b></div><div><span>PLANTAS SANAS</span><b id="resultHealthy">—</b></div></div><p class="result-copy" id="resultCopy"></p><div class="result-lessons" id="resultLessons"></div><div class="result-actions"><button class="btn btn-ghost" data-close="resultModal">Seguir revisando</button><button class="btn btn-lime" id="restartFromResult">Nueva temporada <span>↺</span></button></div></div></div>
 
-  <div class="modal-backdrop" id="addModal"><div class="modal add-modal"><button class="modal-close" data-close="addModal" aria-label="Cerrar">×</button><span class="section-kicker">APORTAR A LA BIBLIOTECA</span><h2>Sumá un PDF con su origen.</h2><p>El archivo queda pendiente de procesamiento. Guardamos la diplomatura y la carpeta para que nunca pierda contexto.</p><form id="addForm"><label class="dropzone" id="dropzone"><input type="file" id="fileInput" accept="application/pdf" /><span class="drop-ico">⇧</span><b id="dropTitle">Arrastrá un PDF o hacé clic</b><small id="dropSub">Máx. 40 MB · se indexa localmente</small></label><div class="control-row"><label class="field"><span>Diplomatura</span><select id="addDiploma"><option>Cultivo Interior</option><option>Agroecología Aplicada</option><option>Cannabis Medicinal</option><option>Extracción y Transformados</option><option>Gestión y Presupuesto</option></select></label><label class="field"><span>Módulo / clase</span><input id="addModule" placeholder="Ej. Módulo 4 · Riego" /></label></div><label class="field"><span>Carpeta de origen</span><input id="addPath" placeholder="Ej. 02_Diplomaturas/CultivoInterior/M4/riego.pdf" /></label><div class="quick-note"><span>ⓘ</span>Se guarda metadato y nombre de archivo en esta demo. El texto se procesará a Markdown en la próxima etapa.</div><button class="btn btn-primary full" type="submit">Añadir al índice <span>+</span></button></form></div></div>
+  <div class="modal-backdrop" id="addModal"><div class="modal add-modal"><button class="modal-close" data-close="addModal" aria-label="Cerrar">×</button><span class="section-kicker">APORTAR A LA BIBLIOTECA</span><h2>Sumá un PDF con su origen.</h2><p>El archivo queda pendiente de procesamiento. Guardamos la diplomatura y la carpeta para que nunca pierda contexto.</p><form id="addForm"><label class="dropzone" id="dropzone"><input type="file" id="fileInput" accept="application/pdf" /><span class="drop-ico">⇧</span><b id="dropTitle">Arrastrá un PDF o hacé clic</b><small id="dropSub">Máx. 40 MB · se indexa localmente</small></label><div class="control-row"><label class="field"><span>Diplomatura</span><select id="addDiploma"><option>Cultivo Interior</option><option>Agroecología Aplicada</option><option>Cannabis Medicinal</option><option>Extracción y Transformados</option><option>Gestión y Presupuesto</option></select></label><label class="field"><span>Módulo / clase</span><input id="addModule" placeholder="Ej. Módulo 4 · Riego" /></label></div><label class="field"><span>Carpeta de origen</span><input id="addPath" placeholder="Ej. 02_Diplomaturas/CultivoInterior/M4/riego.pdf" /></label><div class="quick-note"><span>ⓘ</span>Se guarda metadato y nombre de archivo en esta demo. El texto se procesará a Markdown en la próxima etapa.</div><button class="btn btn-lime full" type="submit">Añadir al índice <span>+</span></button></form></div></div>
+
+  <div class="modal-backdrop" id="strainModal"><div class="strain-sheet" id="strainSheet"></div></div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="library.js"></script>
+  <script src="strains.js"></script>
   <script src="game.js"></script>
 </body>
 </html>

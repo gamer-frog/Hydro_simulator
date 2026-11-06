@@ -18,7 +18,7 @@
   const initialGame = () => ({
     day: 1, selected: 0, water: 15, nutrients: 7, energy: 88, cash: 48000,
     temp: 24, humidity: 58, light: 18, vented: false, harvested: 0,
-    harvestYield: 0, spent: 0, finished: false,
+    harvestYield: 0, spent: 0, finished: false, archived: false,
     plants: Array.from({ length: 9 }, (_, i) => ({
       id: i + 1, age: 1 + (i % 3), health: 88 + (i % 4) * 3,
       moisture: 46 + (i * 11) % 31, nutrition: 48 + (i * 7) % 28,
@@ -30,7 +30,8 @@
   const initialBudget = () => ({ plants: 9, yield: 55, price: 4500, kwh: 95, hours: 18, days: 75, watts: 240 });
   const defaultApp = () => ({
     view: 'panel', budget: initialBudget(), tasks: {}, legal: {}, userResources: [],
-    selectedResource: 3, queries: 0, chat: [], chatSources: [], dupOnly: false
+    selectedResource: null, queries: 0, chat: [], chatSources: [], dupOnly: false,
+    journalWeek: null, journalTasks: {}, selectedStrain: null, grows: []
   });
 
   let game, app;
@@ -40,9 +41,13 @@
     app = Object.assign(defaultApp(), saved ? saved.app : {});
     app.budget = Object.assign(initialBudget(), app.budget || {});
     app.userResources = Array.isArray(app.userResources) ? app.userResources : [];
+    app.journalTasks = app.journalTasks || {};
+    app.grows = Array.isArray(app.grows) ? app.grows : [];
   } catch { game = initialGame(); app = defaultApp(); }
 
-  const persist = () => localStorage.setItem('verde-app-v2', JSON.stringify({ game, app }));
+  const persist = () => {
+    try { localStorage.setItem('verde-app-v2', JSON.stringify({ game, app })); } catch {}
+  };
 
   /* ---------- derived data ---------- */
   const allResources = () => [...app.userResources, ...window.LIBRARY];
@@ -75,20 +80,19 @@
     const value = grams * b.price;
     return {
       items: [
-        { key: 'seeds', name: 'Semillas', value: seeds, color: '#3f6b4a' },
-        { key: 'substrate', name: 'Sustrato', value: substrate, color: '#7f9b5e' },
-        { key: 'nutrition', name: 'Nutrición', value: nutrition, color: '#b2bc70' },
-        { key: 'energy', name: 'Energía', value: energy, color: '#d0ac65' },
-        { key: 'equipment', name: 'Equipos', value: equipment, color: '#8e9d8d' },
-        { key: 'water', name: 'Agua e insumos', value: water + misc, color: '#6f9590' },
-        { key: 'management', name: 'Gestión', value: management, color: '#b3a58c' },
-        { key: 'contingency', name: 'Contingencia', value: contingency, color: '#d8dfd2' }
+        { key: 'seeds', name: 'Semillas', value: seeds, color: '#d8f26b' },
+        { key: 'substrate', name: 'Sustrato', value: substrate, color: '#9cc24f' },
+        { key: 'nutrition', name: 'Nutrición', value: nutrition, color: '#6f9b57' },
+        { key: 'energy', name: 'Energía', value: energy, color: '#e8b56a' },
+        { key: 'equipment', name: 'Equipos', value: equipment, color: '#8b947d' },
+        { key: 'water', name: 'Agua e insumos', value: water + misc, color: '#7fb7c9' },
+        { key: 'management', name: 'Gestión', value: management, color: '#b9a6e6' },
+        { key: 'contingency', name: 'Contingencia', value: contingency, color: '#46503b' }
       ],
       total, grams, value, energy, perPlant: total / b.plants,
       perGram: total / grams, margin: ((value - total) / total) * 100
     };
   }
-
   const budget = () => costsFor(app.budget);
 
   function scaleScenario(n) {
@@ -97,61 +101,75 @@
     return { cost: c.total, perGram: c.perGram, grams: c.grams };
   }
 
-  /* ---------- render: shared ---------- */
-  const VIEWS = { panel: 'PANEL', sim: 'SIMULADOR', library: 'BIBLIOTECA', oracle: 'ORÁCULO IA', budget: 'PRESUPUESTO', process: 'PROCESO' };
-  function navigate(view, opts = {}) {
-    if (!VIEWS[view]) view = 'panel';
-    app.view = view;
+  const view = (name) => getComputedStyle($('#view-' + name)).display !== 'none';
+
+  /* ---------- navigation ---------- */
+  const VIEWS = { panel: 'INICIO', strains: 'CEPAS', journal: 'DIARIO', sim: 'SIMULADOR', library: 'BIBLIOTECA', oracle: 'ORÁCULO IA', budget: 'COSTOS', process: 'PROCESO' };
+  function navigate(target, opts = {}) {
+    if (!VIEWS[target]) target = 'panel';
+    app.view = target;
     $('#resourceDetail').classList.remove('mobile-open');
-    $$('.view').forEach(v => v.classList.toggle('active', v.id === `view-${view}`));
-    $$('.nav-item,.mobile-nav button').forEach(b => b.classList.toggle('active', b.dataset.nav === view));
-    $('#crumbCurrent').textContent = VIEWS[view];
-    if (view === 'library') {
+    document.body.classList.remove('detail-open');
+    $('#moreSheet').classList.remove('open');
+    $$('.view').forEach(v => v.classList.toggle('active', v.id === `view-${target}`));
+    $$('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.nav === target));
+    $$('.mobile-nav button[data-nav]').forEach(b => b.classList.toggle('active', b.dataset.nav === target));
+    $('#crumbCurrent').textContent = VIEWS[target];
+    if (opts.journalWeek) app.journalWeek = opts.journalWeek;
+    if (target === 'library') {
       if (!opts.resourceId) app.selectedResource = null;
       renderLibrary(opts.resourceId);
     }
-    if (view === 'oracle') { renderChat(); if (opts.question) askOracle(opts.question); else setTimeout(() => $('#chatInput')?.focus(), 250); }
-    if (view === 'budget') renderBudget();
-    if (view === 'process') renderProcess();
-    if (view === 'panel') renderPanel();
-    if (view === 'sim') renderSim();
+    if (target === 'oracle') { renderChat(); if (opts.question) askOracle(opts.question); else setTimeout(() => $('#chatInput')?.focus(), 250); }
+    if (target === 'budget') renderBudget();
+    if (target === 'process') renderProcess();
+    if (target === 'panel') renderPanel();
+    if (target === 'sim') renderSim();
+    if (target === 'strains') renderStrains();
+    if (target === 'journal') renderJournal();
     persist();
-    history.replaceState(null, '', `#${view}`);
+    history.replaceState(null, '', `#${target}`);
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
   function renderNav() {
-    $('#navDay').textContent = 'D' + String(game.day).padStart(2, '0');
     const docs = allResources().length;
+    $('#navDay').textContent = 'D' + String(game.day).padStart(2, '0');
+    $('#navWeek').textContent = 'S' + currentWeek();
     $('#navDocs').textContent = docs;
-    $('#panelDay').textContent = String(game.day).padStart(2, '0');
     $('#statDocs').textContent = docs;
     $('#statPlants').textContent = activeCount();
     $('#statQueries').textContent = app.queries;
     $('#statBudget').textContent = fmt(budget().total);
-    $('#navDocs').textContent = docs;
+    $('#statPerGram').textContent = '$' + fmt(budget().perGram) + ' / g';
   }
 
-  /* ---------- render: panel ---------- */
+  /* ---------- dashboard ---------- */
   function renderPanel() {
     renderNav();
     const phase = stageForDay(game.day);
+    const pct = Math.min(1, game.day / 75);
+    const circ = 2 * Math.PI * 19;
     $('#panelPhase').textContent = phase.pill;
     $('#heroDay').textContent = String(game.day).padStart(2, '0');
+    $('#heroCtaDay').textContent = String(game.day).padStart(2, '0');
     $('#heroPhase').textContent = phase.name;
     $('#heroHealth').textContent = avgHealth() + '%';
-    $('#heroHealthBar').style.width = avgHealth() + '%';
     $('#heroDays').textContent = Math.max(0, 75 - game.day);
     $('#heroHarvest').textContent = game.harvested;
+    $('#heroRing').style.strokeDasharray = circ;
+    $('#heroRing').style.strokeDashoffset = circ * (1 - pct);
+    $('#heroProgress').style.width = (pct * 100) + '%';
+    const nxt = nextStage(game.day);
+    $('#panelMilestone').textContent = nxt ? `Próximo: día ${nxt.from} · ${nxt.name}` : 'Cierre de temporada';
     const p = dayPhase(game.day);
     $('#heroInsight').textContent = game.finished
       ? `Temporada completada: ${fmt(game.harvestYield)} g registrados y ${game.harvested} cosechas. Revisá el resultado o iniciá una nueva temporada.`
       : phaseMessage();
-    $('#focusStamp').textContent = 'D' + String(game.day).padStart(2, '0');
 
     $('#miniPlants').innerHTML = game.plants.map(p => {
       const st = statusOf(p);
-      const h = 26 + Math.min(25, p.age * .5);
+      const h = 20 + Math.min(26, p.age * .42);
       return `<div class="mini-pot ${st}" title="Planta ${p.id}"><span class="mini-plant" style="--h:${h}px"></span></div>`;
     }).join('');
 
@@ -167,11 +185,12 @@
       return `<div class="season-node ${cls}"><span class="season-dot"></span><span class="sn-name">${m.name}</span><span class="sn-days">DÍA ${m.from}</span></div>`;
     }).join('');
 
-    $('#focusList').innerHTML = p.tasks.slice(0, 3).map(t => `<div class="focus-item"><span>◆</span>${esc(t.text)}</div>`).join('');
-    if (game.finished) $('#focusList').innerHTML = `<div class="focus-item"><span>◆</span>Cosecha registrada. Compará el costo real con tu presupuesto.</div><div class="focus-item"><span>◆</span>Guardá aprendizajes en la bitácora de la próxima temporada.</div><div class="focus-item"><span>◆</span>Revisá los recursos de secado y curado.</div>`;
+    $('#focusList').innerHTML = (game.finished
+      ? ['Cosecha registrada. Compará el costo real con tu presupuesto.', 'Guardá aprendizajes en la bitácora de la próxima temporada.', 'Revisá los recursos de secado y curado.']
+      : p.tasks.slice(0, 3).map(t => t.text)
+    ).map(t => `<div class="focus-item"><span>◆</span>${esc(t)}</div>`).join('');
 
-    const recent = window.LIBRARY.slice(-3).reverse();
-    $('#recentList').innerHTML = recent.map(r => `<div class="recent-item" data-resource="${r.id}"><span class="recent-icon">PDF</span><span class="recent-info"><span class="recent-title">${esc(r.title)}</span><span class="recent-meta">${esc(r.diploma)} · ${r.module}</span></span><span class="recent-tag">${r.pages} pp.</span></div>`).join('');
+    $('#recentList').innerHTML = allResources().slice(-3).reverse().map(r => `<div class="recent-item" data-resource="${r.id}"><span class="recent-icon">PDF</span><span class="recent-info"><span class="recent-title">${esc(r.title)}</span><span class="recent-meta">${esc(r.diploma)} · ${r.module}</span></span><span class="recent-tag">${r.pages} pp.</span></div>`).join('');
     $$('#recentList .recent-item').forEach(el => el.addEventListener('click', () => navigate('library', { resourceId: Number(el.dataset.resource) })));
 
     const dups = window.LIBRARY.filter(r => r.dup);
@@ -179,7 +198,19 @@
     $('#dupCount').textContent = dups.length;
     $('#insightCount').textContent = groups.length;
     const pair = window.LIBRARY.filter(r => r.dup === 'riego').slice(0, 2);
-    $('#insightPair').innerHTML = pair.map((r, i) => `<span class="pair-dot"></span><b>${esc(r.title)}</b>${i === 0 ? '<span style="font-size:7px;color:#b0bab0">↔</span>' : ''}`).join('');
+    $('#insightPair').innerHTML = pair.map((r, i) => `<span class="pair-dot"></span><b>${esc(r.title)}</b>${i === 0 ? '<span style="font-size:7px;color:#5d6752">↔</span>' : ''}`).join('');
+
+    // strain rail
+    const picks = [window.STRAINS[0], window.STRAINS[3], window.STRAINS[7], window.STRAINS[10]];
+    $('#strainRail').innerHTML = picks.map(strainCardHTML).join('');
+    bindStrainCards('#strainRail');
+
+    // dashboard week chips
+    $('#dashWeeks').innerHTML = journalWeeks().map(w => {
+      const st = w.n < currentWeek() ? 'done' : w.n === currentWeek() ? 'current' : '';
+      return `<button class="week-chip ${st}" data-journal-week="${w.n}"><b>S${w.n}</b><span>${esc(w.title)}</span></button>`;
+    }).join('');
+    $$('#dashWeeks [data-journal-week]').forEach(el => el.addEventListener('click', () => navigate('journal', { journalWeek: Number(el.dataset.journalWeek) })));
   }
 
   function phaseMessage() {
@@ -190,7 +221,7 @@
     return dayPhase(game.day).focus[0];
   }
 
-  /* ---------- render: sim ---------- */
+  /* ---------- simulator ---------- */
   function renderSim() {
     renderNav();
     const selected = game.plants[game.selected] || game.plants[0];
@@ -333,20 +364,21 @@
     if (game.day === 27) log('<b>Prefloración:</b> ajustá nutrición y humedad para el estiramiento.', 'success');
     if (game.day === 67) log('<b>Ventana de cosecha abierta.</b> Revisá tricomas antes de cortar.', 'success');
     if (game.day >= 75) { game.finished = true; log(`<b>Temporada cerrada.</b> ${game.harvested} cosechas y ${fmt(game.harvestYield)} g registrados.`, 'success'); }
+    if (game.finished) archiveSeason();
     saveAndRefresh();
     showToast(`Día ${game.day}: ${game.day >= 67 ? 'revisá la madurez de tus plantas.' : 'el cultivo ha crecido.'}`);
   }
 
-  /* ---------- quick simulation ---------- */
+  /* ---------- quick sim ---------- */
   let quickStrategy = 'balanced';
 
   function runQuickSim() {
+    if (game.finished) { showToast('La temporada ya está cerrada. Iniciá una nueva para simular.'); return; }
     let s = JSON.parse(JSON.stringify(game));
     const strategy = quickStrategy;
     const startDay = s.day;
-    let water = s.water, nuts = s.nutrients, energy = s.energy;
+    let energy = s.energy;
     let extra = 0;
-    const temp0 = s.temp, hum0 = s.humidity;
 
     while (s.day < 75) {
       s.day++;
@@ -359,14 +391,13 @@
         p.age++;
         p.moisture = Math.max(0, p.moisture - 10 - Math.random() * 6);
         p.nutrition = Math.max(0, p.nutrition - 2.2);
-        const waterAt = strategy === 'intensive' ? 55 : strategy === 'balanced' ? 38 : 24;
-        const feedAt = strategy === 'intensive' ? 58 : strategy === 'balanced' ? 38 : 18;
-        // La simulación veloz presupone insumos disponibles y los imputa al costo total.
+        const waterAt = strategy === 'intensive' ? 48 : strategy === 'balanced' ? 32 : 20;
+        const feedAt = strategy === 'intensive' ? 48 : strategy === 'balanced' ? 30 : 14;
         if (p.moisture < waterAt) { p.moisture = Math.min(88, p.moisture + 40); extra += 150; }
         if (p.nutrition < feedAt) { p.nutrition = Math.min(88, p.nutrition + 42); extra += 850; }
         let stress = 0;
-        if (p.moisture < 18 || p.moisture > 93) stress += 7;
-        if (p.nutrition < 12) stress += 5;
+        if (p.moisture < 16 || p.moisture > 93) stress += 6;
+        if (p.nutrition < 10) stress += 4;
         if (s.temp > 29 || s.temp < 19) stress += 4;
         if (strategy === 'minimal') stress += 1;
         p.health = Math.max(0, Math.min(100, p.health + (stress ? -stress : 1)));
@@ -386,19 +417,16 @@
       grams += Math.round(55 * q * (1 + Math.min(.06, (p.age - 67) * .002)));
     });
 
-    s.water = water; s.nutrients = nuts; s.energy = energy;
+    s.energy = energy;
     s.harvested += alive; s.harvestYield += grams;
     s.finished = true;
     const remaining = (75 - startDay + 1) / 75;
     const premium = strategy === 'intensive' ? 0.18 : strategy === 'minimal' ? -0.16 : 0;
     s.spent = game.spent + Math.round(budget().total * remaining * (1 + premium));
-    s.temp = Math.max(18, Math.min(31, temp0 + (strategy === 'intensive' ? -1 : 0)));
-    s.humidity = Math.max(35, Math.min(78, hum0 - (strategy === 'intensive' ? 4 : 2)));
     s.logs.unshift({ day: 75, text: `<b>Simulación veloz · ${strategy === 'balanced' ? 'equilibrada' : strategy === 'minimal' ? 'mínima' : 'intensiva'}.</b> ${grams} g registrados.`, kind: 'success' });
     if (s.logs.length > 8) s.logs = s.logs.slice(0, 8);
     game = s;
 
-    const c = budget();
     const yieldG = game.harvestYield;
     const perGram = game.spent / Math.max(1, yieldG);
     $('#resultTitle').textContent = strategy === 'balanced' ? 'Una temporada equilibrada.' : strategy === 'minimal' ? 'Ahorraste, pero se notó.' : 'Control máximo, costo máximo.';
@@ -415,405 +443,837 @@
     lessons.push(`Costo por gramo simulado: $${fmt(perGram)} frente a un precio de referencia de $${fmt(app.budget.price)}/g.`);
     if (yieldG > 0) lessons.push(`Valor de referencia de la cosecha: $${fmt(yieldG * app.budget.price)}. En autocultivo no equivale a una autorización de venta.`);
     $('#resultLessons').innerHTML = lessons.map(x => `<div>${x}</div>`).join('');
+    archiveSeason();
     $('#quickModal').classList.remove('open');
     $('#resultModal').classList.add('open');
     persist(); renderSim(); renderPanel(); renderNav();
   }
+  /* ---------- toast ---------- */
+  let toastTimer;
+  function showToast(message) {
+    const el = $('#toast');
+    if (!el) return;
+    el.textContent = message;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+  }
 
-  /* ---------- library ---------- */
-  function renderLibrary(resourceId) {
-    renderNav();
-    const resources = allResources();
-    const dups = resources.filter(r => r.dup);
-    const groups = new Set(dups.map(r => r.dup));
-    $('#libTotal').textContent = resources.length;
-    $('#libProcessed').textContent = resources.filter(r => r.state === 'markdown').length;
-    $('#libDuplicates').textContent = groups.size;
-    $('#libVerified').textContent = resources.length;
-    $('#libVerifiedTotal').textContent = resources.length;
-    $('#dupBannerText').textContent = `${dups.length} recursos aparecen en más de una diplomatura (${groups.size} grupos). Verde los vincula sin borrar el original: sabés de dónde viene cada versión y dónde está guardada.`;
-    $('#dupCount') && ($('#dupCount').textContent = dups.length);
+  function downloadText(filename, text) {
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
 
-    const diplomaSelect = $('#libDiploma');
-    if (diplomaSelect.options.length <= 1) {
-      const diplomas = [...new Set(resources.map(r => r.diploma))];
-      diplomaSelect.innerHTML = '<option value="all">Todas las diplomaturas</option>' + diplomas.map(d => `<option>${esc(d)}</option>`).join('');
-    }
+  /* ---------- strain explorer ---------- */
+  function difficultyClass(level) {
+    return level === 'Fácil' ? 'easy' : level === 'Alta' ? 'hard' : 'mid';
+  }
 
-    if (resourceId) app.selectedResource = resourceId;
-    const q = norm($('#libSearch')?.value || '');
-    const dip = diplomaSelect.value;
-    const state = $('#libState').value;
-    const list = resources.filter(r => {
-      if (dip !== 'all' && r.diploma !== dip) return false;
-      if (state !== 'all' && r.state !== state) return false;
-      if (app.dupOnly && !r.dup) return false;
-      if (!q) return true;
-      return norm(`${r.title} ${r.diploma} ${r.module} ${r.tags.join(' ')} ${r.summary}`).includes(q);
-    });
-    const sortMode = $('#libSort')?.value || 'recent';
-    list.sort((a, b) =>
-      sortMode === 'diploma' ? (a.diploma.localeCompare(b.diploma) || a.title.localeCompare(b.title)) :
-      sortMode === 'title' ? a.title.localeCompare(b.title) :
-      sortMode === 'pages' ? b.pages - a.pages :
-      b.id - a.id
-    );
-    $('#libResultCount').textContent = `${list.length} recurso${list.length === 1 ? '' : 's'}`;
-    $('#libEmpty').hidden = list.length > 0;
-    const current = list.find(r => r.id === app.selectedResource) || list[0] || resources[0];
-    if (current) app.selectedResource = current.id;
-    $('#libList').innerHTML = list.map(r => {
-      const groupSize = r.dup ? resources.filter(x => x.dup === r.dup).length : 0;
-      return `<div class="lib-row ${r.id === app.selectedResource ? 'selected' : ''}" data-resource="${r.id}" role="button" tabindex="0" aria-label="${esc(r.title)}">
-        <span class="lib-pdf">PDF</span>
-        <div class="lib-row-main"><div class="lib-title-line"><span class="lib-title">${esc(r.title)}</span>${r.dup ? `<span class="dup-mini">⧉ ${groupSize}</span>` : ''}</div><div class="lib-meta"><b>${esc(r.diploma)}</b> · ${esc(r.module)}</div><div class="lib-path">${esc(r.path)}</div></div>
-        <div class="lib-row-side"><span class="state-badge state-${r.state}">${r.state === 'markdown' ? 'MARKDOWN' : r.state === 'procesado' ? 'PROCESADO' : 'PENDIENTE'}</span><span class="lib-pages">${r.pages} pp.</span></div>
-      </div>`;
-    }).join('');
-    $$('#libList .lib-row').forEach(el => {
-      const open = () => {
-        app.selectedResource = Number(el.dataset.resource);
-        renderLibrary();
-        if (window.innerWidth <= 900) $('#resourceDetail').classList.add('mobile-open');
-      };
+  function difficultyDots(level) {
+    const n = level === 'Fácil' ? 1 : level === 'Alta' ? 3 : 2;
+    return `<span class="difficulty-dots ${difficultyClass(level)}">${[1, 2, 3].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`;
+  }
+
+  function strainCardHTML(st) {
+    return `<article class="strain-card" data-strain="${st.id}" tabindex="0" role="button" aria-label="Ver ficha de ${esc(st.name)}">
+      <div class="strain-card-media">
+        <img src="${st.image}" alt="${esc(st.name)}" loading="lazy" />
+        <div class="strain-card-badges"><span class="strain-badge thc">${st.thc}% THC</span><span class="strain-badge">${esc(st.difficulty)}</span></div>
+        <div class="strain-card-name"><b>${esc(st.name)}</b><small>${esc(st.type)} · ${st.flower} días</small></div>
+      </div>
+      <div class="strain-card-body">
+        <div class="strain-effects">${st.effects.slice(0, 3).map(e => `<span>${esc(e)}</span>`).join('')}</div>
+        <div class="strain-card-foot"><span>${st.yield} g/m² · ${esc(st.height.split('–')[0])}+</span>${difficultyDots(st.difficulty)}</div>
+      </div>
+    </article>`;
+  }
+
+  function bindStrainCards(scope = document) {
+    $$('[data-strain]', typeof scope === 'string' ? $(scope) : scope).forEach(el => {
+      if (el.dataset.bound) return;
+      el.dataset.bound = '1';
+      const open = () => openStrainSheet(el.dataset.strain);
       el.addEventListener('click', open);
       el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
     });
-    renderResourceDetail(current, resources);
-    if (resourceId) {
-      const el = $(`#libList .lib-row[data-resource="${resourceId}"]`);
-      if (el) el.scrollIntoView({ block: 'nearest' });
-    }
   }
 
-  function renderResourceDetail(r, resources) {
-    const el = $('#resourceDetail');
-    if (!r) { el.innerHTML = ''; return; }
-    const group = r.dup ? resources.filter(x => x.dup === r.dup && x.id !== r.id) : [];
-    el.innerHTML = `<div class="rd-top"><span class="rd-icon">PDF</span><span class="rd-badge">${esc(r.code)} · ${r.year}</span></div>
+  function filterStrains() {
+    const q = norm($('#strainSearch')?.value || '');
+    const diff = $('#strainDifficulty')?.value || 'all';
+    const effect = $('#strainEffect')?.value || 'all';
+    const sort = $('#strainSort')?.value || 'thc';
+    let list = window.STRAINS.filter(st => {
+      const hay = norm([st.name, st.summary, st.flavor, st.tags.join(' '), st.effects.join(' '), st.terpenes.map(t => t.n).join(' ')].join(' '));
+      return (!q || hay.includes(q)) && (diff === 'all' || st.difficulty === diff) && (effect === 'all' || st.effects.includes(effect));
+    });
+    if (sort === 'thc') list.sort((a, b) => b.thc - a.thc);
+    if (sort === 'fast') list.sort((a, b) => a.flower - b.flower);
+    if (sort === 'yield') list.sort((a, b) => b.yield - a.yield);
+    if (sort === 'az') list.sort((a, b) => a.name.localeCompare(b.name, 'es'));
+    $('#strainCount').textContent = `${list.length} ${list.length === 1 ? 'cepa' : 'cepas'}`;
+    $('#strainGrid').innerHTML = list.map(strainCardHTML).join('') || `<div class="lib-empty" style="grid-column:1/-1"><b>Sin cepas para ese filtro.</b><p>Probá con otro efecto, dificultad o término de búsqueda.</p></div>`;
+    bindStrainCards('#strainGrid');
+  }
+
+  function renderStrains() {
+    renderNav();
+    const st = window.STRAINS[0];
+    $('#strainFeatured').innerHTML = `<img src="${st.image}" alt="${esc(st.name)}" />
+      <div class="strain-featured-copy">
+        <div class="strain-featured-tags"><span>DESTACADA</span><span class="ghost">${esc(st.type)}</span><span class="ghost">${esc(st.difficulty)}</span></div>
+        <h2>${esc(st.name.replace(' Auto', ''))} <em>Auto.</em></h2>
+        <p>${esc(st.summary)}</p>
+        <div class="strain-featured-stats">
+          <span><b>${st.thc}%</b>THC</span><span><b>${st.cbd}%</b>CBD</span><span><b>${st.flower}</b>días de floración</span><span><b>${st.yield} g</b>por planta</span>
+        </div>
+        <div class="strain-featured-actions"><button class="btn btn-lime" data-strain-open="${st.id}">Ver ficha completa</button><button class="btn btn-glass" data-ask="¿Qué cuidados necesita una autofloreciente ${esc(st.name)}?">Preguntar al oráculo <span>◈</span></button></div>
+      </div>`;
+
+    const effects = [...new Set(window.STRAINS.flatMap(x => x.effects))].sort((a, b) => a.localeCompare(b, 'es'));
+    const sel = $('#strainEffect');
+    if (sel && sel.options.length <= 1) sel.innerHTML = '<option value="all">Todo efecto</option>' + effects.map(e => `<option>${esc(e)}</option>`).join('');
+    filterStrains();
+
+    const featuredBtn = $('#strainFeatured [data-strain-open]');
+    if (featuredBtn) featuredBtn.addEventListener('click', () => openStrainSheet(featuredBtn.dataset.strainOpen));
+  }
+
+  function bindStrains() {
+    ['strainSearch', 'strainDifficulty', 'strainEffect', 'strainSort'].forEach(id => {
+      const el = $('#' + id);
+      if (!el) return;
+      el.addEventListener(id === 'strainSearch' ? 'input' : 'change', filterStrains);
+    });
+  }
+
+  function openStrainSheet(id) {
+    const st = window.STRAINS.find(x => x.id === id);
+    if (!st) return;
+    app.selectedStrain = id;
+    $('#strainSheet').innerHTML = `
+      <div class="strain-sheet-hero"><img src="${st.image}" alt="${esc(st.name)}" /><button class="strain-sheet-close" data-close-sheet aria-label="Cerrar">×</button>
+        <div class="strain-sheet-title"><div><h2>${esc(st.name)}</h2><small>${esc(st.type)} · ${esc(st.lineage)}</small></div><div class="strain-sheet-thc"><b>${st.thc}%</b><span>THC · ${st.cbd}% CBD</span></div></div>
+      </div>
+      <div class="strain-sheet-body">
+        <div>
+          <p>${esc(st.summary)}</p>
+          <h4>Perfil de cultivo</h4>
+          <div class="strain-metrics">
+            <div class="strain-metric"><span>DIFICULTAD</span><b>${esc(st.difficulty)}</b></div>
+            <div class="strain-metric"><span>FLORACIÓN</span><b>${st.flower} días</b></div>
+            <div class="strain-metric"><span>RENDIMIENTO</span><b>${st.yield} g/planta</b></div>
+            <div class="strain-metric"><span>ALTURA</span><b>${esc(st.height)}</b></div>
+          </div>
+          <h4>Terpenos dominantes</h4>
+          <div class="terpene-list">${st.terpenes.map(t => `<div class="terpene-row"><span>${esc(t.n)}</span><i><b style="width:${Math.min(100, t.v * 2)}%"></b></i><em>${t.v}%</em></div>`).join('')}</div>
+          <h4>Efectos</h4>
+          <div class="strain-sheet-effects">${st.effects.map(e => `<span>${esc(e)}</span>`).join('')}</div>
+        </div>
+        <div class="strain-sheet-side">
+          <div class="side-block"><b>Aroma y sabor</b><p>${esc(st.flavor)}</p></div>
+          <div class="side-block"><b>Nota de cultivo</b><p>${esc(st.growNote)}</p></div>
+          <div class="side-block"><b>Etiquetas</b><p>${st.tags.map(esc).join(' · ')}</p></div>
+          <div class="strain-sheet-actions"><button class="btn btn-lime" data-ask="¿Qué cuidados necesita una autofloreciente ${esc(st.name)}?">Consultar al oráculo <span>◈</span></button><button class="btn btn-ghost" data-close-sheet>Cerrar</button></div>
+          <p style="font-size:7.5px;line-height:1.55;color:#6d7561;margin:10px 0 0">Ficha educativa de referencia. Los valores reales dependen de la genética del banco, el ambiente y el manejo.</p>
+        </div>
+      </div>`;
+    $('#strainModal').classList.add('open');
+    $$('#strainSheet [data-close-sheet]').forEach(b => b.addEventListener('click', () => $('#strainModal').classList.remove('open')));
+    $$('#strainSheet [data-ask]').forEach(b => b.addEventListener('click', () => {
+      $('#strainModal').classList.remove('open');
+      navigate('oracle', { question: b.dataset.ask });
+    }));
+  }
+
+  /* ---------- journal ---------- */
+  function journalWeeks() {
+    const titles = ['La siembra', 'Raíces', 'Estructura', 'Ritmo', 'Estiramiento', 'Floración temprana', 'Engorde', 'Densidad', 'Maduración', 'El corte', 'Curado'];
+    const notes = [
+      'Nueve semillas, un sustrato y una regla simple: observar antes de intervenir. La primera semana define el ritmo de toda la temporada.',
+      'Las raíces exploran el volumen de la maceta. Menos agua y más paciencia: el exceso es el error más común en esta etapa.',
+      'La estructura se abre. Empezaron los riegos por peso y conviene registrar cuánto tarda el sustrato en secarse.',
+      'La rutina se estabiliza. Ajustá nutrición a media dosis y revisá que la luz llegue pareja a toda la canopia.',
+      'El estiramiento puede duplicar la altura. Momento de tutorar, separar ramas y revisar la distancia a la luminaria.',
+      'Las flores aparecen. Bajá la humedad, mantené el aire en movimiento y evitá mojar los cogollos al regar.',
+      'Engorde visible. La demanda de agua sube y la nutrición pasa a P y K. La constancia vale más que las dosis grandes.',
+      'Cogollos densos: la semana de mayor riesgo de botritis. Ventilá, revisá el interior de las flores y no improvises riegos.',
+      'Los tricomas empiezan a cambiar. Reducí riego y nutrición, prepará el espacio de secado y definí el punto de corte.',
+      'Cosecha por planta, rotulá cada lote y manicurá con calma. El secado lento protege el aroma y la uniformidad.',
+      'Curado en frascos con aireación diaria. Cerrá la temporada con pesos reales, costo por gramo y aprendizajes.'
+    ];
+    const taskSets = [
+      ['Registrar genética y fecha de siembra', 'Hidratar sustrato y verificar drenaje', 'Medir temperatura y humedad', 'Ajustar luz a 18/6'],
+      ['Regar por peso de maceta', 'Revisar humedad en los bordes', 'Observar apertura de hojas', 'Ventilar sin corriente directa'],
+      ['Iniciar nutrición vegetativa suave', 'Revisar envés y trampas', 'Registrar altura de cada planta', 'Ajustar distancia de luz'],
+      ['Riego según demanda', 'Completar dosis de crecimiento', 'Aplicar LST suave si hace falta', 'Limpiar el espacio de cultivo'],
+      ['Tutorar ramas laterales', 'Bajar humedad hacia 60%', 'Revisar soportes y altura', 'Registrar el estiramiento'],
+      ['Cambiar a fórmula de floración', 'Defoliar solo lo necesario', 'Revisar botritis de forma temprana', 'Ajustar VPD al nuevo ciclo'],
+      ['Subir P y K de forma gradual', 'Controlar humedad bajo 60%', 'Revisar densidad de cogollos', 'Registrar consumo de agua'],
+      ['Ventilar el interior de la canopia', 'Inspeccionar moho y botritis', 'Evitar mojar las flores', 'Revisar filtración de aire'],
+      ['Observar tricomas con lupa', 'Reducir riego y nutrición', 'Preparar espacio de secado', 'Rotular frascos y lotes'],
+      ['Cortar y manicurar por planta', 'Pesar en fresco y registrar', 'Secar a 18–20 °C y 55–60% HR', 'Limpiar y guardar equipos'],
+      ['Airear frascos a diario', 'Medir humedad del frasco', 'Registrar peso seco final', 'Calcular costo por gramo']
+    ];
+    return Array.from({ length: 11 }, (_, i) => {
+      const n = i + 1;
+      const from = i * 7 + 1;
+      const to = Math.min(75, n * 7);
+      const mid = Math.round((from + to) / 2);
+      const phase = window.PHASES.find(p => mid >= p.from && mid <= p.to) || window.PHASES[window.PHASES.length - 1];
+      const temp = +(23.4 + Math.sin(n / 1.8) * 1.8 - (n > 5 ? .6 : 0)).toFixed(1);
+      const hum = Math.round(64 - n * 2 + (n % 3));
+      return { n, from, to, title: titles[i], note: notes[i], phase, temp, hum, tasks: taskSets[i] };
+    });
+  }
+
+  function currentWeek() { return Math.min(11, Math.max(1, Math.ceil(game.day / 7))); }
+
+  function archiveSeason() {
+    if (game.archived || (!game.finished && game.harvested === 0)) return;
+    const harvest = game.harvestYield || 0;
+    app.grows.unshift({
+      id: Date.now(),
+      label: `Temporada ${app.grows.length + 1} · ${game.harvested || 0} cosechas`,
+      day: game.day,
+      yield: harvest,
+      harvested: game.harvested || 0,
+      cost: game.spent,
+      perGram: game.spent / Math.max(1, harvest),
+      healthy: healthyCount()
+    });
+    app.grows = app.grows.slice(0, 12);
+    game.archived = true;
+    persist();
+  }
+
+  function renderSeasonHistory() {
+    const grows = app.grows || [];
+    $('#seasonCount').textContent = grows.length;
+    $('#seasonHistoryList').innerHTML = grows.length
+      ? grows.slice(0, 4).map(g => `<div class="season-history-row"><div><b>${esc(g.label)}</b><small>Día ${g.day} · ${g.healthy}/9 sanas</small></div><span>${fmt(g.yield)} g<i>$${fmt(g.perGram)}/g</i></span></div>`).join('')
+      : '<p class="season-history-empty">Cerrá una temporada para conservar su rendimiento, costo y aprendizaje. El archivo guarda hasta 12 cultivos.</p>';
+  }
+
+  function envSeries(week) {
+    const seed = week * 17;
+    const tempBase = 23.2 + Math.sin(week / 1.7) * 1.9 - (week > 5 ? .7 : 0);
+    const humBase = 64 - week * 1.9 + (week > 8 ? 1.2 : 0);
+    return Array.from({ length: 7 }, (_, i) => {
+      const wave = Math.sin((seed + i * 3.1)) * 0.9;
+      const temp = +(tempBase + wave + (i % 2 ? .4 : -.2)).toFixed(1);
+      const hum = Math.round(humBase - wave * 1.2 + (i % 3 ? 1 : -1));
+      const svp = 0.6108 * Math.exp(17.27 * temp / (temp + 237.3));
+      return { d: i + 1, temp, hum, vpd: +(svp * (1 - hum / 100)).toFixed(2) };
+    });
+  }
+
+  function envChartSVG(week) {
+    const data = envSeries(week);
+    const W = 620, H = 170, x0 = 30, x1 = 602, y0 = 12, y1 = 138;
+    const x = i => x0 + (x1 - x0) * i / 6;
+    const yT = v => y1 - (v - 16) / 16 * (y1 - y0);
+    const yH = v => y1 - (v - 28) / 52 * (y1 - y0);
+    const yV = v => y1 - (Math.max(.3, Math.min(2.2, v)) - .3) / 1.9 * (y1 - y0);
+    const line = (key, fn) => data.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${fn(p[key]).toFixed(1)}`).join(' ');
+    const grid = [0, 1, 2, 3, 4].map(i => {
+      const yy = y0 + (y1 - y0) * i / 4;
+      const val = (16 + (4 - i) * 4);
+      return `<line x1="${x0}" y1="${yy}" x2="${x1}" y2="${yy}"/><text class="chart-axis" x="${x0 - 6}" y="${yy + 2.5}" text-anchor="end">${val}°</text>`;
+    }).join('');
+    const labels = ['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((d, i) => `<text class="chart-axis" x="${x(i)}" y="${H - 5}" text-anchor="middle">${d}</text>`).join('');
+    const dots = data.map((p, i) => `<circle class="chart-dot" cx="${x(i)}" cy="${yT(p.temp)}" r="2.4" fill="#e8b56a"/>`).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Temperatura, humedad y VPD de la semana ${week}">
+      <defs><linearGradient id="tempFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8b56a" stop-opacity=".26"/><stop offset="1" stop-color="#e8b56a" stop-opacity="0"/></linearGradient></defs>
+      <g class="chart-grid">${grid}</g>
+      <path class="chart-area-temp" d="${line('temp', yT)} L${x(6)},${y1} L${x0},${y1} Z"/>
+      <path class="chart-line temp" d="${line('temp', yT)}"/>
+      <path class="chart-line hum" d="${line('hum', yH)}"/>
+      <path class="chart-line vpd" d="${line('vpd', yV)}"/>
+      ${dots}${labels}
+    </svg>`;
+  }
+
+  function renderJournal() {
+    renderNav();
+    const week = app.journalWeek || currentWeek();
+    app.journalWeek = week;
+    const w = journalWeeks()[week - 1];
+    const data = envSeries(week);
+    $('#journalHeroTitle').textContent = `Semana ${w.n} · ${w.phase.name}`;
+    $('#journalHeroCopy').textContent = w.note;
+    $('#journalHeroDay').textContent = `Día ${w.from}–${w.to}`;
+    $('#journalHeroTemp').textContent = `${w.temp} °C`;
+    $('#journalHeroHum').textContent = `${w.hum}%`;
+    $('#journalHeroWeek').textContent = `S${w.n}`;
+    $('#journalTimeline').innerHTML = journalWeeks().map(x => {
+      const cls = x.n === week ? 'active' : x.n < currentWeek() ? 'done' : '';
+      return `<button class="week-tab ${cls}" data-week="${x.n}" role="tab" aria-selected="${x.n === week}"><b>SEMANA ${String(x.n).padStart(2, '0')}</b><span>${esc(x.title)}</span></button>`;
+    }).join('');
+    $$('#journalTimeline [data-week]').forEach(el => el.addEventListener('click', () => { app.journalWeek = Number(el.dataset.week); renderJournal(); persist(); }));
+
+    $('#weekKicker').textContent = `SEMANA ${String(w.n).padStart(2, '0')} · DÍAS ${w.from}–${w.to}`;
+    $('#weekTitle').textContent = w.title;
+    $('#weekPhase').textContent = w.phase.name.toUpperCase();
+    $('#weekNote').textContent = w.note;
+    $('#envChart').innerHTML = envChartSVG(week);
+    const avg = (key) => (data.reduce((n, p) => n + p[key], 0) / data.length);
+    $('#envReadings').innerHTML = `
+      <div class="env-reading"><span>TEMPERATURA MEDIA</span><b>${avg('temp').toFixed(1)}<small>°C</small></b></div>
+      <div class="env-reading"><span>HUMEDAD MEDIA</span><b>${Math.round(avg('hum'))}<small>%</small></b></div>
+      <div class="env-reading"><span>VPD MEDIO</span><b>${avg('vpd').toFixed(2)}<small>kPa</small></b></div>`;
+
+    const events = [
+      `<b>Semana ${w.n}:</b> ${w.phase.goal.toLowerCase()}.`,
+      `<b>Prioridad:</b> ${w.phase.focus[0]}`,
+      w.n === currentWeek() ? `<b>En curso:</b> día ${game.day} de 75 · ${healthyCount()} plantas saludables.` : `<b>Registro:</b> semana ${w.n < currentWeek() ? 'completada' : 'planificada'}.`
+    ];
+    if (w.n === 8) events.push('<b>Alerta:</b> máxima densidad de cogollos. Revisá botritis en el interior de las flores.');
+    if (w.n === 10) events.push('<b>Ventana de corte:</b> revisá tricomas antes de decidir.');
+    $('#weekEvents').innerHTML = events.map((e, i) => `<div class="week-event ${i === 3 ? 'warn' : ''}"><span>◆</span><span>${e}</span></div>`).join('');
+
+    const projected = app.budget.plants * app.budget.yield;
+    const actual = game.harvestYield;
+    const gramsLabel = game.harvested ? actual : projected;
+    const costPerGram = game.harvested ? game.spent / Math.max(1, actual) : budget().perGram;
+    $('#harvestCard').innerHTML = `
+      <span class="section-kicker">${game.harvested ? 'COSECHA REGISTRADA' : 'PROYECCIÓN DE COSECHA'}</span>
+      <h3>${game.harvested ? 'Lo que salió del cultivo' : 'Lo que puede rendir'}</h3>
+      <div class="harvest-big">${fmt(gramsLabel)}<small>g</small></div>
+      <p class="harvest-sub">${game.harvested ? `${game.harvested} de 9 plantas cosechadas` : `${app.budget.plants} plantas × ${app.budget.yield} g estimados`}</p>
+      <div class="harvest-rows">
+        <div class="harvest-row"><span>Plantas activas</span><b>${activeCount()} / 9</b></div>
+        <div class="harvest-row"><span>Costo acumulado</span><b>$${fmt(game.spent)}</b></div>
+        <div class="harvest-row"><span>Costo por gramo</span><b>$${fmt(costPerGram)}</b></div>
+        <div class="harvest-row"><span>Valor de referencia</span><b>$${fmt(gramsLabel * app.budget.price)}</b></div>
+      </div>`;
+
+    const done = w.tasks.filter((_, i) => app.journalTasks[`${w.n}-${i}`]).length;
+    $('#weekTaskCount').textContent = `${done}/${w.tasks.length}`;
+    $('#weekTasks').innerHTML = w.tasks.map((t, i) => {
+      const isDone = !!app.journalTasks[`${w.n}-${i}`];
+      return `<div class="week-task ${isDone ? 'done' : ''}" data-jtask="${w.n}-${i}" role="checkbox" aria-checked="${isDone}" tabindex="0"><span class="chk"></span><span>${esc(t)}</span><span class="task-day">D${w.from + ((i * 2) % 7)}</span></div>`;
+    }).join('');
+    $$('#weekTasks [data-jtask]').forEach(el => {
+      const toggle = () => {
+        const key = el.dataset.jtask;
+        app.journalTasks[key] = !app.journalTasks[key];
+        persist(); renderJournal();
+      };
+      el.addEventListener('click', toggle);
+      el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+    });
+
+    $('#photoStrip').innerHTML = `<span class="section-kicker">REGISTRO VISUAL</span><div class="photo-grid"><img src="assets/greenhouse.jpg" alt="Vista del invernadero" loading="lazy" /><img src="assets/bud-macro.jpg" alt="Detalle de cogollo" loading="lazy" /><img src="assets/leaf-texture.jpg" alt="Textura de hojas" loading="lazy" /></div>`;
+    renderSeasonHistory();
+  }
+
+  function exportJournal() {
+    const weeks = journalWeeks();
+    let text = '# Verde — Diario de cultivo\n\n';
+    text += `Temporada 2026 · 9 autoflorecientes · 15 m² · día ${game.day} de 75\n\n`;
+    weeks.forEach(w => {
+      const done = w.tasks.filter((_, i) => app.journalTasks[`${w.n}-${i}`]).length;
+      text += `## Semana ${w.n} · ${w.title} (días ${w.from}–${w.to})\n`;
+      text += `${w.note}\n\n`;
+      text += `Ambiente: ${w.temp} °C · ${w.hum}% HR\n`;
+      text += `Tareas: ${done}/${w.tasks.length}\n`;
+      w.tasks.forEach((t, i) => { text += `- [${app.journalTasks[`${w.n}-${i}`] ? 'x' : ' '}] ${t}\n`; });
+      text += '\n';
+    });
+    text += `## Resultado\n- Plantas activas: ${activeCount()}/9\n- Cosechas: ${game.harvested}\n- Peso registrado: ${fmt(game.harvestYield)} g\n- Gasto acumulado: $${fmt(game.spent)}\n`;
+    downloadText('verde-diario.md', text);
+    showToast('Diario exportado en Markdown.');
+  }
+
+  /* ---------- library ---------- */
+  let libFiltersReady = false;
+
+  function libStateLabel(state) {
+    return state === 'markdown' ? 'MARKDOWN' : state === 'procesado' ? 'PROCESADO' : 'PENDIENTE';
+  }
+
+  function renderLibrary(resourceId) {
+    renderNav();
+    const q = norm($('#libSearch')?.value || '');
+    const diploma = $('#libDiploma')?.value || 'all';
+    const state = $('#libState')?.value || 'all';
+    const sort = $('#libSort')?.value || 'recent';
+    if (!libFiltersReady) {
+      const diplomas = [...new Set([...window.DIPLOMAS.map(d => d.name), ...app.userResources.map(r => r.diploma)])];
+      $('#libDiploma').innerHTML = '<option value="all">Todas las diplomaturas</option>' + diplomas.map(d => `<option>${esc(d)}</option>`).join('');
+      libFiltersReady = true;
+    }
+    let list = allResources().filter(r => {
+      const hay = norm([r.title, r.summary, r.diploma, r.module, r.path, (r.tags || []).join(' ')].join(' '));
+      return (!q || hay.includes(q)) && (diploma === 'all' || r.diploma === diploma) && (state === 'all' || r.state === state) && (!app.dupOnly || r.dup);
+    });
+    if (sort === 'recent') list.sort((a, b) => b.id - a.id);
+    if (sort === 'diploma') list.sort((a, b) => a.diploma.localeCompare(b.diploma, 'es') || a.title.localeCompare(b.title, 'es'));
+    if (sort === 'title') list.sort((a, b) => a.title.localeCompare(b.title, 'es'));
+    if (sort === 'pages') list.sort((a, b) => b.pages - a.pages);
+
+    const all = allResources();
+    const dupGroups = new Set(all.filter(r => r.dup).map(r => r.dup));
+    const markdown = all.filter(r => r.state === 'markdown').length;
+    $('#libTotal').textContent = all.length;
+    $('#libProcessed').textContent = markdown;
+    $('#libDuplicates').textContent = dupGroups.size;
+    $('#libVerified').textContent = all.length;
+    $('#libVerifiedTotal').textContent = all.length;
+    $('#libResultCount').textContent = `${list.length} ${list.length === 1 ? 'recurso' : 'recursos'}`;
+    $('#libEmpty').hidden = list.length > 0;
+    $('#dupToggle').classList.toggle('active', app.dupOnly);
+    $('#dupBannerText').textContent = `${all.filter(r => r.dup).length} recursos aparecen en más de una diplomatura. Verde los vincula sin borrar el original: sabés de dónde viene cada versión y dónde está guardada.`;
+
+    $('#libList').innerHTML = list.map(r => `<div class="lib-row ${app.selectedResource === r.id ? 'selected' : ''}" data-resource="${r.id}" tabindex="0" role="button">
+      <span class="lib-pdf">PDF</span>
+      <div class="lib-row-main">
+        <div class="lib-title-line"><span class="lib-title">${esc(r.title)}</span>${r.dup ? '<span class="dup-mini">DUPLICADO</span>' : ''}</div>
+        <div class="lib-meta"><b>${esc(r.diploma)}</b> · ${esc(r.module)} · ${r.year}</div>
+        <div class="lib-path">${esc(r.path)}</div>
+      </div>
+      <div class="lib-row-side"><span class="state-badge state-${r.state}">${libStateLabel(r.state)}</span><span class="lib-pages">${r.pages} pp.</span></div>
+    </div>`).join('');
+    $$('#libList .lib-row').forEach(el => {
+      const open = () => {
+        app.selectedResource = Number(el.dataset.resource);
+        $$('#libList .lib-row').forEach(x => x.classList.toggle('selected', x === el));
+        renderResourceDetail();
+        if (window.innerWidth <= 960) {
+          $('#resourceDetail').classList.add('mobile-open');
+          document.body.classList.add('detail-open');
+        }
+        persist();
+      };
+      el.addEventListener('click', open);
+      el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+    });
+
+    if (resourceId) app.selectedResource = Number(resourceId);
+    if (app.selectedResource && !all.some(r => r.id === app.selectedResource)) app.selectedResource = null;
+    if (!app.selectedResource && list.length && window.innerWidth > 960) app.selectedResource = list[0].id;
+    renderResourceDetail();
+  }
+
+  function renderResourceDetail() {
+    const r = allResources().find(x => x.id === app.selectedResource);
+    const box = $('#resourceDetail');
+    if (!r) {
+      box.innerHTML = `<div class="rd-empty"><span>▦</span><b>Elegí un recurso</b><p>Seleccioná un PDF del índice para ver su origen, ruta y metadatos.</p></div>`;
+      return;
+    }
+    const dups = r.dup ? allResources().filter(x => x.dup === r.dup && x.id !== r.id) : [];
+    box.innerHTML = `
+      <div class="rd-top"><span class="rd-icon">PDF</span><span class="rd-badge">${libStateLabel(r.state)}</span></div>
       <h2>${esc(r.title)}</h2>
-      <div class="rd-origin"><b>${esc(r.diploma)}</b><br>${esc(r.module)} · ${r.pages} páginas</div>
+      <div class="rd-origin"><b>${esc(r.diploma)}</b><br>${esc(r.module)} · ${r.year}</div>
       <p class="rd-summary">${esc(r.summary)}</p>
-      <div class="rd-facts"><div class="rd-fact"><span>ESTADO DE PROCESO</span><b>${r.state === 'markdown' ? 'Markdown listo' : r.state === 'procesado' ? 'Procesado' : 'Pendiente'}</b></div><div class="rd-fact"><span>FORMATO</span><b>PDF · ${r.pages} pp.</b></div><div class="rd-fact"><span>DIPLOMATURA</span><b>${esc(r.diploma)}</b></div><div class="rd-fact"><span>ACTUALIZADO</span><b>${esc(r.updated)}</b></div></div>
-      <div class="rd-path"><b>UBICACIÓN EN TU BIBLIOTECA</b>${esc(r.path)}</div>
-      <div class="rd-tags">${r.tags.map(t => `<span>#${esc(t)}</span>`).join('')}</div>
-      ${group.length ? `<div class="rd-dup"><b>⧉ También aparece en ${group.length} ubicación${group.length > 1 ? 'es' : ''}</b><p>${group.map(g => `${esc(g.diploma)} · ${esc(g.path)}`).join('<br>')}</p></div>` : ''}
-      <div class="rd-actions"><button class="btn btn-soft" data-open-oracle="${r.id}">Preguntar al oráculo <span>◈</span></button><button class="btn btn-ghost" id="closeRd">Cerrar</button></div>`;
-    $('[data-open-oracle]', el)?.addEventListener('click', () => navigate('oracle', { question: `¿Qué dice mi biblioteca sobre ${r.title.toLowerCase()}?` }));
-    $('#closeRd', el)?.addEventListener('click', () => el.classList.remove('mobile-open'));
+      <div class="rd-facts">
+        <div class="rd-fact"><span>ID</span><b>#${String(r.id).padStart(3, '0')}</b></div>
+        <div class="rd-fact"><span>PÁGINAS</span><b>${r.pages}</b></div>
+        <div class="rd-fact"><span>ACTUALIZADO</span><b>${esc(r.updated)}</b></div>
+        <div class="rd-fact"><span>CÓDIGO</span><b>${esc(r.code || '—')}</b></div>
+      </div>
+      <div class="rd-path"><b>UBICACIÓN FÍSICA</b>${esc(r.path)}</div>
+      <div class="rd-tags">${(r.tags || []).map(t => `<span>${esc(t)}</span>`).join('')}</div>
+      ${dups.length ? `<div class="rd-dup"><b>También aparece en ${dups.length} ubicación${dups.length > 1 ? 'es' : ''}</b><p>${dups.map(d => `${esc(d.diploma)} · ${esc(d.path)}`).join('<br>')}</p></div>` : ''}
+      <button class="rd-close" id="closeResourceDetail" aria-label="Cerrar detalle">×</button>
+      <div class="rd-actions">
+        <button class="btn btn-lime" data-ask="¿Qué dice ${esc(r.title)}?">Preguntar <span>◈</span></button>
+        <button class="btn btn-ghost" id="copyPathBtn">Copiar ruta</button>
+      </div>
+      <p style="font-size:7px;line-height:1.6;color:#6d7561;margin:11px 0 0">Origen verificado. El recurso original no se borra ni se sobrescribe al vincular duplicados.</p>`;
+    box.querySelector('[data-ask]')?.addEventListener('click', (e) => navigate('oracle', { question: e.currentTarget.dataset.ask }));
+    box.querySelector('#copyPathBtn')?.addEventListener('click', () => {
+      navigator.clipboard?.writeText(r.path).then(() => showToast('Ruta copiada.')).catch(() => showToast('No se pudo copiar la ruta.'));
+    });
+    box.querySelector('#closeResourceDetail')?.addEventListener('click', () => {
+      box.classList.remove('mobile-open');
+      document.body.classList.remove('detail-open');
+    });
   }
 
   function bindLibrary() {
-    $('#libSearch').addEventListener('input', () => renderLibrary());
-    $('#libDiploma').addEventListener('change', () => renderLibrary());
-    $('#libState').addEventListener('change', () => renderLibrary());
-    $('#libSort').addEventListener('change', () => renderLibrary());
-    $('#dupToggle').addEventListener('click', () => {
-      app.dupOnly = !app.dupOnly;
-      $('#dupToggle').classList.toggle('active', app.dupOnly);
-      renderLibrary();
+    ['libSearch', 'libDiploma', 'libState', 'libSort'].forEach(id => {
+      const el = $('#' + id);
+      if (!el) return;
+      el.addEventListener(id === 'libSearch' ? 'input' : 'change', () => { app.selectedResource = null; renderLibrary(); persist(); });
     });
-    $('#showDupBtn').addEventListener('click', () => {
-      app.dupOnly = true; $('#dupToggle').classList.add('active'); renderLibrary();
+    $('#dupToggle')?.addEventListener('click', () => { app.dupOnly = !app.dupOnly; renderLibrary(); persist(); });
+    $('#showDupBtn')?.addEventListener('click', () => { app.dupOnly = true; renderLibrary(); persist(); $('#libList').scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+    $('#clearFilters')?.addEventListener('click', () => {
+      if ($('#libSearch')) $('#libSearch').value = '';
+      if ($('#libDiploma')) $('#libDiploma').value = 'all';
+      if ($('#libState')) $('#libState').value = 'all';
+      app.dupOnly = false; app.selectedResource = null; renderLibrary(); persist();
     });
-    $('#clearFilters').addEventListener('click', () => {
-      $('#libSearch').value = ''; $('#libDiploma').value = 'all'; $('#libState').value = 'all';
-      app.dupOnly = false; $('#dupToggle').classList.remove('active'); renderLibrary();
+    $('#exportIdxBtn')?.addEventListener('click', () => {
+      const rows = allResources().map(r => `- [${r.state}] ${r.title} — ${r.diploma} · ${r.module} · ${r.pages} pp.\n  ${r.path}`).join('\n');
+      downloadText('verde-indice-biblioteca.md', `# Verde — Índice de biblioteca\n\n${allResources().length} recursos · 6 diplomaturas\n\n${rows}\n`);
+      showToast('Índice exportado en Markdown.');
     });
-    $('#exportIdxBtn').addEventListener('click', () => {
-      const data = JSON.stringify({ version: '0.8', exportedAt: new Date().toISOString(), resources: allResources() }, null, 2);
-      const blob = new Blob([data], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob); a.download = 'verde-indice.json'; a.click();
-      URL.revokeObjectURL(a.href);
-      showToast('Índice exportado con diplomatura, módulo y ubicación.');
-    });
-    $('#addResourceBtn').addEventListener('click', () => { $('#addForm').reset(); $('#dropTitle').textContent = 'Arrastrá un PDF o hacé clic'; $('#dropSub').textContent = 'Máx. 40 MB · se indexa localmente'; $('#addModal').classList.add('open'); });
-    let pickedFile = null;
-    $('#fileInput').addEventListener('change', (e) => {
-      const f = e.target.files[0]; pickedFile = f || null;
+    $('#addResourceBtn')?.addEventListener('click', () => $('#addModal').classList.add('open'));
+    $('#fileInput')?.addEventListener('change', (e) => {
+      const f = e.target.files?.[0];
       if (f) { $('#dropTitle').textContent = f.name; $('#dropSub').textContent = `${(f.size / 1024 / 1024).toFixed(1)} MB · listo para indexar`; }
     });
-    $('#addForm').addEventListener('submit', (e) => {
+    $('#addForm')?.addEventListener('submit', (e) => {
       e.preventDefault();
-      const diploma = $('#addDiploma').value;
-      const module = $('#addModule').value.trim() || 'Módulo sin especificar';
-      const path = $('#addPath').value.trim() || `99_Aportes/${diploma.replace(/ /g, '_')}/${pickedFile ? pickedFile.name : 'documento.pdf'}`;
-      const fallbackName = path.split('/').pop().replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ');
-      const title = pickedFile ? pickedFile.name.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ') : (fallbackName || module);
+      const file = $('#fileInput')?.files?.[0];
+      const diploma = $('#addDiploma')?.value || 'Cultivo Interior';
+      const module = $('#addModule')?.value.trim() || 'Módulo sin especificar';
+      const rawPath = $('#addPath')?.value.trim() || `99_Aportes/${file?.name || 'nuevo_recurso.pdf'}`;
+      const title = (file?.name || 'Recurso sin título').replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ');
+      const cleanTitle = norm(title);
+      const existing = allResources().find(r => {
+        const other = norm(r.title);
+        return other === cleanTitle || (cleanTitle.length > 4 && other.includes(cleanTitle)) || (other.length > 4 && cleanTitle.includes(other));
+      });
       const resource = {
-        id: Date.now(), title, diploma, code: diploma === 'Cultivo Interior' ? 'CI' : diploma === 'Agroecología Aplicada' ? 'AA' : diploma === 'Cannabis Medicinal' ? 'CM' : diploma === 'Extracción y Transformados' ? 'ET' : 'GP',
-        module, year: 2026, pages: 0, state: 'pendiente', tags: ['aporte propio', 'sin procesar'], path, dup: null,
-        updated: 'hoy', summary: 'Recurso aportado por mbole. Pendiente de conversión a Markdown y revisión de contenido.'
+        id: Math.max(...allResources().map(r => r.id), 0) + 1,
+        title: title.charAt(0).toUpperCase() + title.slice(1),
+        diploma, code: 'AP', module, year: 2026, pages: 1, state: 'pendiente',
+        tags: ['aporte', diploma.toLowerCase()], path: rawPath,
+        dup: existing ? (existing.dup || 'manual') : null, updated: '6 nov 2026',
+        summary: 'Recurso aportado por el usuario. Pendiente de procesamiento a Markdown para búsqueda semántica.'
       };
-      app.userResources.unshift(resource);
+      app.userResources.push(resource);
       app.selectedResource = resource.id;
-      persist(); renderLibrary(); $('#addModal').classList.remove('open');
-      showToast('PDF añadido al índice. Queda pendiente de procesar.');
+      persist();
+      $('#addModal').classList.remove('open');
+      $('#addForm').reset();
+      $('#dropTitle').textContent = 'Arrastrá un PDF o hacé clic';
+      $('#dropSub').textContent = 'Máx. 40 MB · se indexa localmente';
+      libFiltersReady = false;
+      renderLibrary();
+      showToast(existing ? 'Aportado y vinculado a un duplicado existente.' : 'Recurso añadido al índice.');
     });
-    $('#guideBtn').addEventListener('click', () => $('#guideModal').classList.add('open'));
   }
 
   /* ---------- oracle ---------- */
+  let oraclePending = false;
+
+  function oracleWelcome() {
+    return 'Hola. Soy el <b>Oráculo Verde</b>: busco en tus diplomaturas y te devuelvo la respuesta con la fuente exacta. Podés preguntarme por riego, nutrición, ambiente, cosecha, costos o marco legal.';
+  }
+
   function renderChat() {
-    if (!app.chat.length) {
-      app.chat.push({ role: 'bot', html: '<p>Hola, mbole. Soy tu oráculo de cultivo. Puedo cruzar tus 6 diplomaturas y responder con fuentes verificables.</p><p>Probá con una pregunta sobre <b>riego</b>, <b>ambiente</b>, <b>cosecha</b>, <b>costos</b> o el <b>marco legal</b> de Argentina.</p>' });
-    }
-    $('#chatLog').innerHTML = app.chat.map(m => m.role === 'user'
-      ? `<div class="msg user"><span class="msg-avatar">MB</span><div class="msg-body"><p>${esc(m.text)}</p></div></div>`
-      : `<div class="msg"><span class="msg-avatar">◈</span><div class="msg-body">${m.html}</div></div>`).join('');
-    $('#chatLog').scrollTop = $('#chatLog').scrollHeight;
+    if (!app.chat.length) app.chat.push({ role: 'assistant', html: oracleWelcome() });
+    const log = $('#chatLog');
+    log.innerHTML = app.chat.map(m => `<div class="msg ${m.role === 'user' ? 'user' : 'assistant'}"><span class="msg-avatar">${m.role === 'user' ? 'MB' : '◈'}</span><div class="msg-body">${m.html}</div></div>`).join('');
+    if (oraclePending) log.innerHTML += `<div class="msg assistant"><span class="msg-avatar">◈</span><div class="msg-body"><span class="typing"><i></i><i></i><i></i></span></div></div>`;
+    log.scrollTop = log.scrollHeight;
     renderSources();
   }
 
   function renderSources() {
-    const el = $('#sourceList');
-    const sources = app.chatSources;
-    $('#sourceCount').textContent = sources.length;
-    if (!sources.length) {
-      el.innerHTML = `<div class="sources-empty"><span>◈</span><p>Hacé una pregunta y acá vas a ver los recursos exactos que la sustentan.</p></div>`;
+    const list = app.chatSources || [];
+    $('#sourceCount').textContent = list.length ? `${list.length} fuentes` : '0';
+    if (!list.length) {
+      $('#sourceList').innerHTML = `<div class="sources-empty"><span>◈</span><p>Hacé una pregunta y acá vas a ver los recursos exactos que la sustentan.</p></div>`;
       return;
     }
-    el.innerHTML = sources.map((s, i) => `<div class="source-item" data-resource="${s.id}"><span class="source-score">${98 - i * 7}%</span><div class="source-title">${esc(s.title)}</div><div class="source-meta">${esc(s.diploma)} · ${esc(s.module)}<br>${esc(s.path)}</div></div>`).join('');
-    $$('#sourceList .source-item').forEach(item => item.addEventListener('click', () => navigate('library', { resourceId: Number(item.dataset.resource) })));
+    $('#sourceList').innerHTML = list.map(s => {
+      const r = allResources().find(x => x.id === s.id);
+      if (!r) return '';
+      return `<div class="source-item" data-resource="${r.id}"><div class="source-title">${esc(r.title)}<span class="source-score">${s.score}</span></div><div class="source-meta">${esc(r.diploma)}<br>${esc(r.module)} · ${esc(r.path)}</div></div>`;
+    }).join('');
+    $$('#sourceList .source-item').forEach(el => el.addEventListener('click', () => navigate('library', { resourceId: Number(el.dataset.resource) })));
   }
 
-  function answerFor(text) {
-    const q = norm(text);
+  function scoreKnowledge(question) {
+    const q = norm(question);
     let best = null, bestScore = 0;
     window.ORACLE_KB.forEach(entry => {
       let score = 0;
-      entry.match.forEach(m => { if (q.includes(norm(m))) score += 3; });
-      if (norm(entry.key) && q.includes(norm(entry.key))) score += 2;
+      entry.match.forEach(m => {
+        const key = norm(m);
+        if (q.includes(key)) score += key.length + 2;
+      });
+      entry.tags.forEach(t => { if (q.includes(norm(t))) score += 3; });
       if (score > bestScore) { bestScore = score; best = entry; }
     });
-    const resources = allResources();
-    if (best) {
-      const src = best.sources.map(id => resources.find(r => r.id === id)).filter(Boolean);
-      const cites = src.map((r, i) => `<span class="cite">[${i + 1}] ${esc(r.diploma)}</span>`).join('');
-      const practical = `<ul><li><b>Qué observar:</b> medí antes de corregir y registrá la fecha del cambio.</li><li><b>Qué evitar:</b> pasar de una corrección a otra sin dar tiempo a la planta.</li><li><b>Próximo paso:</b> contrastá la recomendación con tu registro real y ajustá una sola variable.</li></ul>`;
-      const legal = best.key === 'legal' ? '<div class="legal-callout">Información educativa, no asesoramiento legal. Verificá tu inscripción REPROCANN y la normativa vigente en tu jurisdicción.</div>' : '';
-      const budgetNote = best.key === 'presupuesto' ? `<div class="legal-callout">Escenario base de la app: 9 plantas en 15 m², $${fmt(budget().total)} de costo total y $${fmt(app.budget.price)}/g de referencia.</div>` : '';
-      return { html: `<p><b>${best.title}</b></p><p>${best.answer}</p>${practical}<p>${cites}</p>${legal}${budgetNote}`, sources: src };
-    }
-    const words = q.split(/\s+/).filter(w => w.length > 3);
-    const scored = resources.map(r => {
-      const hay = norm(`${r.title} ${r.diploma} ${r.tags.join(' ')} ${r.summary}`);
-      return { r, score: words.reduce((n, w) => n + (hay.includes(w) ? 1 : 0), 0) };
-    }).filter(x => x.score > 0).sort((a, b) => b.score - a.score).slice(0, 3);
-    if (!scored.length) {
-      return { html: `<p>No encontré una coincidencia directa en las 24 fuentes indexadas. Probá con un término más concreto —riego, pH, VPD, tricomas, REPROCANN, costo por gramo— o agregá el PDF que falta a la biblioteca.</p><p>Mientras tanto, puedo ayudarte a descomponer la pregunta: <b>¿qué etapa del cultivo</b> querés resolver y <b>qué variable</b> estás observando?</p>`, sources: [] };
-    }
-    const html = `<p>Encontré material relacionado en tu biblioteca. Todavía no hay una respuesta curada para esta pregunta exacta, pero estas fuentes son el mejor punto de partida:</p><ul>${scored.map(x => `<li><b>${esc(x.r.title)}</b> — ${esc(x.r.summary)}</li>`).join('')}</ul><p>${scored.map((x, i) => `<span class="cite">[${i + 1}] ${esc(x.r.diploma)}</span>`).join('')}</p><div class="legal-callout">Respuesta generada por recuperación local. Contrastá siempre con el documento completo.</div>`;
-    return { html, sources: scored.map(x => x.r) };
+    return { entry: best, score: bestScore };
   }
 
-  function askOracle(text) {
-    if (!text || !text.trim()) return;
-    app.chat.push({ role: 'user', text: text.trim() });
+  function libraryFallback(question) {
+    const q = norm(question);
+    return allResources()
+      .map(r => {
+        const hay = norm([r.title, r.summary, (r.tags || []).join(' '), r.diploma, r.module].join(' '));
+        let score = 1;
+        q.split(/\s+/).filter(w => w.length > 4).forEach(w => { if (hay.includes(w)) score += 2; });
+        return { id: r.id, score, title: r.title };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 4);
+  }
+
+  function askOracle(question) {
+    const q = String(question || '').trim();
+    if (!q) return;
+    app.chat.push({ role: 'user', html: esc(q) });
+    if (app.chat.length > 24) app.chat = app.chat.slice(-24);
     app.queries++;
+    oraclePending = true;
     renderChat();
-    $('#statQueries').textContent = app.queries;
-    $('#chatInput').value = '';
-    const typing = document.createElement('div');
-    typing.className = 'msg';
-    typing.innerHTML = '<span class="msg-avatar">◈</span><div class="msg-body"><div class="typing"><i></i><i></i><i></i></div></div>';
-    $('#chatLog').appendChild(typing);
-    $('#chatLog').scrollTop = $('#chatLog').scrollHeight;
     persist();
+    const input = $('#chatInput');
+    if (input) input.value = '';
     setTimeout(() => {
-      const ans = answerFor(text);
-      app.chat.push({ role: 'bot', html: ans.html });
-      app.chatSources = ans.sources;
+      const { entry } = scoreKnowledge(q);
+      let html, sources;
+      if (entry) {
+        const cited = entry.sources.map(id => {
+          const r = allResources().find(x => x.id === id);
+          return r ? `<span class="cite">${esc(r.diploma)} · ${String(r.id).padStart(3, '0')}</span>` : '';
+        }).join(' ');
+        html = `<p>${entry.answer}</p><p>${cited}</p>`;
+        sources = entry.sources.map((id, i) => ({ id, score: 92 - i * 7 })).filter(s => allResources().some(r => r.id === s.id));
+        if (norm(q).includes('legal')) html += '<div class="legal-callout">Información educativa. Verificá tu inscripción REPROCANN y la normativa provincial vigente antes de tomar decisiones.</div>';
+      } else {
+        const found = libraryFallback(q);
+        if (found.length && found[0].score > 1) {
+          html = `<p>No tengo una respuesta específica para esa formulación, pero encontré material relacionado en tu biblioteca. Los recursos más cercanos son <b>${found.slice(0, 3).map(f => esc(f.title)).join('</b>, <b>')}</b>. Probá preguntar por <b>riego, nutrición, ambiente, cosecha, costos o marco legal</b> para obtener una respuesta con fragmento.</p>`;
+          sources = found.filter(f => f.score > 1);
+        } else {
+          html = '<p>No encontré coincidencias suficientes en la biblioteca indexada. Probá con una pregunta más concreta: <b>riego y pH</b>, <b>VPD en floración</b>, <b>secado y curado</b>, <b>costo por gramo</b> o <b>marco legal</b>.</p>';
+          sources = allResources().slice(0, 3).map((r, i) => ({ id: r.id, score: 60 - i * 6 }));
+        }
+      }
+      app.chat.push({ role: 'assistant', html });
+      app.chatSources = sources;
+      oraclePending = false;
       renderChat();
       persist();
-    }, 620);
+    }, 420);
   }
 
   function bindOracle() {
-    $('#chatForm').addEventListener('submit', (e) => { e.preventDefault(); askOracle($('#chatInput').value); });
+    $('#chatForm')?.addEventListener('submit', (e) => { e.preventDefault(); askOracle($('#chatInput')?.value); });
     $$('#chatPrompts button').forEach(b => b.addEventListener('click', () => askOracle(b.textContent)));
-    $('#clearChat').addEventListener('click', () => { app.chat = []; app.chatSources = []; renderChat(); persist(); });
-    document.addEventListener('click', (e) => {
-      const ask = e.target.closest('[data-ask]');
-      if (ask) navigate('oracle', { question: ask.dataset.ask });
+    $('#clearChat')?.addEventListener('click', () => {
+      app.chat = [{ role: 'assistant', html: oracleWelcome() }];
+      app.chatSources = [];
+      persist(); renderChat();
+      showToast('Consulta reiniciada.');
     });
   }
 
   /* ---------- budget ---------- */
   function renderBudget() {
+    renderNav();
     const b = app.budget;
-    $('#bPlants').value = b.plants; $('#bYield').value = b.yield; $('#bPrice').value = b.price;
-    $('#bKwh').value = b.kwh; $('#bHours').value = b.hours; $('#bDays').value = b.days; $('#bWatts').value = b.watts;
+    const c = budget();
+    const setRange = (id, val) => { const el = $('#' + id); if (el) el.value = val; };
+    setRange('bPlants', b.plants); setRange('bYield', b.yield); setRange('bPrice', b.price);
+    const num = (id, val) => { const el = $('#' + id); if (el) el.value = val; };
+    num('bKwh', b.kwh); num('bHours', b.hours); num('bDays', b.days); num('bWatts', b.watts);
     $('#bPlantsVal').textContent = b.plants;
     $('#bYieldVal').textContent = b.yield;
     $('#bPriceVal').textContent = fmt(b.price);
-    const c = costsFor(b);
+    renderBudgetResults();
+  }
+
+  function renderBudgetResults() {
+    const b = app.budget, c = budget();
     $('#bTotal').textContent = fmt(c.total);
     $('#bPerPlant').textContent = '$' + fmt(c.perPlant);
     $('#bPerGram').textContent = '$' + fmt(c.perGram);
     $('#bValue').textContent = '$' + fmt(c.value);
-    $('#bMargin').textContent = (c.margin >= 0 ? '+' : '') + Math.round(c.margin) + '%';
-    $('#bMargin').style.color = c.margin >= 0 ? '#b7d685' : '#e29b84';
-    const max = Math.max(...c.items.map(i => i.value));
-    $('#breakdownBars').innerHTML = c.items.map(i => `<div class="bd-row"><span class="bd-name">${i.name}</span><span class="bd-track"><i style="width:${i.value / max * 100}%;background:${i.color}"></i></span><span class="bd-val">$${fmt(i.value)}</span></div>`).join('');
+    $('#bMargin').textContent = `${c.margin >= 0 ? '+' : ''}${Math.round(c.margin)}%`;
+    $('#breakdownBars').innerHTML = c.items.map(item => {
+      const pct = item.value / c.total * 100;
+      return `<div class="bd-row"><span class="bd-name">${item.name}</span><span class="bd-track"><i style="width:${pct.toFixed(1)}%;background:${item.color}"></i></span><span class="bd-val">$${fmt(item.value)}</span></div>`;
+    }).join('');
     const s9 = scaleScenario(9), s90 = scaleScenario(90), s900 = scaleScenario(900);
-    $('#scale9').textContent = '$' + fmt(s9.cost); $('#scale9g').textContent = '$' + fmt(s9.perGram);
-    $('#scale90').textContent = '$' + fmt(s90.cost); $('#scale90g').textContent = '$' + fmt(s90.perGram);
-    $('#scale900').textContent = '$' + fmt(s900.cost); $('#scale900g').textContent = '$' + fmt(s900.perGram);
-    $('#scaleSave').textContent = '−' + Math.max(0, Math.round((1 - s90.perGram / s9.perGram) * 100)) + '%';
+    $('#scale9').textContent = '$' + fmt(s9.cost);
+    $('#scale9g').textContent = '$' + fmt(s9.perGram);
+    $('#scale90').textContent = '$' + fmt(s90.cost);
+    $('#scale90g').textContent = '$' + fmt(s90.perGram);
+    $('#scale900').textContent = '$' + fmt(s900.cost);
+    $('#scale900g').textContent = '$' + fmt(s900.perGram);
+    $('#scaleSave').textContent = `−${Math.max(0, Math.round((1 - s900.perGram / Math.max(1, s9.perGram)) * 100))}%`;
     $('#processTease').textContent = fmt(c.total);
-    $('#processCost').textContent = '$' + fmt(processSpent());
     $('#statBudget').textContent = fmt(c.total);
+    $('#statPerGram').textContent = '$' + fmt(c.perGram) + ' / g';
+    persist();
   }
 
   function bindBudget() {
-    const map = [['bPlants', 'plants'], ['bYield', 'yield'], ['bPrice', 'price']];
-    map.forEach(([id, key]) => $('#' + id).addEventListener('input', (e) => {
-      app.budget[key] = Number(e.target.value);
-      if (key === 'plants') $('#bPlantsVal').textContent = e.target.value;
-      if (key === 'yield') $('#bYieldVal').textContent = e.target.value;
-      if (key === 'price') $('#bPriceVal').textContent = fmt(e.target.value);
-      renderBudget(); persist();
-    }));
-    [['bKwh', 'kwh'], ['bHours', 'hours'], ['bDays', 'days'], ['bWatts', 'watts']].forEach(([id, key]) => $('#' + id).addEventListener('input', (e) => {
-      app.budget[key] = Math.max(0, Number(e.target.value) || 0); renderBudget(); persist();
-    }));
-    $('#budgetReset').addEventListener('click', () => { app.budget = initialBudget(); renderBudget(); persist(); showToast('Supuestos restablecidos.'); });
-    $('#saveBudgetBtn').addEventListener('click', () => { persist(); showToast('Presupuesto guardado: $' + fmt(budget().total) + ' ARS.'); });
+    const ranges = [['bPlants', 'plants'], ['bYield', 'yield'], ['bPrice', 'price']];
+    ranges.forEach(([id, key]) => {
+      $('#' + id)?.addEventListener('input', (e) => {
+        app.budget[key] = Number(e.target.value);
+        if (key === 'plants') $('#bPlantsVal').textContent = app.budget.plants;
+        if (key === 'yield') $('#bYieldVal').textContent = app.budget.yield;
+        if (key === 'price') $('#bPriceVal').textContent = fmt(app.budget.price);
+        renderBudgetResults();
+      });
+    });
+    [['bKwh', 'kwh'], ['bHours', 'hours'], ['bDays', 'days'], ['bWatts', 'watts']].forEach(([id, key]) => {
+      $('#' + id)?.addEventListener('input', (e) => {
+        app.budget[key] = Math.max(0, Number(e.target.value) || 0);
+        renderBudgetResults();
+      });
+    });
+    $('#budgetReset')?.addEventListener('click', () => { app.budget = initialBudget(); renderBudget(); showToast('Escenario restablecido.'); });
+    $('#saveBudgetBtn')?.addEventListener('click', () => {
+      persist();
+      showToast(`Escenario guardado · $${fmt(budget().total)} · $${fmt(budget().perGram)}/g.`);
+    });
   }
 
   /* ---------- process ---------- */
-  function processSpent() {
-    const total = budget().total;
-    let done = 0, totalTasks = 0;
-    window.PHASES.forEach(p => p.tasks.forEach(t => { totalTasks++; if (app.tasks[t.id]) done++; }));
-    return Math.round(total * (done / Math.max(1, totalTasks)));
-  }
-
   function renderProcess() {
-    const phases = window.PHASES;
-    let done = 0, all = 0;
-    phases.forEach(p => p.tasks.forEach(t => { all++; if (app.tasks[t.id]) done++; }));
-    $('#taskProgressLabel').textContent = `${done} / ${all} tareas`;
-    $('#taskProgressBar').style.width = `${done / all * 100}%`;
-    $('#processCost').textContent = '$' + fmt(processSpent());
-    $('#processTease').textContent = fmt(budget().total);
-    $('#statBudget') && ($('#statBudget').textContent = fmt(budget().total));
-
-    $('#processTimeline').innerHTML = phases.map(p => {
-      const isCurrent = game.day >= p.from && game.day <= p.to;
-      const isDone = game.day > p.to || p.tasks.every(t => app.tasks[t.id]);
-      return `<div class="phase-block ${isCurrent ? 'current' : ''} ${isDone ? 'done' : ''}">
-        <div class="phase-marker"><span>${isDone ? '✓' : p.icon}</span></div>
+    renderNav();
+    const day = game.day;
+    let totalTasks = 0, doneTasks = 0;
+    $('#processTimeline').innerHTML = window.PHASES.map(phase => {
+      const active = day >= phase.from && day <= phase.to;
+      const done = day > phase.to;
+      const phaseDone = phase.tasks.filter(t => app.tasks[t.id]).length;
+      totalTasks += phase.tasks.length;
+      doneTasks += phaseDone;
+      return `<div class="phase-block ${active ? 'current' : done ? 'done' : ''}">
+        <div class="phase-marker"><span>${done ? '✓' : phase.icon}</span></div>
         <div class="phase-content">
-          <div class="phase-head"><div><div class="phase-title"><h3>${p.name}</h3><span>DÍAS ${p.from}–${p.to}</span></div><div class="phase-goal">${esc(p.goal)}</div></div><div class="phase-cost">$${fmt(p.cost)}<small>COSTO ESTIMADO</small></div></div>
-          <div class="phase-tasks">${p.tasks.map(t => `<label class="task ${app.tasks[t.id] ? 'done' : ''}" data-task="${t.id}"><input type="checkbox" ${app.tasks[t.id] ? 'checked' : ''}><span class="chk"></span><span>${esc(t.text)}</span></label>`).join('')}</div>
-          <div class="phase-focus">${p.focus.map(f => `<span>${esc(f)}</span>`).join('')}</div>
+          <div class="phase-head"><div><div class="phase-title"><h3>${esc(phase.name)}</h3><span>DÍA ${phase.from}–${phase.to}</span></div><div class="phase-goal">${esc(phase.goal)} · ${phaseDone}/${phase.tasks.length} tareas</div></div><div class="phase-cost">$${fmt(phase.cost)}<small>COSTO ESTIMADO</small></div></div>
+          <div class="phase-tasks">${phase.tasks.map(t => `<div class="task ${app.tasks[t.id] ? 'done' : ''}" data-task="${t.id}" role="checkbox" aria-checked="${!!app.tasks[t.id]}" tabindex="0"><span class="chk"></span><span>${esc(t.text)}</span></div>`).join('')}</div>
+          <div class="phase-focus">${phase.focus.map(f => `<span>${esc(f)}</span>`).join('')}</div>
         </div>
       </div>`;
     }).join('');
+    $('#taskProgressLabel').textContent = `${doneTasks} / ${totalTasks} tareas`;
+    $('#taskProgressBar').style.width = `${totalTasks ? doneTasks / totalTasks * 100 : 0}%`;
+    const c = budget();
+    $('#processCost').textContent = '$' + fmt(c.total);
+    $('#processTease').textContent = fmt(c.total);
+    $('#legalChecks').innerHTML = window.LEGAL_CHECKS.map(l => `<div class="legal-check-row ${app.legal[l.id] ? 'done' : ''}" data-legal="${l.id}" role="checkbox" aria-checked="${!!app.legal[l.id]}" tabindex="0"><span class="chk"></span><div><b>${esc(l.text)}</b><small>${esc(l.detail)}</small></div></div>`).join('');
 
-    $('#legalChecks').innerHTML = window.LEGAL_CHECKS.map(c => `<label class="legal-check-row ${app.legal[c.id] ? 'done' : ''}" data-legal="${c.id}"><input type="checkbox" ${app.legal[c.id] ? 'checked' : ''}><span class="chk"></span><span><b>${esc(c.text)}</b><small>${esc(c.detail)}</small></span></label>`).join('');
-    $$('#processTimeline .task').forEach(t => t.addEventListener('click', (e) => {
-      e.preventDefault();
-      const id = t.dataset.task;
-      app.tasks[id] = !app.tasks[id];
-      renderProcess(); persist();
-    }));
-    $$('#legalChecks .legal-check-row').forEach(t => t.addEventListener('click', (e) => {
-      e.preventDefault();
-      const id = t.dataset.legal;
-      app.legal[id] = !app.legal[id];
-      renderProcess(); persist();
-    }));
+    $$('#processTimeline [data-task]').forEach(el => {
+      const toggle = () => { app.tasks[el.dataset.task] = !app.tasks[el.dataset.task]; persist(); renderProcess(); };
+      el.addEventListener('click', toggle);
+      el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+    });
+    $$('#legalChecks [data-legal]').forEach(el => {
+      const toggle = () => { app.legal[el.dataset.legal] = !app.legal[el.dataset.legal]; persist(); renderProcess(); };
+      el.addEventListener('click', toggle);
+      el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+    });
   }
 
-  /* ---------- shop / modals / misc ---------- */
-  function showToast(text) {
-    const t = $('#toast');
-    t.textContent = text;
-    t.classList.add('show');
-    clearTimeout(showToast.timer);
-    showToast.timer = setTimeout(() => t.classList.remove('show'), 2400);
-  }
+  /* ---------- modals / shop / global bindings ---------- */
+  function closeModal(id) { $('#' + id)?.classList.remove('open'); }
 
-  function bindShop() {
-    $('#shopBtn').addEventListener('click', () => $('#shopModal').classList.add('open'));
-    $$('.shop-items button').forEach(btn => btn.addEventListener('click', () => {
-      const type = btn.dataset.buy, cost = { water: 4000, nutrient: 8000, energy: 6000 }[type];
-      if (game.cash < cost) { showToast('No tenés fondos suficientes.'); return; }
-      if ((type === 'water' && game.water >= 20) || (type === 'nutrient' && game.nutrients >= 10) || (type === 'energy' && game.energy >= 100)) { showToast('Tu reserva ya está completa.'); return; }
-      game.cash -= cost; game.spent += cost;
-      if (type === 'water') game.water = Math.min(20, game.water + 5);
-      if (type === 'nutrient') game.nutrients = Math.min(10, game.nutrients + 3);
-      if (type === 'energy') game.energy = Math.min(100, game.energy + 20);
-      saveAndRefresh(); showToast('Suministros añadidos. Gasto registrado en la temporada.');
-    }));
-  }
-
-  function bindModals() {
-    $$('[data-close]').forEach(b => b.addEventListener('click', () => $('#' + b.dataset.close).classList.remove('open')));
-    $$('.modal-backdrop').forEach(m => m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('open'); }));
+  function bindGlobal() {
+    $$('[data-nav]').forEach(el => {
+      if (el.dataset.navBound) return;
+      el.dataset.navBound = '1';
+      el.addEventListener('click', (e) => { e.preventDefault(); navigate(el.dataset.nav); });
+    });
+    $$('[data-ask]').forEach(el => {
+      if (el.dataset.askBound) return;
+      el.dataset.askBound = '1';
+      el.addEventListener('click', (e) => { e.preventDefault(); navigate('oracle', { question: el.dataset.ask }); });
+    });
+    $$('[data-close]').forEach(el => {
+      if (el.dataset.closeBound) return;
+      el.dataset.closeBound = '1';
+      el.addEventListener('click', () => closeModal(el.dataset.close));
+    });
+    $$('.modal-backdrop').forEach(bd => {
+      bd.addEventListener('click', (e) => { if (e.target === bd) bd.classList.remove('open'); });
+    });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') $$('.modal-backdrop').forEach(m => m.classList.remove('open'));
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); navigate('library'); setTimeout(() => $('#libSearch').focus(), 100); }
-      if (e.code === 'Space' && !e.target.closest('button,input,select,textarea') && app.view === 'sim') { e.preventDefault(); advance(); }
-    });
-    $('#quickSimBtn').addEventListener('click', () => {
-      if (game.finished) { showToast('La temporada terminó. Reiniciá para correr otra simulación.'); return; }
-      quickStrategy = 'balanced'; $$('#strategyList button').forEach(b => b.classList.toggle('active', b.dataset.strategy === 'balanced')); $('#quickModal').classList.add('open');
-    });
-    $('#resetSimBtn').addEventListener('click', () => {
-      if (confirm('¿Reiniciar la temporada? Se borrará el progreso del cultivo, no la biblioteca ni el presupuesto.')) {
-        game = initialGame(); saveAndRefresh(); navigate('sim'); showToast('Nueva temporada iniciada.');
+      if (e.key === 'Escape') {
+        $$('.modal-backdrop.open').forEach(b => b.classList.remove('open'));
+        $('#moreSheet')?.classList.remove('open');
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        navigate('strains');
+        setTimeout(() => $('#strainSearch')?.focus(), 120);
       }
     });
-    $$('#strategyList button').forEach(b => b.addEventListener('click', () => {
-      quickStrategy = b.dataset.strategy;
-      $$('#strategyList button').forEach(x => x.classList.toggle('active', x === b));
-    }));
-    $('#runQuickBtn').addEventListener('click', runQuickSim);
-    $('#restartFromResult').addEventListener('click', () => {
-      game = initialGame(); game.cash = 48000;
-      $('#resultModal').classList.remove('open'); saveAndRefresh(); navigate('sim'); showToast('Nueva temporada iniciada.');
+
+    $('#advanceBtn')?.addEventListener('click', advance);
+    $('#advanceBtn2')?.addEventListener('click', advance);
+    $('#quickSimBtn')?.addEventListener('click', () => $('#quickModal').classList.add('open'));
+    $('#resetSimBtn')?.addEventListener('click', () => {
+      if (!window.confirm('¿Reiniciar la temporada desde el día 1?')) return;
+      archiveSeason();
+      game = initialGame(); persist(); renderPanel(); renderSim(); renderJournal(); showToast('Temporada reiniciada.');
     });
-    let sound = false;
-    $('#soundBtn').addEventListener('click', (e) => {
-      sound = !sound;
-      e.currentTarget.textContent = sound ? '♪' : '◖';
-      e.currentTarget.setAttribute('aria-label', sound ? 'Desactivar sonido' : 'Activar sonido');
-      showToast(sound ? 'Sonido ambiental activado.' : 'Sonido desactivado.');
+    $('#restartFromResult')?.addEventListener('click', () => {
+      archiveSeason();
+      game = initialGame(); persist();
+      closeModal('resultModal');
+      navigate('panel');
+      showToast('Nueva temporada iniciada.');
     });
+    $$('.action-card').forEach(btn => {
+      if (btn.dataset.actionBound) return;
+      btn.dataset.actionBound = '1';
+      btn.addEventListener('click', () => action(btn.dataset.action));
+    });
+    $$('#strategyList [data-strategy]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        quickStrategy = btn.dataset.strategy;
+        $$('#strategyList [data-strategy]').forEach(x => x.classList.toggle('active', x === btn));
+      });
+    });
+    $('#runQuickBtn')?.addEventListener('click', runQuickSim);
+    $('#shopBtn')?.addEventListener('click', () => $('#shopModal').classList.add('open'));
+    $$('#shopModal [data-buy]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const map = { water: [4000, () => { game.water = Math.min(20, game.water + 5); }], nutrient: [8000, () => { game.nutrients = Math.min(10, game.nutrients + 3); }], energy: [6000, () => { game.energy = Math.min(100, game.energy + 20); }] };
+        const entry = map[btn.dataset.buy];
+        if (!entry) return;
+        if (game.cash < entry[0]) { showToast('Fondo insuficiente para esa compra.'); return; }
+        game.cash -= entry[0]; game.spent += entry[0]; entry[1]();
+        saveAndRefresh(); persist();
+        showToast('Recursos repuestos.');
+      });
+    });
+    $('#guideBtn')?.addEventListener('click', () => $('#guideModal').classList.add('open'));
+    $('#soundBtn')?.addEventListener('click', () => {
+      const on = $('#soundBtn').textContent === '◖';
+      $('#soundBtn').textContent = on ? '◗' : '◖';
+      $('#soundBtn').setAttribute('aria-label', on ? 'Desactivar sonido' : 'Activar sonido');
+      showToast(on ? 'Sonido ambiente activado (demo).' : 'Sonido ambiente desactivado.');
+    });
+    $('#moreBtn')?.addEventListener('click', () => $('#moreSheet').classList.add('open'));
+    $('#closeMore')?.addEventListener('click', () => $('#moreSheet').classList.remove('open'));
+    $('#exportJournalBtn')?.addEventListener('click', exportJournal);
+    $('#askStrainBtn')?.addEventListener('click', () => navigate('oracle', { question: '¿Qué autofloreciente conviene para empezar y qué cuidados necesita?' }));
   }
 
-  function bindNav() {
-    document.addEventListener('click', (e) => {
-      const nav = e.target.closest('[data-nav]');
-      if (nav) { e.preventDefault(); navigate(nav.dataset.nav); }
-      const plant = e.target.closest('[data-plant]');
-      if (plant && app.view === 'sim') { game.selected = Number(plant.dataset.plant); renderSim(); persist(); }
-    });
-    $$('#view-sim .action-card').forEach(b => b.addEventListener('click', () => action(b.dataset.action)));
-    $('#advanceBtn').addEventListener('click', advance);
-    $('#advanceBtn2').addEventListener('click', advance);
-  }
-
+  /* ---------- init ---------- */
   function init() {
-    bindNav(); bindModals(); bindLibrary(); bindOracle(); bindBudget(); bindShop();
-    $('#price') && ($('#bPriceVal').textContent = fmt(app.budget.price));
-    const hash = location.hash.replace('#', '');
-    const start = VIEWS[hash] ? hash : (app.view || 'panel');
-    renderPanel(); renderSim(); renderBudget(); renderProcess(); renderLibFilters();
-    navigate(start);
-    if (game.finished) setTimeout(() => showToast('Temporada completada. Revisá el resumen o iniciá una nueva.'), 700);
-  }
-
-  function renderLibFilters() {
-    if (app.dupOnly) $('#dupToggle').classList.add('active');
-    const diplomaSelect = $('#libDiploma');
-    const diplomas = [...new Set(allResources().map(r => r.diploma))];
-    diplomaSelect.innerHTML = '<option value="all">Todas las diplomaturas</option>' + diplomas.map(d => `<option>${esc(d)}</option>`).join('');
+    if (game.finished) archiveSeason();
+    bindGlobal();
+    bindStrains();
+    bindLibrary();
+    bindOracle();
+    bindBudget();
+    const initialView = (location.hash || '').replace('#', '');
+    const target = VIEWS[initialView] ? initialView : 'panel';
+    renderNav();
+    renderPanel();
+    renderStrains();
+    renderJournal();
+    renderSim();
+    renderLibrary();
+    renderChat();
+    renderBudget();
+    renderProcess();
+    navigate(target);
   }
 
   init();
