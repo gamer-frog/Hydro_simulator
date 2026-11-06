@@ -9,10 +9,14 @@
   const rand = (lo, hi) => lo + Math.random() * (hi - lo);
   const MAP_URL = 'assets/ao/';
   const ACTORS = [
-    { id: 'player', name: 'Viajero del Sur', body: 1, head: 1, x: 48, y: 43 },
-    { id: 'luna', name: 'Luna de Plata', className: 'mage', body: 2, head: 2, x: 52, y: 43 },
-    { id: 'bruno', name: 'Bruno Fierro', className: 'ranger', body: 3, head: 3, x: 50, y: 48 },
-    { id: 'mateo', name: 'Mateo del Monte', className: 'warrior', body: 1, head: 4, x: 44, y: 46 }
+    { id: 'player', name: 'Viajero del Sur', team: 'sacred', body: 1, head: 1, x: 43, y: 46 },
+    { id: 'sacredMage', name: 'Luna de Plata', team: 'sacred', className: 'mage', body: 2, head: 2, x: 43, y: 43 },
+    { id: 'sacredCleric', name: 'Iria del Alba', team: 'sacred', className: 'cleric', body: 3, head: 3, x: 43, y: 49 },
+    { id: 'sacredPaladin', name: 'Darian Luzfirme', team: 'sacred', className: 'paladin', body: 1, head: 4, x: 46, y: 46 },
+    { id: 'chaoticWarrior', name: 'Krag Martillo', team: 'chaotic', className: 'warrior', body: 1, head: 1, x: 57, y: 46 },
+    { id: 'chaoticMage', name: 'Neris Umbría', team: 'chaotic', className: 'mage', body: 2, head: 2, x: 57, y: 43 },
+    { id: 'chaoticCleric', name: 'Vela Ceniza', team: 'chaotic', className: 'cleric', body: 3, head: 3, x: 57, y: 49 },
+    { id: 'chaoticPaladin', name: 'Soren Quebrantahuesos', team: 'chaotic', className: 'paladin', body: 1, head: 4, x: 54, y: 46 }
   ];
   const HEADINGS = { N: 1, E: 2, S: 3, W: 4 };
   const DELTAS = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] };
@@ -23,24 +27,28 @@
     arrowleft: [-1, 0], a: [-1, 0]
   };
   const names = Object.fromEntries(ACTORS.map(actor => [actor.id, actor.name]));
-  // Prototype-only action values: these are tuning placeholders, not current AO or Imperium balance data.
+  // Prototype-only tuning placeholders; these are not official AO/AO Libre/Imperium values.
   const CLASS_PROFILES = {
-    warrior: { label: 'GUERRERO', body: 1, head: 1, hp: 130, mana: 70, skills: [
-      { name: 'Golpe poderoso', icon: '⚔', type: 'damage', cost: 14, damage: [25, 34], range: 1 },
-      { name: 'Vendaje', icon: '✚', type: 'heal', cost: 18, heal: 32 },
-      { name: 'Carga', icon: '➤', type: 'damage', cost: 24, damage: [35, 44], range: 2 }
+    warrior: { label: 'GUERRERO', body: 1, head: 1, hp: 130, mana: 0, skills: [] },
+    mage: { label: 'MAGO', body: 2, head: 2, hp: 100, mana: 150, skills: [
+      { name: 'Inmo', icon: '❄', type: 'immobilize', cost: 24, duration: 1.15, range: 6, color: '#62d8ff' },
+      { name: 'Remo', icon: '✧', type: 'remove', cost: 18, color: '#b895ff' },
+      { name: 'Ráfaga ígnea', icon: '✹', type: 'damage', cost: 30, damage: [28, 38], range: 7, color: '#ff8559' }
     ] },
-    mage: { label: 'MAGO', body: 2, head: 2, hp: 90, mana: 160, skills: [
-      { name: 'Inmo', icon: '❄', type: 'immobilize', cost: 30, duration: 2.4, range: 6 },
-      { name: 'Remo', icon: '✧', type: 'remove', cost: 25 },
-      { name: 'Ráfaga ígnea', icon: '✹', type: 'damage', cost: 40, damage: [32, 45], range: 7 },
-      { name: 'Sanar', icon: '✚', type: 'heal', cost: 20, heal: 30 },
-      { name: 'Curación', icon: '✚', type: 'heal', cost: 35, heal: 55 }
+    cleric: { label: 'CLÉRIGO', body: 3, head: 3, hp: 115, mana: 120, skills: [
+      { name: 'Remo', icon: '✧', type: 'remove', cost: 16, color: '#b895ff' },
+      { name: 'Sanar aliado', icon: '✚', type: 'healAlly', cost: 22, heal: 34, color: '#8ee2a3' },
+      { name: 'Curación', icon: '✚', type: 'healAlly', cost: 34, heal: 52, color: '#8ee2a3' }
+    ] },
+    paladin: { label: 'PALADÍN', body: 1, head: 4, hp: 125, mana: 90, skills: [
+      { name: 'Inmo', icon: '❄', type: 'immobilize', cost: 22, duration: 1.1, range: 4, color: '#62d8ff' },
+      { name: 'Golpe sagrado', icon: '⚔', type: 'damage', cost: 18, damage: [24, 34], range: 1, color: '#ffd36e' },
+      { name: 'Remo', icon: '✧', type: 'remove', cost: 16, color: '#b895ff' }
     ] },
     ranger: { label: 'CAZADOR', body: 3, head: 3, hp: 105, mana: 95, skills: [
-      { name: 'Flecha certera', icon: '➶', type: 'damage', cost: 16, damage: [22, 32], range: 6 },
-      { name: 'Hierbas', icon: '✚', type: 'heal', cost: 20, heal: 30 },
-      { name: 'Flecha venenosa', icon: '☠', type: 'damage', cost: 27, damage: [32, 43], range: 7 }
+      { name: 'Flecha certera', icon: '➶', type: 'damage', cost: 16, damage: [22, 32], range: 6, color: '#c9e177' },
+      { name: 'Hierbas', icon: '✚', type: 'heal', cost: 20, heal: 30, color: '#8ee2a3' },
+      { name: 'Flecha venenosa', icon: '☠', type: 'damage', cost: 27, damage: [32, 43], range: 7, color: '#b895ff' }
     ] }
   };
   const STEP_DURATION = .115;
@@ -52,7 +60,7 @@
   let mapData, grhs, characters;
   let W = 800, H = 480, dpr = 1, tilePx = 32;
   let elapsed = 0, remaining = 180, gameOver = false, paused = false;
-  let selected = 'luna', selectedSkill = null, kills = 0, currentClass = 'warrior';
+  let selected = 'chaoticWarrior', selectedSkill = null, kills = 0, currentClass = 'warrior';
   let placingNpc = false, placementTile = null, pointerCanvas = null;
   const floatingTexts = [], spellEffects = [];
   let audioOn = true, audioReady = false, audioCtx;
