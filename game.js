@@ -74,7 +74,29 @@
     logs: [{ day: 1, text: '<b>Temporada iniciada.</b> Nueve autos en su primer día.', kind: 'success' }]
   });
 
-  const initialBudget = () => ({ plants: 9, yield: 55, price: 4500, kwh: 95, hours: 18, days: 75, watts: 240 });
+  const initialBudget = () => ({ plants: 9, yield: 55, price: 4500, kwh: 95, hours: 18, days: 75, watts: 240, mode: 'indoor' });
+  const BUDGET_PRODUCTS = {
+    indoor: [
+      { id: 'led', name: 'LED 240W quantum 3000K', price: 285000, img: 'assets/grow-room.jpg', q: 'led 240w quantum 3000k cultivo indoor' },
+      { id: 'tent', name: 'Carpa 120×120×200 indoor', price: 165000, img: 'assets/grow-room.jpg', q: 'carpa indoor 120x120x200 cultivo' },
+      { id: 'extractor', name: 'Extractor 4" + filtro carbón', price: 89000, img: 'assets/greenhouse.jpg', q: 'extractor 4 pulgadas filtro carbon cultivo' },
+      { id: 'substrate', name: 'Sustrato 20L (9 macetas)', price: 54000, img: 'assets/leaf-texture.jpg', q: 'sustrato 20 litros cultivo indoor' },
+      { id: 'nutrients', name: 'Nutrientes NPK + CaMg', price: 42000, img: 'assets/leaf-texture.jpg', q: 'nutrientes npk cultivo indoor pack' },
+      { id: 'seeds', name: 'Semillas auto x9', price: 22000, img: 'assets/hero-bud.jpg', q: 'semillas autoflorecientes x9' },
+      { id: 'timer', name: 'Timer + temporizadores', price: 12000, img: 'assets/grow-room.jpg', q: 'timer mecanico riego cultivo indoor' },
+      { id: 'ph', name: 'Medidores pH/EC', price: 18000, img: 'assets/bud-macro.jpg', q: 'medidor ph ec cultivo' }
+    ],
+    outdoor: [
+      { id: 'pots', name: 'Macetas 20L x9 + tierra', price: 48000, img: 'assets/greenhouse.jpg', q: 'maceta 20 litros cultivo exterior' },
+      { id: 'substrate', name: 'Sustrato exterior 40L', price: 38000, img: 'assets/leaf-texture.jpg', q: 'sustrato exterior 40 litros' },
+      { id: 'nutrients', name: 'Nutrientes orgánicos', price: 32000, img: 'assets/leaf-texture.jpg', q: 'nutrientes organicos cultivo exterior' },
+      { id: 'seeds', name: 'Semillas auto x9', price: 22000, img: 'assets/hero-bud.jpg', q: 'semillas autoflorecientes x9' },
+      { id: 'pest', name: 'Control biológico (trampas+aceite)', price: 15000, img: 'assets/bud-macro.jpg', q: 'control biologico plagas cultivo' },
+      { id: 'shade', name: 'Media sombra / tutorado', price: 19000, img: 'assets/greenhouse.jpg', q: 'media sombra tutorado cultivo exterior' },
+      { id: 'ph', name: 'Medidores pH/EC', price: 18000, img: 'assets/bud-macro.jpg', q: 'medidor ph ec cultivo' },
+      { id: 'water', name: 'Regadera + medidor humedad', price: 11000, img: 'assets/leaf-texture.jpg', q: 'medidor humedad sustrato' }
+    ]
+  };
   const defaultApp = () => ({
     view: 'panel', budget: initialBudget(), tasks: {}, legal: {}, userResources: [],
     selectedResource: null, queries: 0, chat: [], chatSources: [], dupOnly: false,
@@ -164,12 +186,13 @@
   };
 
   function costsFor(b) {
-    const energy = (b.watts / 1000) * b.hours * b.days * b.kwh;
+    const outdoor = b.mode === 'outdoor';
+    const energy = outdoor ? 0 : (b.watts / 1000) * b.hours * b.days * b.kwh;
     const seeds = b.plants * 8000;
-    const substrate = b.plants * 7500;
-    const nutrition = b.plants * 6000;
+    const substrate = b.plants * (outdoor ? 5500 : 7500);
+    const nutrition = b.plants * (outdoor ? 4200 : 6000);
     const water = 1200 + b.plants * 140;
-    const equipment = 120000 * Math.pow(b.plants / 9, 0.55);
+    const equipment = (outdoor ? 38000 : 120000) * Math.pow(b.plants / 9, 0.55);
     const misc = 22000 * Math.pow(b.plants / 9, 0.4);
     const management = b.plants * 2500;
     const subtotal = seeds + substrate + nutrition + energy + water + equipment + misc + management;
@@ -2130,10 +2153,43 @@
   }
 
   /* ---------- budget ---------- */
+  function renderMarketList() {
+    const mode = app.budget.mode || 'indoor';
+    const list = BUDGET_PRODUCTS[mode] || [];
+    if (!app.budget.prices) app.budget.prices = {};
+    const el = $('#marketList');
+    if (!el) return;
+    el.innerHTML = list.map(p => {
+      const price = app.budget.prices[`${mode}:${p.id}`] ?? p.price;
+      const url = `https://www.mercadolibre.com.ar/${encodeURIComponent(p.q)}`;
+      return `<div class="market-row">
+        <img src="${p.img}" alt="${esc(p.name)}" loading="lazy" />
+        <div class="market-copy"><b>${esc(p.name)}</b>
+          <a href="${url}" target="_blank" rel="noopener">Corroborar en Mercado Libre ↗</a>
+          <small>${esc(p.q)}</small>
+        </div>
+        <label class="market-price"><span>ARS</span><input type="number" min="0" step="500" value="${price}" data-market="${mode}:${p.id}" aria-label="Precio de ${esc(p.name)}" /></label>
+      </div>`;
+    }).join('');
+    const total = list.reduce((n, p) => n + (app.budget.prices[`${mode}:${p.id}`] ?? p.price), 0);
+    const mt = $('#marketTotal');
+    if (mt) mt.textContent = '$' + fmt(total);
+    $$('#marketList [data-market]').forEach(inp => inp.addEventListener('input', () => {
+      app.budget.prices[inp.dataset.market] = Math.max(0, Number(inp.value) || 0);
+      const t = list.reduce((n, p) => n + (app.budget.prices[`${mode}:${p.id}`] ?? p.price), 0);
+      if ($('#marketTotal')) $('#marketTotal').textContent = '$' + fmt(t);
+      persist();
+    }));
+  }
+
   function renderBudget() {
     renderNav();
     const b = app.budget;
     const c = budget();
+    $$('.budget-mode').forEach(el => el.classList.toggle('active', (el.dataset.mode || 'indoor') === (b.mode || 'indoor')));
+    const tag = $('#bModeTag');
+    if (tag) tag.textContent = b.mode === 'outdoor' ? 'AUTO · OUTDOOR' : 'AUTO · INDOOR';
+    renderMarketList();
     const setRange = (id, val) => { const el = $('#' + id); if (el) el.value = val; };
     setRange('bPlants', b.plants); setRange('bYield', b.yield); setRange('bPrice', b.price);
     const num = (id, val) => { const el = $('#' + id); if (el) el.value = val; };
@@ -2170,6 +2226,11 @@
   }
 
   function bindBudget() {
+    $$('.budget-mode').forEach(el => el.addEventListener('click', () => {
+      app.budget.mode = el.dataset.mode === 'outdoor' ? 'outdoor' : 'indoor';
+      renderBudget(); persist();
+      showToast(app.budget.mode === 'outdoor' ? 'Presupuesto outdoor: sin energía LED, equipos mínimos.' : 'Presupuesto indoor: con LED y carpa.');
+    }));
     const ranges = [['bPlants', 'plants'], ['bYield', 'yield'], ['bPrice', 'price']];
     ranges.forEach(([id, key]) => {
       $('#' + id)?.addEventListener('input', (e) => {

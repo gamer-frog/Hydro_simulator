@@ -486,7 +486,11 @@
 
           <div class="budget-grid">
             <section class="card budget-controls">
-              <div class="card-head"><div><span class="section-kicker">SUPUESTOS EDITABLES</span><h2>Armá tu escenario</h2></div><span class="scenario-tag">AUTO · INDOOR</span></div>
+              <div class="card-head"><div><span class="section-kicker">SUPUESTOS EDITABLES</span><h2>Armá tu escenario</h2></div><span class="scenario-tag" id="bModeTag">AUTO · INDOOR</span></div>
+              <div class="budget-mode-row" role="tablist" aria-label="Modo de presupuesto">
+                <button class="budget-mode active" data-mode="indoor" type="button">Indoor</button>
+                <button class="budget-mode" data-mode="outdoor" type="button">Outdoor</button>
+              </div>
               <div class="control-group"><div class="control-label"><span>Plantas en floración</span><b><span id="bPlantsVal">9</span> / 9</b></div><input type="range" id="bPlants" min="1" max="9" value="9" /><div class="range-scale"><span>1</span><span>9 · límite legal</span></div></div>
               <div class="control-group"><div class="control-label"><span>Rendimiento por planta</span><b><span id="bYieldVal">55</span> g</b></div><input type="range" id="bYield" min="20" max="120" step="5" value="55" /><div class="range-scale"><span>20 g</span><span>120 g · optimizado</span></div></div>
               <div class="control-group"><div class="control-label"><span>Precio de referencia</span><b>$<span id="bPriceVal">4.500</span> / g</b></div><input type="range" id="bPrice" min="1500" max="9000" step="250" value="4500" /><div class="range-scale"><span>$1.500</span><span>$9.000</span></div></div>
@@ -506,6 +510,12 @@
               <section class="card breakdown-card">
                 <div class="card-head"><div><span class="section-kicker">DISTRIBUCIÓN</span><h2>En qué se va el dinero</h2></div><span class="mono-note">ARS</span></div>
                 <div class="breakdown-bars" id="breakdownBars"></div>
+              </section>
+              <section class="card market-card">
+                <div class="card-head"><div><span class="section-kicker">MERCADO LIBRE · ACTUALIZACIÓN MANUAL</span><h2>Corroborar precios e imágenes</h2></div><span class="mono-note">SIN AUTO-REFRESH</span></div>
+                <p class="compare-copy">Elegí un producto, corroborá el precio en Mercado Libre (link + nombre de búsqueda) y actualizá el valor a mano. Las imágenes son referencia de tipo, no fotos del vendedor.</p>
+                <div class="market-list" id="marketList"></div>
+                <div class="market-foot"><span>Inversión lista estimada:</span><b id="marketTotal">$0</b></div>
               </section>
               <section class="card compare-card">
                 <div class="card-head"><div><span class="section-kicker">PROYECCIÓN</span><h2>Si el proyecto crece</h2></div><span class="projection-tag">EJERCICIO</span></div>
