@@ -53,14 +53,14 @@
             <div class="match-result hidden" id="resultPanel"><div class="result-kicker">FIN DE LA PARTIDA</div><div class="result-title" id="resultTitle">VICTORIA</div><div class="result-sub" id="resultSub">El Robledal recuerda tu nombre.</div><button id="playAgain">VOLVER A LUCHAR <span>↻</span></button></div>
             <div class="mobile-joystick" id="joystick"><div class="joy-ring"><div class="joy-knob" id="joyKnob"></div></div></div>
             <div class="mobile-cast-hint">MOVER</div>
-            <div class="canvas-tip" id="canvasTip"><span>FLECHAS</span> MOVER <span class="tip-dot">·</span> <span>CLICK</span> ATACAR</div>
+            <div class="canvas-tip" id="canvasTip"><span>FLECHAS</span> MOVER <span class="tip-dot">·</span> <span>CLICK</span> ELEGIR OBJETIVO</div>
           </div>
 
           <div class="combat-hud">
             <div class="hero-card"><div class="hero-portrait"><span class="portrait-helm">♞</span><span class="level-badge">08</span></div><div class="hero-details"><div class="hero-titleline"><strong>GUERRERO</strong><span class="hero-class">HUMANO</span></div><div class="hero-name">Viajero del Sur</div><div class="health-track"><i id="healthBar"></i></div><div class="resource-track"><i id="manaBar"></i></div></div></div>
             <div class="combat-divider"></div>
             <div class="spell-loadout">
-              <button class="spell-slot active-spell" data-spell="0" aria-label="Q Corte de hierro"><span class="spell-key">Q</span><span class="spell-icon spell-slash">╱</span><span class="spell-name">CORTE</span><span class="cooldown"></span></button>
+              <button class="spell-slot" data-spell="0" aria-label="Q Corte de hierro"><span class="spell-key">Q</span><span class="spell-icon spell-slash">╱</span><span class="spell-name">CORTE</span><span class="cooldown"></span></button>
               <button class="spell-slot" data-spell="1" aria-label="W Velo de escarcha"><span class="spell-key">W</span><span class="spell-icon spell-frost">❄</span><span class="spell-name">ESCARCHA</span><span class="cooldown"></span></button>
               <button class="spell-slot" data-spell="2" aria-label="E Carga"><span class="spell-key">E</span><span class="spell-icon spell-charge">➤</span><span class="spell-name">CARGA</span><span class="cooldown"></span></button>
               <button class="spell-slot ultimate" data-spell="3" aria-label="R Tormenta del sur"><span class="spell-key">R</span><span class="spell-icon spell-ult">✹</span><span class="spell-name">TORMENTA</span><span class="cooldown"></span></button>
@@ -88,7 +88,7 @@
     </main>
   </div>
   <div class="toast" id="toast"></div>
-  <div class="modal hidden" id="helpModal"><div class="modal-card"><button class="modal-close" id="closeHelp">×</button><div class="eyebrow">GUÍA DEL VIAJERO</div><h2>Controles de arena</h2><div class="control-list"><p><kbd>↑ ↓ ← →</kbd><span>Moverse por la arena</span></p><p><kbd>CLICK</kbd><span>Atacar al rival más cercano</span></p><p><kbd>Q</kbd><span>Corte de hierro · daño cercano</span></p><p><kbd>W</kbd><span>Velo de escarcha · daño y ralentización</span></p><p><kbd>E</kbd><span>Carga · avance y golpe</span></p><p><kbd>R</kbd><span>Tormenta del sur · estallido en área</span></p><p><kbd>1</kbd><span>Poción · recupera vida y maná</span></p><p><kbd>ESPACIO</kbd><span>Bloquear · reduce el daño recibido</span></p></div><div class="modal-note">En móvil, usá el pad izquierdo para moverte y los botones de habilidad para combatir.</div></div></div>
+  <div class="modal hidden" id="helpModal"><div class="modal-card"><button class="modal-close" id="closeHelp">×</button><div class="eyebrow">GUÍA DEL VIAJERO</div><h2>Controles de arena</h2><div class="control-list"><p><kbd>↑ ↓ ← →</kbd><span>Moverse por la arena</span></p><p><kbd>CLICK</kbd><span>Atacar al rival que señalás</span></p><p><kbd>Q</kbd><span>Corte de hierro · daño cercano</span></p><p><kbd>W</kbd><span>Velo de escarcha · daño y ralentización</span></p><p><kbd>E</kbd><span>Carga · avance y golpe</span></p><p><kbd>R</kbd><span>Tormenta del sur · estallido en área</span></p><p><kbd>1</kbd><span>Poción · recupera vida y maná</span></p><p><kbd>ESPACIO</kbd><span>Bloquear · reduce el daño recibido</span></p></div><div class="modal-note">En móvil, usá el pad izquierdo para moverte y los botones de habilidad para combatir.</div></div></div>
   <script src="game.js"></script>
 </body>
 </html>
