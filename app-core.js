@@ -241,12 +241,16 @@ function scopeLabel() {
   if (project) return project.name;
   return scopeFilter.kind === 'repo' ? String(scopeFilter.id) : 'Proyecto';
 }
-function selectScope(kind = 'all', id = 'all') {
-  scopeFilter = { kind, id };
-  projectFilter = 'all';
-  renderAll();
+function renderBreadcrumb() {
   const crumb = $('#breadcrumb');
   if (crumb) crumb.textContent = `${scopeLabel()} · ${VIEW_TITLES[currentView] || 'Vista'}`;
+}
+function selectScope(kind = 'all', id = 'all', options = {}) {
+  scopeFilter = normalizeScope(kind, id);
+  projectFilter = 'all';
+  renderAll();
+  renderBreadcrumb();
+  if (options.updateHash !== false) setRouteHash(currentView, activeDetail?.kind, activeDetail?.id);
 }
 
 const missionById = id => state.missions.find(m => m.id === id);
@@ -364,24 +368,30 @@ const VIEW_TITLES = { home: '00 Brain', world: 'El estudio', missions: 'Misiones
 
 function routeHash(view, kind, id) {
   const base = `#/${ROUTE_VIEWS.includes(view) ? view : 'home'}`;
-  if (!kind || !id) return base;
-  return `${base}/${encodeURIComponent(kind)}/${encodeURIComponent(id)}`;
+  const scope = scopeFilter?.kind !== 'all' ? `/scope/${encodeURIComponent(scopeFilter.kind)}/${encodeURIComponent(scopeFilter.id)}` : '';
+  const detail = kind && id ? `/${encodeURIComponent(kind)}/${encodeURIComponent(id)}` : '';
+  return `${base}${scope}${detail}`;
 }
 function parseRoute(hash = '') {
   const clean = String(hash || '').replace(/^#\/?/, '').trim();
-  if (!clean) return { view: 'home', detail: null };
+  if (!clean) return { view: 'home', scope: { kind: 'all', id: 'all' }, detail: null };
   const parts = clean.split('/').filter(Boolean).map(part => {
     try { return decodeURIComponent(part); } catch (_) { return part; }
   });
   const hasView = ROUTE_VIEWS.includes(parts[0]);
   const view = hasView ? parts[0] : 'home';
   const rest = hasView ? parts.slice(1) : parts;
-  const kind = rest[0];
-  const id = rest[1];
-  if (DETAIL_VIEWS[kind] && id) {
-    return { view: hasView ? view : DETAIL_VIEWS[kind], detail: { kind, id } };
+  let scope = { kind: 'all', id: 'all' };
+  let detailParts = rest;
+  if (rest[0] === 'scope' && rest[1] && rest[2]) {
+    scope = { kind: rest[1], id: rest[2] };
+    detailParts = rest.slice(3);
   }
-  return { view, detail: null };
+  if (detailParts[0] === 'detail') detailParts = detailParts.slice(1);
+  const kind = detailParts[0];
+  const id = detailParts[1];
+  const detail = DETAIL_VIEWS[kind] && id ? { kind, id } : null;
+  return { view: hasView ? view : (detail ? DETAIL_VIEWS[kind] : 'home'), scope, detail };
 }
 function setRouteHash(view, kind, id, options = {}) {
   const hash = routeHash(view, kind, id);
@@ -395,6 +405,8 @@ function applyRouteFromHash(force = false) {
   if (!force && hash === appliedHash) return;
   appliedHash = hash;
   const route = parseRoute(hash);
+  scopeFilter = normalizeScope(route.scope?.kind, route.scope?.id);
+  projectFilter = 'all';
   navigate(route.view, { updateHash: false, detail: route.detail });
 }
 function markDetail(kind, id, options = {}) {
@@ -409,7 +421,7 @@ function navigate(view, options = {}) {
   if (view === 'world') activeRoom = options.detail?.kind === 'project' ? options.detail.id : 'all';
   $$('.view').forEach(panel => panel.classList.toggle('active', panel.dataset.panel === view));
   $$('.side-nav [data-view], .bottom-nav [data-view]').forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
-  const crumb = $('#breadcrumb'); if (crumb) crumb.textContent = VIEW_TITLES[view] || 'Hoy';
+  renderBreadcrumb();
   if (view === 'world') { renderWorld(); syncWorldLive(); }
   if (view === 'missions') renderMissions();
   if (view === 'agents') renderAgents();

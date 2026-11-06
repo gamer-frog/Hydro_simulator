@@ -146,7 +146,10 @@ function issueMatchesScope(item, visibleIds = scopedProjectIds()) {
   if (scopeFilter.kind === 'all') return true;
   if (item.projectId) return visibleIds.has(item.projectId);
   const labels = (item.labels || []).map(label => String(label).trim().toLowerCase());
-  if (scopeFilter.kind === 'repo') return item.repo === scopeFilter.id || item.repo === github.repo;
+  if (scopeFilter.kind === 'repo') {
+    const selectedRepo = String(scopeFilter.id).trim().toLowerCase();
+    return repoMatches(item.repo, scopeFilter.id) || labels.some(label => label === `repo:${selectedRepo}` || label === `project:${selectedRepo}`);
+  }
   if (scopeFilter.kind === 'client') {
     const client = state.clients.find(value => value.id === scopeFilter.id);
     return labels.includes(`client:${scopeFilter.id}`) || Boolean(client && labels.includes(client.name.toLowerCase()));
@@ -402,7 +405,7 @@ function openMission(id, options = {}) {
   const order = ['backlog', 'ready', 'working', 'review', 'done'];
   const currentIndex = STATUS[m.status]?.order ?? 0;
   const pct = m.totalSubtasks ? Math.round((m.subtasks / m.totalSubtasks) * 100) : (m.status === 'done' ? 100 : 0);
-  const recent = state.activity.filter(e => e.agentId === m.assignee).sort((a, b) => a.agoSeconds - b.agoSeconds).slice(0, 3);
+  const recent = scopedActivity().filter(e => e.agentId === m.assignee).sort((a, b) => a.agoSeconds - b.agoSeconds).slice(0, 3);
   const dependencies = missionDependencies(m);
   const blockers = missionBlockers(m);
   const blocked = isBlocked(m);

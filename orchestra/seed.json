@@ -8,19 +8,58 @@
     "heartbeatMinutes": 15
   },
   "divisions": [
-    { "id": "music", "name": "Música" },
-    { "id": "games", "name": "Juegos" },
-    { "id": "cannabis-studios", "name": "Estudios Cannabis" },
-    { "id": "technology-studios", "name": "Estudios Tecnología" },
-    { "id": "marketing-studios", "name": "Estudios Marketing" },
-    { "id": "mimic-fanvue", "name": "Mimic PC + Fanvue AI" },
-    { "id": "vistta", "name": "VISTTA" },
-    { "id": "hydroponics-nft", "name": "Hidroponia NFT" },
-    { "id": "agent-orchestration", "name": "Orquestación de agentes" }
+    {
+      "id": "music",
+      "name": "Música"
+    },
+    {
+      "id": "games",
+      "name": "Juegos"
+    },
+    {
+      "id": "cannabis-studios",
+      "name": "Estudios Cannabis"
+    },
+    {
+      "id": "technology-studios",
+      "name": "Estudios Tecnología"
+    },
+    {
+      "id": "marketing-studios",
+      "name": "Estudios Marketing"
+    },
+    {
+      "id": "mimic-fanvue",
+      "name": "Mimic PC + Fanvue AI"
+    },
+    {
+      "id": "vistta",
+      "name": "VISTTA"
+    },
+    {
+      "id": "hydroponics-nft",
+      "name": "Hidroponia NFT"
+    },
+    {
+      "id": "agent-orchestration",
+      "name": "Orquestación de agentes"
+    }
   ],
   "clients": [
-    { "id": "vistta-sweetsoul", "divisionId": "vistta", "name": "SweetSoul", "repos": ["VISTTA_SWEETSOUL"] },
-    { "id": "vistta-peluqueria-german", "divisionId": "vistta", "name": "Peluquería Germán", "repos": [] }
+    {
+      "id": "vistta-sweetsoul",
+      "divisionId": "vistta",
+      "name": "SweetSoul",
+      "repos": [
+        "VISTTA_SWEETSOUL"
+      ]
+    },
+    {
+      "id": "vistta-peluqueria-german",
+      "divisionId": "vistta",
+      "name": "Peluquería Germán",
+      "repos": []
+    }
   ],
   "projects": [
     {
@@ -474,6 +513,942 @@
       "home": {
         "x": 50,
         "y": 58
+      },
+      "avatar": {
+        "bg": "#f4e4e6",
+        "skin": "#e4b18f",
+        "hair": "#a35f4d",
+        "shirt": "#d49b9a",
+        "accessory": "bun"
+      }
+    },
+    {
+      "id": "mock-ada",
+      "name": "Ada",
+      "role": "Builder",
+      "projectId": "project-playground",
+      "model": "Claude Sonnet",
+      "status": "working",
+      "heartbeatMinutes": 15,
+      "lastAction": "Builder · PlayGround",
+      "bio": "Agente de demostración para builder y colaboración en PlayGround.",
+      "skills": [
+        "planning",
+        "issues"
+      ],
+      "home": {
+        "x": 24,
+        "y": 28
+      },
+      "avatar": {
+        "bg": "#e5eedb",
+        "skin": "#f0c9ae",
+        "hair": "#3c302b",
+        "shirt": "#7e9c72",
+        "accessory": "bob"
+      }
+    },
+    {
+      "id": "mock-echo",
+      "name": "Echo",
+      "role": "Researcher",
+      "projectId": "project-atlas",
+      "model": "GPT-5",
+      "status": "idle",
+      "heartbeatMinutes": 15,
+      "lastAction": "Researcher · Atlas",
+      "bio": "Agente de demostración para researcher y colaboración en Atlas.",
+      "skills": [
+        "research",
+        "docs"
+      ],
+      "home": {
+        "x": 37,
+        "y": 45
+      },
+      "avatar": {
+        "bg": "#f4e4d6",
+        "skin": "#d9a07f",
+        "hair": "#6d3f2a",
+        "shirt": "#c98d6c",
+        "accessory": "curls"
+      }
+    },
+    {
+      "id": "mock-vega",
+      "name": "Vega",
+      "role": "Reviewer",
+      "projectId": "project-signal",
+      "model": "Gemini Pro",
+      "status": "reviewing",
+      "heartbeatMinutes": 15,
+      "lastAction": "Reviewer · Signal",
+      "bio": "Agente de demostración para reviewer y colaboración en Signal.",
+      "skills": [
+        "review",
+        "testing"
+      ],
+      "home": {
+        "x": 50,
+        "y": 62
+      },
+      "avatar": {
+        "bg": "#e6edf3",
+        "skin": "#efc7a8",
+        "hair": "#25201d",
+        "shirt": "#698798",
+        "accessory": "glasses"
+      }
+    },
+    {
+      "id": "mock-rio",
+      "name": "Río",
+      "role": "QA",
+      "projectId": "project-archive",
+      "model": "GPT-5 mini",
+      "status": "working",
+      "heartbeatMinutes": 15,
+      "lastAction": "QA · Archive",
+      "bio": "Agente de demostración para qa y colaboración en Archive.",
+      "skills": [
+        "qa",
+        "regression"
+      ],
+      "home": {
+        "x": 63,
+        "y": 31
+      },
+      "avatar": {
+        "bg": "#e9e6f0",
+        "skin": "#c98f6b",
+        "hair": "#282233",
+        "shirt": "#9285a6",
+        "accessory": "headset"
+      }
+    },
+    {
+      "id": "mock-kai",
+      "name": "Kai",
+      "role": "Operator",
+      "projectId": "project-playground",
+      "model": "Claude Opus",
+      "status": "idle",
+      "heartbeatMinutes": 15,
+      "lastAction": "Operator · PlayGround",
+      "bio": "Agente de demostración para operator y colaboración en PlayGround.",
+      "skills": [
+        "planning",
+        "issues"
+      ],
+      "home": {
+        "x": 76,
+        "y": 48
+      },
+      "avatar": {
+        "bg": "#eef0d9",
+        "skin": "#b87e5e",
+        "hair": "#54422e",
+        "shirt": "#9daa65",
+        "accessory": "cap"
+      }
+    },
+    {
+      "id": "mock-iris",
+      "name": "Iris",
+      "role": "Designer",
+      "projectId": "project-atlas",
+      "model": "Claude Sonnet",
+      "status": "reviewing",
+      "heartbeatMinutes": 15,
+      "lastAction": "Designer · Atlas",
+      "bio": "Agente de demostración para designer y colaboración en Atlas.",
+      "skills": [
+        "research",
+        "docs"
+      ],
+      "home": {
+        "x": 35,
+        "y": 65
+      },
+      "avatar": {
+        "bg": "#f4e4e6",
+        "skin": "#e4b18f",
+        "hair": "#a35f4d",
+        "shirt": "#d49b9a",
+        "accessory": "bun"
+      }
+    },
+    {
+      "id": "mock-nebula",
+      "name": "Nébula",
+      "role": "Planner",
+      "projectId": "project-signal",
+      "model": "GPT-5",
+      "status": "working",
+      "heartbeatMinutes": 15,
+      "lastAction": "Planner · Signal",
+      "bio": "Agente de demostración para planner y colaboración en Signal.",
+      "skills": [
+        "review",
+        "testing"
+      ],
+      "home": {
+        "x": 48,
+        "y": 34
+      },
+      "avatar": {
+        "bg": "#e5eedb",
+        "skin": "#f0c9ae",
+        "hair": "#3c302b",
+        "shirt": "#7e9c72",
+        "accessory": "bob"
+      }
+    },
+    {
+      "id": "mock-turing",
+      "name": "Turing",
+      "role": "Analyst",
+      "projectId": "project-archive",
+      "model": "Gemini Pro",
+      "status": "idle",
+      "heartbeatMinutes": 15,
+      "lastAction": "Analyst · Archive",
+      "bio": "Agente de demostración para analyst y colaboración en Archive.",
+      "skills": [
+        "qa",
+        "regression"
+      ],
+      "home": {
+        "x": 61,
+        "y": 51
+      },
+      "avatar": {
+        "bg": "#f4e4d6",
+        "skin": "#d9a07f",
+        "hair": "#6d3f2a",
+        "shirt": "#c98d6c",
+        "accessory": "curls"
+      }
+    },
+    {
+      "id": "mock-cora",
+      "name": "Cora",
+      "role": "Builder",
+      "projectId": "project-playground",
+      "model": "GPT-5 mini",
+      "status": "reviewing",
+      "heartbeatMinutes": 15,
+      "lastAction": "Builder · PlayGround",
+      "bio": "Agente de demostración para builder y colaboración en PlayGround.",
+      "skills": [
+        "planning",
+        "issues"
+      ],
+      "home": {
+        "x": 74,
+        "y": 68
+      },
+      "avatar": {
+        "bg": "#e6edf3",
+        "skin": "#efc7a8",
+        "hair": "#25201d",
+        "shirt": "#698798",
+        "accessory": "glasses"
+      }
+    },
+    {
+      "id": "mock-byte",
+      "name": "Byte",
+      "role": "Researcher",
+      "projectId": "project-atlas",
+      "model": "Claude Opus",
+      "status": "working",
+      "heartbeatMinutes": 15,
+      "lastAction": "Researcher · Atlas",
+      "bio": "Agente de demostración para researcher y colaboración en Atlas.",
+      "skills": [
+        "research",
+        "docs"
+      ],
+      "home": {
+        "x": 33,
+        "y": 37
+      },
+      "avatar": {
+        "bg": "#e9e6f0",
+        "skin": "#c98f6b",
+        "hair": "#282233",
+        "shirt": "#9285a6",
+        "accessory": "headset"
+      }
+    },
+    {
+      "id": "mock-uma",
+      "name": "Uma",
+      "role": "Reviewer",
+      "projectId": "project-signal",
+      "model": "Claude Sonnet",
+      "status": "idle",
+      "heartbeatMinutes": 15,
+      "lastAction": "Reviewer · Signal",
+      "bio": "Agente de demostración para reviewer y colaboración en Signal.",
+      "skills": [
+        "review",
+        "testing"
+      ],
+      "home": {
+        "x": 46,
+        "y": 54
+      },
+      "avatar": {
+        "bg": "#eef0d9",
+        "skin": "#b87e5e",
+        "hair": "#54422e",
+        "shirt": "#9daa65",
+        "accessory": "cap"
+      }
+    },
+    {
+      "id": "mock-atlas-jr",
+      "name": "Atlas Jr.",
+      "role": "QA",
+      "projectId": "project-archive",
+      "model": "GPT-5",
+      "status": "reviewing",
+      "heartbeatMinutes": 15,
+      "lastAction": "QA · Archive",
+      "bio": "Agente de demostración para qa y colaboración en Archive.",
+      "skills": [
+        "qa",
+        "regression"
+      ],
+      "home": {
+        "x": 59,
+        "y": 71
+      },
+      "avatar": {
+        "bg": "#f4e4e6",
+        "skin": "#e4b18f",
+        "hair": "#a35f4d",
+        "shirt": "#d49b9a",
+        "accessory": "bun"
+      }
+    },
+    {
+      "id": "mock-pixel",
+      "name": "Pixel",
+      "role": "Operator",
+      "projectId": "project-playground",
+      "model": "Gemini Pro",
+      "status": "working",
+      "heartbeatMinutes": 15,
+      "lastAction": "Operator · PlayGround",
+      "bio": "Agente de demostración para operator y colaboración en PlayGround.",
+      "skills": [
+        "planning",
+        "issues"
+      ],
+      "home": {
+        "x": 72,
+        "y": 40
+      },
+      "avatar": {
+        "bg": "#e5eedb",
+        "skin": "#f0c9ae",
+        "hair": "#3c302b",
+        "shirt": "#7e9c72",
+        "accessory": "bob"
+      }
+    },
+    {
+      "id": "mock-clover",
+      "name": "Clover",
+      "role": "Designer",
+      "projectId": "project-atlas",
+      "model": "GPT-5 mini",
+      "status": "idle",
+      "heartbeatMinutes": 15,
+      "lastAction": "Designer · Atlas",
+      "bio": "Agente de demostración para designer y colaboración en Atlas.",
+      "skills": [
+        "research",
+        "docs"
+      ],
+      "home": {
+        "x": 31,
+        "y": 57
+      },
+      "avatar": {
+        "bg": "#f4e4d6",
+        "skin": "#d9a07f",
+        "hair": "#6d3f2a",
+        "shirt": "#c98d6c",
+        "accessory": "curls"
+      }
+    },
+    {
+      "id": "mock-sora",
+      "name": "Sora",
+      "role": "Planner",
+      "projectId": "project-signal",
+      "model": "Claude Opus",
+      "status": "reviewing",
+      "heartbeatMinutes": 15,
+      "lastAction": "Planner · Signal",
+      "bio": "Agente de demostración para planner y colaboración en Signal.",
+      "skills": [
+        "review",
+        "testing"
+      ],
+      "home": {
+        "x": 44,
+        "y": 74
+      },
+      "avatar": {
+        "bg": "#e6edf3",
+        "skin": "#efc7a8",
+        "hair": "#25201d",
+        "shirt": "#698798",
+        "accessory": "glasses"
+      }
+    },
+    {
+      "id": "mock-milo",
+      "name": "Milo",
+      "role": "Analyst",
+      "projectId": "project-archive",
+      "model": "Claude Sonnet",
+      "status": "working",
+      "heartbeatMinutes": 15,
+      "lastAction": "Analyst · Archive",
+      "bio": "Agente de demostración para analyst y colaboración en Archive.",
+      "skills": [
+        "qa",
+        "regression"
+      ],
+      "home": {
+        "x": 57,
+        "y": 43
+      },
+      "avatar": {
+        "bg": "#e9e6f0",
+        "skin": "#c98f6b",
+        "hair": "#282233",
+        "shirt": "#9285a6",
+        "accessory": "headset"
+      }
+    },
+    {
+      "id": "mock-delta",
+      "name": "Delta",
+      "role": "Builder",
+      "projectId": "project-playground",
+      "model": "GPT-5",
+      "status": "idle",
+      "heartbeatMinutes": 15,
+      "lastAction": "Builder · PlayGround",
+      "bio": "Agente de demostración para builder y colaboración en PlayGround.",
+      "skills": [
+        "planning",
+        "issues"
+      ],
+      "home": {
+        "x": 70,
+        "y": 60
+      },
+      "avatar": {
+        "bg": "#eef0d9",
+        "skin": "#b87e5e",
+        "hair": "#54422e",
+        "shirt": "#9daa65",
+        "accessory": "cap"
+      }
+    },
+    {
+      "id": "mock-aria",
+      "name": "Aria",
+      "role": "Researcher",
+      "projectId": "project-atlas",
+      "model": "Gemini Pro",
+      "status": "reviewing",
+      "heartbeatMinutes": 15,
+      "lastAction": "Researcher · Atlas",
+      "bio": "Agente de demostración para researcher y colaboración en Atlas.",
+      "skills": [
+        "research",
+        "docs"
+      ],
+      "home": {
+        "x": 29,
+        "y": 29
+      },
+      "avatar": {
+        "bg": "#f4e4e6",
+        "skin": "#e4b18f",
+        "hair": "#a35f4d",
+        "shirt": "#d49b9a",
+        "accessory": "bun"
+      }
+    },
+    {
+      "id": "mock-zen",
+      "name": "Zen",
+      "role": "Reviewer",
+      "projectId": "project-signal",
+      "model": "GPT-5 mini",
+      "status": "working",
+      "heartbeatMinutes": 15,
+      "lastAction": "Reviewer · Signal",
+      "bio": "Agente de demostración para reviewer y colaboración en Signal.",
+      "skills": [
+        "review",
+        "testing"
+      ],
+      "home": {
+        "x": 42,
+        "y": 46
+      },
+      "avatar": {
+        "bg": "#e5eedb",
+        "skin": "#f0c9ae",
+        "hair": "#3c302b",
+        "shirt": "#7e9c72",
+        "accessory": "bob"
+      }
+    },
+    {
+      "id": "mock-koda",
+      "name": "Koda",
+      "role": "QA",
+      "projectId": "project-archive",
+      "model": "Claude Opus",
+      "status": "idle",
+      "heartbeatMinutes": 15,
+      "lastAction": "QA · Archive",
+      "bio": "Agente de demostración para qa y colaboración en Archive.",
+      "skills": [
+        "qa",
+        "regression"
+      ],
+      "home": {
+        "x": 55,
+        "y": 63
+      },
+      "avatar": {
+        "bg": "#f4e4d6",
+        "skin": "#d9a07f",
+        "hair": "#6d3f2a",
+        "shirt": "#c98d6c",
+        "accessory": "curls"
+      }
+    },
+    {
+      "id": "mock-maple",
+      "name": "Maple",
+      "role": "Operator",
+      "projectId": "project-playground",
+      "model": "Claude Sonnet",
+      "status": "reviewing",
+      "heartbeatMinutes": 15,
+      "lastAction": "Operator · PlayGround",
+      "bio": "Agente de demostración para operator y colaboración en PlayGround.",
+      "skills": [
+        "planning",
+        "issues"
+      ],
+      "home": {
+        "x": 68,
+        "y": 32
+      },
+      "avatar": {
+        "bg": "#e6edf3",
+        "skin": "#efc7a8",
+        "hair": "#25201d",
+        "shirt": "#698798",
+        "accessory": "glasses"
+      }
+    },
+    {
+      "id": "mock-quark",
+      "name": "Quark",
+      "role": "Designer",
+      "projectId": "project-atlas",
+      "model": "GPT-5",
+      "status": "working",
+      "heartbeatMinutes": 15,
+      "lastAction": "Designer · Atlas",
+      "bio": "Agente de demostración para designer y colaboración en Atlas.",
+      "skills": [
+        "research",
+        "docs"
+      ],
+      "home": {
+        "x": 27,
+        "y": 49
+      },
+      "avatar": {
+        "bg": "#e9e6f0",
+        "skin": "#c98f6b",
+        "hair": "#282233",
+        "shirt": "#9285a6",
+        "accessory": "headset"
+      }
+    },
+    {
+      "id": "mock-nix",
+      "name": "Nix",
+      "role": "Planner",
+      "projectId": "project-signal",
+      "model": "Gemini Pro",
+      "status": "idle",
+      "heartbeatMinutes": 15,
+      "lastAction": "Planner · Signal",
+      "bio": "Agente de demostración para planner y colaboración en Signal.",
+      "skills": [
+        "review",
+        "testing"
+      ],
+      "home": {
+        "x": 40,
+        "y": 66
+      },
+      "avatar": {
+        "bg": "#eef0d9",
+        "skin": "#b87e5e",
+        "hair": "#54422e",
+        "shirt": "#9daa65",
+        "accessory": "cap"
+      }
+    },
+    {
+      "id": "mock-lumen",
+      "name": "Lumen",
+      "role": "Analyst",
+      "projectId": "project-archive",
+      "model": "GPT-5 mini",
+      "status": "reviewing",
+      "heartbeatMinutes": 15,
+      "lastAction": "Analyst · Archive",
+      "bio": "Agente de demostración para analyst y colaboración en Archive.",
+      "skills": [
+        "qa",
+        "regression"
+      ],
+      "home": {
+        "x": 53,
+        "y": 35
+      },
+      "avatar": {
+        "bg": "#f4e4e6",
+        "skin": "#e4b18f",
+        "hair": "#a35f4d",
+        "shirt": "#d49b9a",
+        "accessory": "bun"
+      }
+    },
+    {
+      "id": "mock-bowie",
+      "name": "Bowie",
+      "role": "Builder",
+      "projectId": "project-playground",
+      "model": "Claude Opus",
+      "status": "working",
+      "heartbeatMinutes": 15,
+      "lastAction": "Builder · PlayGround",
+      "bio": "Agente de demostración para builder y colaboración en PlayGround.",
+      "skills": [
+        "planning",
+        "issues"
+      ],
+      "home": {
+        "x": 66,
+        "y": 52
+      },
+      "avatar": {
+        "bg": "#e5eedb",
+        "skin": "#f0c9ae",
+        "hair": "#3c302b",
+        "shirt": "#7e9c72",
+        "accessory": "bob"
+      }
+    },
+    {
+      "id": "mock-yuki",
+      "name": "Yuki",
+      "role": "Researcher",
+      "projectId": "project-atlas",
+      "model": "Claude Sonnet",
+      "status": "idle",
+      "heartbeatMinutes": 15,
+      "lastAction": "Researcher · Atlas",
+      "bio": "Agente de demostración para researcher y colaboración en Atlas.",
+      "skills": [
+        "research",
+        "docs"
+      ],
+      "home": {
+        "x": 25,
+        "y": 69
+      },
+      "avatar": {
+        "bg": "#f4e4d6",
+        "skin": "#d9a07f",
+        "hair": "#6d3f2a",
+        "shirt": "#c98d6c",
+        "accessory": "curls"
+      }
+    },
+    {
+      "id": "mock-runa",
+      "name": "Runa",
+      "role": "Reviewer",
+      "projectId": "project-signal",
+      "model": "GPT-5",
+      "status": "reviewing",
+      "heartbeatMinutes": 15,
+      "lastAction": "Reviewer · Signal",
+      "bio": "Agente de demostración para reviewer y colaboración en Signal.",
+      "skills": [
+        "review",
+        "testing"
+      ],
+      "home": {
+        "x": 38,
+        "y": 38
+      },
+      "avatar": {
+        "bg": "#e6edf3",
+        "skin": "#efc7a8",
+        "hair": "#25201d",
+        "shirt": "#698798",
+        "accessory": "glasses"
+      }
+    },
+    {
+      "id": "mock-cosmo",
+      "name": "Cosmo",
+      "role": "QA",
+      "projectId": "project-archive",
+      "model": "Gemini Pro",
+      "status": "working",
+      "heartbeatMinutes": 15,
+      "lastAction": "QA · Archive",
+      "bio": "Agente de demostración para qa y colaboración en Archive.",
+      "skills": [
+        "qa",
+        "regression"
+      ],
+      "home": {
+        "x": 51,
+        "y": 55
+      },
+      "avatar": {
+        "bg": "#e9e6f0",
+        "skin": "#c98f6b",
+        "hair": "#282233",
+        "shirt": "#9285a6",
+        "accessory": "headset"
+      }
+    },
+    {
+      "id": "mock-tess",
+      "name": "Tess",
+      "role": "Operator",
+      "projectId": "project-playground",
+      "model": "GPT-5 mini",
+      "status": "idle",
+      "heartbeatMinutes": 15,
+      "lastAction": "Operator · PlayGround",
+      "bio": "Agente de demostración para operator y colaboración en PlayGround.",
+      "skills": [
+        "planning",
+        "issues"
+      ],
+      "home": {
+        "x": 64,
+        "y": 72
+      },
+      "avatar": {
+        "bg": "#eef0d9",
+        "skin": "#b87e5e",
+        "hair": "#54422e",
+        "shirt": "#9daa65",
+        "accessory": "cap"
+      }
+    },
+    {
+      "id": "mock-onyx",
+      "name": "Onyx",
+      "role": "Designer",
+      "projectId": "project-atlas",
+      "model": "Claude Opus",
+      "status": "reviewing",
+      "heartbeatMinutes": 15,
+      "lastAction": "Designer · Atlas",
+      "bio": "Agente de demostración para designer y colaboración en Atlas.",
+      "skills": [
+        "research",
+        "docs"
+      ],
+      "home": {
+        "x": 77,
+        "y": 41
+      },
+      "avatar": {
+        "bg": "#f4e4e6",
+        "skin": "#e4b18f",
+        "hair": "#a35f4d",
+        "shirt": "#d49b9a",
+        "accessory": "bun"
+      }
+    },
+    {
+      "id": "mock-mika",
+      "name": "Mika",
+      "role": "Planner",
+      "projectId": "project-signal",
+      "model": "Claude Sonnet",
+      "status": "working",
+      "heartbeatMinutes": 15,
+      "lastAction": "Planner · Signal",
+      "bio": "Agente de demostración para planner y colaboración en Signal.",
+      "skills": [
+        "review",
+        "testing"
+      ],
+      "home": {
+        "x": 36,
+        "y": 58
+      },
+      "avatar": {
+        "bg": "#e5eedb",
+        "skin": "#f0c9ae",
+        "hair": "#3c302b",
+        "shirt": "#7e9c72",
+        "accessory": "bob"
+      }
+    },
+    {
+      "id": "mock-aster",
+      "name": "Aster",
+      "role": "Analyst",
+      "projectId": "project-archive",
+      "model": "GPT-5",
+      "status": "idle",
+      "heartbeatMinutes": 15,
+      "lastAction": "Analyst · Archive",
+      "bio": "Agente de demostración para analyst y colaboración en Archive.",
+      "skills": [
+        "qa",
+        "regression"
+      ],
+      "home": {
+        "x": 49,
+        "y": 75
+      },
+      "avatar": {
+        "bg": "#f4e4d6",
+        "skin": "#d9a07f",
+        "hair": "#6d3f2a",
+        "shirt": "#c98d6c",
+        "accessory": "curls"
+      }
+    },
+    {
+      "id": "mock-ciro",
+      "name": "Ciro",
+      "role": "Builder",
+      "projectId": "project-playground",
+      "model": "Gemini Pro",
+      "status": "reviewing",
+      "heartbeatMinutes": 15,
+      "lastAction": "Builder · PlayGround",
+      "bio": "Agente de demostración para builder y colaboración en PlayGround.",
+      "skills": [
+        "planning",
+        "issues"
+      ],
+      "home": {
+        "x": 62,
+        "y": 44
+      },
+      "avatar": {
+        "bg": "#e6edf3",
+        "skin": "#efc7a8",
+        "hair": "#25201d",
+        "shirt": "#698798",
+        "accessory": "glasses"
+      }
+    },
+    {
+      "id": "mock-faye",
+      "name": "Faye",
+      "role": "Researcher",
+      "projectId": "project-atlas",
+      "model": "GPT-5 mini",
+      "status": "working",
+      "heartbeatMinutes": 15,
+      "lastAction": "Researcher · Atlas",
+      "bio": "Agente de demostración para researcher y colaboración en Atlas.",
+      "skills": [
+        "research",
+        "docs"
+      ],
+      "home": {
+        "x": 75,
+        "y": 61
+      },
+      "avatar": {
+        "bg": "#e9e6f0",
+        "skin": "#c98f6b",
+        "hair": "#282233",
+        "shirt": "#9285a6",
+        "accessory": "headset"
+      }
+    },
+    {
+      "id": "mock-remy",
+      "name": "Remy",
+      "role": "Reviewer",
+      "projectId": "project-signal",
+      "model": "Claude Opus",
+      "status": "idle",
+      "heartbeatMinutes": 15,
+      "lastAction": "Reviewer · Signal",
+      "bio": "Agente de demostración para reviewer y colaboración en Signal.",
+      "skills": [
+        "review",
+        "testing"
+      ],
+      "home": {
+        "x": 34,
+        "y": 30
+      },
+      "avatar": {
+        "bg": "#eef0d9",
+        "skin": "#b87e5e",
+        "hair": "#54422e",
+        "shirt": "#9daa65",
+        "accessory": "cap"
+      }
+    },
+    {
+      "id": "mock-solace",
+      "name": "Solace",
+      "role": "QA",
+      "projectId": "project-archive",
+      "model": "Claude Sonnet",
+      "status": "reviewing",
+      "heartbeatMinutes": 15,
+      "lastAction": "QA · Archive",
+      "bio": "Agente de demostración para qa y colaboración en Archive.",
+      "skills": [
+        "qa",
+        "regression"
+      ],
+      "home": {
+        "x": 47,
+        "y": 47
       },
       "avatar": {
         "bg": "#f4e4e6",

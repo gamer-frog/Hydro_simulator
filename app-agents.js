@@ -42,7 +42,7 @@ function renderAgents() {
 function openAgent(id, options = {}) {
   const agent = agentById(id);
   const p = projectById(agent.projectId);
-  const events = state.activity.filter(e => e.agentId === agent.id).sort((a, b) => a.agoSeconds - b.agoSeconds).slice(0, 5);
+  const events = scopedActivity().filter(e => e.agentId === agent.id).sort((a, b) => a.agoSeconds - b.agoSeconds).slice(0, 5);
   const latest = events[0];
   markDetail('agent', agent.id, options);
   openSheet(`

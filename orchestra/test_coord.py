@@ -32,6 +32,14 @@ class ProtocolTest(unittest.TestCase):
     def state(self, root=None):
         return json.loads(self.run_cli("status", root=root).stdout)
 
+    def test_seed_has_42_mock_agents_with_valid_project_assignments(self):
+        seed = json.loads((self.root / "seed.json").read_text())
+        agents = seed["agents"]
+        project_ids = {project["id"] for project in seed["projects"]}
+        self.assertEqual(len(agents), 42)
+        self.assertEqual(len({agent["id"] for agent in agents}), 42)
+        self.assertTrue(all(agent.get("projectId") in project_ids for agent in agents))
+
     def mission(self, root=None):
         return next(x for x in self.state(root)["missions"] if x["id"] == "mission-onboarding")
 

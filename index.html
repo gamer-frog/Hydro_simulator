@@ -102,7 +102,7 @@
               <div>
                 <div class="eyebrow">OPS HEALTH</div>
                 <h2>Latido del sistema</h2>
-                <p class="block-sub">Frescura de heartbeats, claims activos y última sincronización. El auto-refresh corre cada 60 segundos.</p>
+                <p class="block-sub">Heartbeats y claims siguen el ámbito seleccionado; fuente y sincronización son del workspace. El auto-refresh corre cada 60 segundos.</p>
               </div>
               <button class="mini-button" id="opsRefresh" type="button"><span data-icon="refresh"></span> Actualizar</button>
             </div>
@@ -359,6 +359,7 @@
       <label>Título<input name="title" required maxlength="90" placeholder="Ej. Conectar alertas de deploy a Slack" /></label>
       <label>Descripción<textarea name="description" rows="4" maxlength="1200" placeholder="¿Qué hay que lograr? ¿Cómo sabemos que está listo?"></textarea></label>
       <label>Repo<select name="project" id="requestProject"></select></label>
+      <label id="requestContextField" hidden>Contexto organizativo<select name="organizationContext" id="requestContext"><option value="">Elegí cliente o división</option></select></label>
       <div class="form-row">
         <label>Prioridad<select name="priority"><option>P1</option><option>P0</option><option>P2</option><option>P3</option></select></label>
         <label>Horizonte<select name="horizon"><option value="now">Ahora</option><option value="week">Esta semana</option><option value="month">Este mes</option></select></label>

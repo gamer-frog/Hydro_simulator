@@ -37,7 +37,7 @@ function paletteItems() {
   add('Navegar', 'Agentes', 'Agent Agency y protocolo', 'users', 'agentes agents equipo agency', () => navigate('agents'));
   add('Navegar', 'Plan', 'Corto, mediano y largo plazo', 'calendar', 'plan gantt roadmap loops', () => navigate('plan'));
 
-  add('Acciones', 'Pedir una misión', 'Publica un issue en GitHub', 'plus', 'pedir crear mision issue request', () => openRequest(state.projects[0]?.id));
+  add('Acciones', 'Pedir una misión', 'Publica un issue en GitHub', 'plus', 'pedir crear mision issue request', () => openRequest());
   add('Acciones', 'Sincronizar GitHub', 'Trae issues y pulls en vivo', 'refresh', 'sync sincronizar github actualizar issues', () => syncGitHub(true));
   add('Acciones', 'Abrir conexiones', 'GitHub, Trello y credenciales', 'sliders', 'conexiones settings trello github token', () => openSettings());
   add('Acciones', 'Reproducir los últimos 15 minutos', 'Inicia el replay', 'play', 'replay reproducir 15 minutos timeline', () => { setReplay(0); navigate('world'); togglePlayback(); });
@@ -45,16 +45,16 @@ function paletteItems() {
   add('Acciones', 'Leer el protocolo', 'Cómo se unen los agentes', 'book', 'protocolo onboarding agente register claim', () => openProtocol());
   add('Acciones', 'Copiar link de esta vista', 'Deep link al estado actual', 'link', 'copiar link url deep link compartir', () => copyCurrentLink());
 
-  state.projects.forEach(project => {
+  scopedProjects().forEach(project => {
     add('Repos', project.name, `${project.repo} · ${project.issuesOpen || 0} issues`, 'cube', `repo ${project.name} ${project.repo} ${project.description || ''}`, () => navigate('world', { detail: { kind: 'project', id: project.id } }));
   });
 
-  state.agents.forEach(agent => {
+  scopedAgents().forEach(agent => {
     const project = projectById(agent.projectId);
     add('Agentes', agent.name, `${agent.role} · ${project.name}`, 'users', `agente ${agent.name} ${agent.role} ${agent.model || ''} ${(agent.skills || []).join(' ')}`, () => openAgent(agent.id));
   });
 
-  state.missions.forEach(mission => {
+  scopedMissions().forEach(mission => {
     const status = statusData(mission.status).es;
     const blocked = isBlocked(mission) ? ' · bloqueada' : '';
     add('Misiones', mission.title, `#${mission.issue || '—'} · ${status}${blocked}`, 'inbox', `mision ${mission.title} ${mission.description || ''} #${mission.issue || ''} ${(mission.labels || []).join(' ')} ${status}`, () => openMission(mission.id));

@@ -80,12 +80,62 @@ function openSettings() {
   if (!dialog.open) dialog.showModal();
 }
 
+function requestContextChoices(projects) {
+  let divisions = state.divisions;
+  let clients = state.clients;
+  if (scopeFilter.kind === 'division') {
+    divisions = divisions.filter(division => division.id === scopeFilter.id);
+    clients = clients.filter(client => client.divisionId === scopeFilter.id);
+  } else if (scopeFilter.kind === 'client') {
+    clients = clients.filter(client => client.id === scopeFilter.id);
+    const divisionIds = new Set(clients.map(client => client.divisionId));
+    divisions = divisions.filter(division => divisionIds.has(division.id));
+  } else if (scopeFilter.kind === 'project') {
+    const project = state.projects.find(item => item.id === scopeFilter.id);
+    const clientIds = new Set(project?.clientId ? [project.clientId] : []);
+    const divisionIds = new Set([project?.divisionId, ...state.clients.filter(client => clientIds.has(client.id)).map(client => client.divisionId)].filter(Boolean));
+    clients = clients.filter(client => clientIds.has(client.id));
+    divisions = divisions.filter(division => divisionIds.has(division.id));
+  } else if (scopeFilter.kind === 'repo') {
+    const visible = new Set(projects.map(project => project.id));
+    const clientIds = new Set(projects.map(project => project.clientId).filter(Boolean));
+    const divisionIds = new Set(projects.map(project => project.divisionId).filter(Boolean));
+    clients = clients.filter(client => clientIds.has(client.id));
+    divisions = divisions.filter(division => divisionIds.has(division.id));
+  }
+  return [
+    ...clients.map(client => ({ value: `client:${client.id}`, label: `Cliente · ${client.name}` })),
+    ...divisions.map(division => ({ value: `division:${division.id}`, label: `División · ${division.name}` }))
+  ];
+}
+
+function updateRequestContextVisibility() {
+  const projectId = $('#requestProject')?.value;
+  const field = $('#requestContextField');
+  const select = $('#requestContext');
+  if (!field || !select) return;
+  const needsContext = !projectId;
+  field.hidden = !needsContext;
+  select.required = needsContext;
+}
+
 function openRequest(projectId, prefill = {}) {
   const form = $('#requestForm');
   if (!form) return;
   const select = $('#requestProject');
-  select.innerHTML = state.projects.map(p => `<option value="${esc(p.id)}">${esc(p.name)} · ${esc(p.repo)}</option>`).join('');
-  select.value = projectId || state.projects[0]?.id;
+  const projects = scopedProjects();
+  select.innerHTML = `<option value="">Sin repositorio asociado · issue en ${esc(connections.githubRepo || state.workspace.repo)}</option>`
+    + projects.map(project => `<option value="${esc(project.id)}">${esc(project.name)} · ${esc(project.repo)}</option>`).join('');
+  const defaultProject = projects.find(project => project.id === projectId) || projects[0] || null;
+  select.value = defaultProject?.id || '';
+  const contextSelect = $('#requestContext');
+  const choices = requestContextChoices(projects);
+  contextSelect.innerHTML = `<option value="">Elegí cliente o división</option>`
+    + choices.map(choice => `<option value="${esc(choice.value)}">${esc(choice.label)}</option>`).join('');
+  const scopedContext = scopeFilter.kind === 'client' ? `client:${scopeFilter.id}`
+    : scopeFilter.kind === 'division' ? `division:${scopeFilter.id}` : '';
+  contextSelect.value = prefill.context || scopedContext || '';
+  updateRequestContextVisibility();
   form.title.value = prefill.title || '';
   form.description.value = prefill.description || '';
   form.priority.value = prefill.priority || 'P1';
@@ -95,6 +145,27 @@ function openRequest(projectId, prefill = {}) {
   const dialog = $('#requestDialog');
   if (!dialog.open) dialog.showModal();
   setTimeout(() => form.title.focus(), 50);
+}
+
+function requestContext(project, selected = '') {
+  if (project) {
+    return {
+      client: state.clients.find(item => item.id === project.clientId) || null,
+      division: state.divisions.find(item => item.id === project.divisionId) || null
+    };
+  }
+  let client = null;
+  let division = null;
+  if (selected.startsWith('client:')) {
+    client = state.clients.find(item => item.id === selected.slice(7)) || null;
+    division = state.divisions.find(item => item.id === client?.divisionId) || null;
+  } else if (selected.startsWith('division:')) {
+    division = state.divisions.find(item => item.id === selected.slice(9)) || null;
+  } else {
+    client = scopeFilter.kind === 'client' ? state.clients.find(item => item.id === scopeFilter.id) || null : null;
+    division = state.divisions.find(item => item.id === (client?.divisionId || (scopeFilter.kind === 'division' ? scopeFilter.id : ''))) || null;
+  }
+  return { client, division };
 }
 
 function openProtocol() {
@@ -122,19 +193,38 @@ function submitRequest(event) {
   const data = new FormData(form);
   const title = String(data.get('title') || '').trim();
   if (!title) return;
-  const project = projectById(String(data.get('project')));
-  const repo = project.repo || connections.githubRepo;
+  const projectId = String(data.get('project') || '');
+  const project = state.projects.find(item => item.id === projectId) || null;
+  const selectedContext = String(data.get('organizationContext') || '');
+  const { client, division } = requestContext(project, selectedContext);
+  if (!project && !client && !division) {
+    toast('Elegí un proyecto, cliente o división para dar contexto a la misión.');
+    return;
+  }
+  const repo = String(project?.repo || connections.githubRepo || state.workspace.repo || '').trim()
+    .replace(/^https?:\/\/github\.com\//i, '').replace(/\.git$/i, '').replace(/\/$/, '');
+  if (!/^[^/\s]+\/[^/\s]+$/.test(repo)) {
+    toast('Configurá un repositorio de issues válido (owner/repo) en Conexiones.');
+    return;
+  }
   const description = String(data.get('description') || '').trim();
   const priority = String(data.get('priority') || 'P1');
   const horizon = String(data.get('horizon') || 'now');
-  const labels = String(data.get('labels') || 'mission').split(',').map(s => s.trim()).filter(Boolean);
+  const labels = [...new Set([
+    ...String(data.get('labels') || 'mission').split(',').map(s => s.trim()).filter(Boolean),
+    ...(project ? [`project:${project.id}`] : []),
+    ...(client ? [`client:${client.id}`] : []),
+    ...(division ? [`division:${division.id}`] : [])
+  ])];
   const body = [
     `## Objetivo`,
     description || title,
     ``,
     `## Contexto`,
     `- Repo: \`${repo}\``,
-    `- Proyecto: **${project.name}**`,
+    `- Proyecto: **${project?.name || 'Sin repositorio asociado'}**`,
+    ...(client ? [`- Cliente: **${client.name}** (\`client:${client.id}\`)`] : []),
+    ...(division ? [`- División: **${division.name}** (\`division:${division.id}\`)`] : []),
     `- Horizonte: **${HORIZONS[horizon] || horizon}**`,
     `- Prioridad: **${priority}**`,
     `- Pedido por: Alex desde Conductor`,
@@ -321,8 +411,9 @@ function bindEvents() {
   $('#opsRefresh')?.addEventListener('click', () => refreshLiveSources(true));
   $('#openTrelloButton')?.addEventListener('click', openTrelloBoardOrSettings);
   $('#worldTrelloButton')?.addEventListener('click', openTrelloBoardOrSettings);
-  $('#requestMissionButton')?.addEventListener('click', () => openRequest(state.projects[0]?.id));
-  $('#homeRequestButton')?.addEventListener('click', () => openRequest(state.projects[0]?.id));
+  $('#requestProject')?.addEventListener('change', updateRequestContextVisibility);
+  $('#requestMissionButton')?.addEventListener('click', () => openRequest());
+  $('#homeRequestButton')?.addEventListener('click', () => openRequest());
   $('#projectFilterButton')?.addEventListener('click', openProjectFilter);
   $('#registerAgentButton')?.addEventListener('click', openProtocol);
   $('#readProtocolButton')?.addEventListener('click', openProtocol);

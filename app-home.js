@@ -200,15 +200,16 @@ function renderOpsAttention(freshness) {
   const el = $('#opsAttention');
   if (!el) return;
   const items = [];
+  const missions = scopedMissions();
   const warnings = Array.isArray(state.protocol?.warnings) ? state.protocol.warnings : [];
-  warnings.forEach(warning => items.push({ kind: 'warning', title: 'Protocolo', detail: warning, rank: 0 }));
-  state.missions.filter(m => m.claimStatus === 'conflict').forEach(mission => {
+  warnings.forEach(warning => items.push({ kind: 'warning', title: 'Protocolo · workspace', detail: warning, rank: 0 }));
+  missions.filter(m => m.claimStatus === 'conflict').forEach(mission => {
     items.push({ kind: 'conflict', title: 'Claim en conflicto', detail: mission.title, missionId: mission.id, rank: 1 });
   });
   freshness.filter(item => item.status === 'stale' && item.agent.status !== 'idle').forEach(item => {
     items.push({ kind: 'stale', title: 'Heartbeat vencido', detail: `${item.agent.name} · ${item.label}`, agentId: item.agent.id, rank: 2 });
   });
-  state.missions.filter(mission => isOpen(mission) && isBlocked(mission)).forEach(mission => {
+  missions.filter(mission => isOpen(mission) && isBlocked(mission)).forEach(mission => {
     const blockers = missionBlockers(mission).map(dependency => dependency.title).join(', ');
     items.push({ kind: 'blocked', title: 'En espera', detail: `${mission.title} · ${blockers}`, missionId: mission.id, rank: 3 });
   });
@@ -235,11 +236,13 @@ function renderOpsAttention(freshness) {
 function renderOpsHealth() {
   const el = $('#opsGrid');
   if (!el) return;
-  const freshness = state.agents.map(agent => ({ agent, ...agentFreshness(agent) }));
+  const agentsInScope = scopedAgents();
+  const missionsInScope = scopedMissions();
+  const freshness = agentsInScope.map(agent => ({ agent, ...agentFreshness(agent) }));
   const freshCount = freshness.filter(item => item.status === 'fresh').length;
   const warnings = Array.isArray(state.protocol?.warnings) ? state.protocol.warnings : [];
-  const conflicts = state.missions.filter(m => m.claimStatus === 'conflict').length;
-  const claimed = state.missions.filter(m => m.claimStatus === 'claimed').length;
+  const conflicts = missionsInScope.filter(m => m.claimStatus === 'conflict').length;
+  const claimed = missionsInScope.filter(m => m.claimStatus === 'claimed').length;
   const sourceLabel = sourceMode === 'repo' ? 'state.json' : 'fallback local';
   const coordinationState = warnings.length || conflicts ? 'warn' : 'ok';
   const coordinationLabel = warnings.length ? `${warnings.length} warnings` : conflicts ? `${conflicts} conflictos` : 'sin conflictos';
@@ -251,13 +254,13 @@ function renderOpsHealth() {
       <strong>${esc(sourceLabel)}</strong>
       <small>último fetch ${esc(lastSyncLabel(syncMeta.snapshotAt))}</small>
     </article>
-    <article class="ops-card ${freshCount === state.agents.length ? 'ok' : 'warn'}">
-      <span class="ops-card-top">Heartbeat <span class="ops-signal"></span></span>
-      <strong>${freshCount}/${state.agents.length}</strong>
-      <small>frescos · umbral ${Math.round((freshness[0]?.threshold || 1800) / 60)}m</small>
+    <article class="ops-card ${freshness.length ? (freshCount === freshness.length ? 'ok' : 'warn') : 'muted'}">
+      <span class="ops-card-top">Heartbeat · ${esc(scopeLabel())} <span class="ops-signal"></span></span>
+      <strong>${freshCount}/${freshness.length}</strong>
+      <small>${freshness.length ? `frescos · umbral ${Math.round((freshness[0]?.threshold || 1800) / 60)}m` : 'sin agentes asignados'}</small>
     </article>
     <article class="ops-card ${coordinationState}">
-      <span class="ops-card-top">Coordinación <span class="ops-signal"></span></span>
+      <span class="ops-card-top">Claims · ${esc(scopeLabel())} <span class="ops-signal"></span></span>
       <strong>${claimed} <small>claims</small></strong>
       <small>${esc(coordinationLabel)}</small>
     </article>
