@@ -114,7 +114,7 @@
             </button>
             <button class="book-row" data-nav="strains">
               <span class="book-num">03</span>
-              <span class="book-copy"><b>Cepas</b><small>14 autoflorecientes por Sativa, Indica y CBD, con su fuente anotada.</small></span>
+              <span class="book-copy"><b>Cepas</b><small>16 autoflorecientes por Sativa, Indica y CBD, con su fuente anotada.</small></span>
               <span class="book-arrow" aria-hidden="true">→</span>
             </button>
             <button class="book-row" data-nav="oracle">
@@ -152,7 +152,7 @@
               <h1>El catálogo,<br><em>curado.</em></h1>
               <p class="lead">Perfiles, terpenos, efectos y tiempos reales de cultivo. Toda ficha es una síntesis educativa: contrastá siempre con la información del banco de semillas.</p>
             </div>
-            <div class="head-actions"><button class="btn btn-ghost" data-nav="journal">Ver diario <span>→</span></button><button class="btn btn-lime" id="askStrainBtn">Preguntar al oráculo <span>◈</span></button></div>
+            <div class="head-actions"><button class="btn btn-ghost" data-nav="sim">Simular esta cepa <span>→</span></button><button class="btn btn-lime" id="askStrainBtn">Preguntar al oráculo <span>◈</span></button></div>
           </div>
 
           <div class="strain-featured" id="strainFeatured"></div>
@@ -394,22 +394,24 @@
           </div>
 
           <div class="lib-mode-tabs" id="libModeTabs">
-            <button class="lib-mode active" data-libmode="digest"><span class="lm-ico">◈</span><span><b>Vista digerida</b><small>Índice de sabiduría · cursos, % cargado, metadata y vínculos</small></span></button>
-            <button class="lib-mode" data-libmode="files"><span class="lm-ico">▦</span><span><b>Archivos PDF</b><small>28 recursos · búsqueda, filtros y duplicados</small></span></button>
+            <button class="lib-mode active" data-libmode="digest"><span class="lm-ico">◈</span><span><b>Vista digerida · datos que emergen</b><small>Guía completa desde los Markdown: insights, vínculos y huecos</small></span></button>
+            <button class="lib-mode" data-libmode="files"><span class="lm-ico">▦</span><span><b>Archivos PDF · ingesta</b><small>Tapas por curso/carpeta · orden físico + Markdown</small></span></button>
             <button class="lib-mode-ask" data-nav="oracle"><span>◈</span> Preguntar al índice</button>
           </div>
 
           <div id="libDigest">
             <div class="digest-top">
               <div class="digest-copy">
-                <span class="section-kicker">CURSO POR CURSO</span>
-                <h2>Qué está cargado, <em>qué falta digerir.</em></h2>
-                <p>Cada curso declara su nombre real, sus PDFs, sus páginas y el porcentaje convertido a Markdown con metadata. Los extras muestran qué categorías del curso todavía no están completas.</p>
+                <span class="section-kicker">LA INGESTA VIVE EN ARCHIVOS PDF</span>
+                <h2>Datos que <em>emergen.</em></h2>
+                <p>La ingesta (PDFs con tapa, por curso/carpeta, con Markdown) ya está en <b>Archivos PDF</b>. Esta vista es la guía de lo que emerge de esos Markdown: conceptos que se repiten, cursos que se cruzan y huecos de digestión.</p>
                 <div class="digest-quick" id="digestQuickStats"></div>
                 <button class="text-link digest-export" id="exportWisdomBtn" type="button">Exportar índice de sabiduría <span>↓</span></button>
               </div>
               <div class="digest-pipeline" id="libPipeline"></div>
             </div>
+
+            <section class="emergent-guide" id="emergentGuide" aria-label="Guía de datos que emergen"></section>
 
             <div class="lib-course-grid" id="libCourseGrid"></div>
 
@@ -569,7 +571,7 @@
         <section class="view" id="view-roadmap">
           <div class="view-head roadmap-head">
             <div>
-              <div class="eyebrow"><span class="live-dot"></span>DESARROLLO <i>/</i> <span>ROADMAP VIVO · <span id="roadmapVersion">v2.7</span></span></div>
+              <div class="eyebrow"><span class="live-dot"></span>DESARROLLO <i>/</i> <span>ROADMAP VIVO · <span id="roadmapVersion">v4.1</span></span></div>
               <h1>El camino,<br><em>sin perderlo.</em></h1>
               <p class="lead">Todo lo que queremos construir, ordenado por horizonte, impacto y dependencia. No es una lista de deseos: es el contrato de largo plazo de Verde.</p>
             </div>

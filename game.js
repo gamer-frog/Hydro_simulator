@@ -158,6 +158,7 @@
   /* ---------- navigation ---------- */
   const VIEWS = { panel: 'INICIO', strains: 'CEPAS', journal: 'DIARIO', sim: 'SIMULADOR', library: 'BIBLIOTECA', oracle: 'ORÁCULO IA', budget: 'COSTOS', process: 'PROCESO', roadmap: 'ROADMAP' };
   function navigate(target, opts = {}) {
+    if (target === 'journal') { target = 'panel'; showToast('Diario fuera de la app de estudio (ver Roadmap).'); }
     if (!VIEWS[target]) target = 'panel';
     app.view = target;
     $('#resourceDetail').classList.remove('mobile-open');
@@ -1672,6 +1673,44 @@
       <div class="wm-meta-code"><span>EJEMPLO DE RUTA</span><code>${esc(mdPath(sample))}</code><small>hash ${mdHash(sample)} · ${sample.pages} pp · ${esc(sample.code)}</small></div>
       <div class="wm-note"><span>ⓘ</span>El PDF original nunca se mueve ni se sobrescribe. Markdown y metadata son una capa derivada y reversible.</div>`;
 
+    // Guía de datos que emergen: solo desde Markdown procesado
+    const emergent = $('#emergentGuide');
+    if (emergent) {
+      const mdNow = allResources().filter(r => r.state === 'markdown');
+      const pending = allResources().filter(r => r.state !== 'markdown');
+      const multi = tagIndex().filter(t => t.courses.size > 1).slice(0, 6);
+      const gaps = courses.map(c => ({ ...c, gap: c.list.length - c.md })).filter(c => c.list.length);
+      emergent.innerHTML = `
+        <div class="emergent-head">
+          <span class="section-kicker">GUÍA · DATOS QUE EMERGEN DE LOS MARKDOWN</span>
+          <h3>Lo que ya se puede <em>estudiar</em> sin volver a la ingesta.</h3>
+        </div>
+        <div class="emergent-grid">
+          <section class="emergent-card">
+            <span class="emergent-kicker">EMERGENCIA 01</span>
+            <b>${mdNow.length} Markdown listos para estudiar</b>
+            <p>Todo lo que sigue sale de texto ordenado con metadata, no de los PDFs crudos. Si un dato no está en un Markdown, no se inventa.</p>
+            <div class="emergent-list">${mdNow.slice(0, 5).map(r => `<button data-emergent="${r.id}">${esc(r.title)} <small>${esc(r.diploma)} · ${r.pages} pp</small></button>`).join('') || '<small>Sin Markdown aún.</small>'}</div>
+          </section>
+          <section class="emergent-card">
+            <span class="emergent-kicker">EMERGENCIA 02</span>
+            <b>Conceptos que cruzan cursos</b>
+            <p>Tags que aparecen en más de una diplomatura: ahí hay comparaciones y contradicciones útiles.</p>
+            <div class="emergent-list">${multi.map(t => `<button data-tag="${esc(t.tag)}">#${esc(t.tag)} <small>${t.courses.size} cursos · ${t.ids.size} PDFs</small></button>`).join('') || '<small>Sin cruces aún.</small>'}</div>
+          </section>
+          <section class="emergent-card">
+            <span class="emergent-kicker">EMERGENCIA 03</span>
+            <b>Huecos de digestión</b>
+            <p>Cursos con menos Markdown: pedir ingesta ahí antes que buscar insights que no existen.</p>
+            <div class="emergent-list">${gaps.slice().sort((a, b) => b.gap - a.gap).slice(0, 5).map(c => `<button data-course="${c.code}">${esc(c.name)} <small>${c.md}/${c.list.length} MD · ${c.pct}%</small></button>`).join('')}</div>
+          </section>
+        </div>
+        <p class="emergent-foot">Pendientes de ingesta: <b>${pending.length}</b> PDFs. ${pending.length ? `Próximo: ${esc(pending[0].title)}. ` : ''}La ingesta se hace en <b>Archivos PDF</b>; aquí solo se estudia lo digerido.</p>`;
+      $$('#emergentGuide [data-emergent]').forEach(el => el.addEventListener('click', () => openLibraryResource(Number(el.dataset.emergent))));
+      $$('#emergentGuide [data-tag]').forEach(el => el.addEventListener('click', () => searchLibraryTag(el.dataset.tag)));
+      $$('#emergentGuide [data-course]').forEach(el => el.addEventListener('click', () => openCourseFiles(el.dataset.course)));
+    }
+
     $$('#libCourseGrid [data-course]').forEach(el => el.addEventListener('click', () => openCourseFiles(el.dataset.course)));
     $$('#wisdomIndex [data-resource]').forEach(el => el.addEventListener('click', () => openLibraryResource(Number(el.dataset.resource))));
     $$('#wisdomLinks [data-tag], #wisdomInsights [data-tag]').forEach(el => el.addEventListener('click', () => searchLibraryTag(el.dataset.tag)));
@@ -1755,15 +1794,34 @@
     $('#dupToggle').classList.toggle('active', app.dupOnly);
     $('#dupBannerText').textContent = `${all.filter(r => r.dup).length} recursos aparecen en más de una diplomatura. Verde los vincula sin borrar el original: sabés de dónde viene cada versión y dónde está guardada.`;
 
-    $('#libList').innerHTML = list.map(r => `<div class="lib-row ${app.selectedResource === r.id ? 'selected' : ''}" data-resource="${r.id}" tabindex="0" role="button">
-      <span class="lib-pdf">PDF</span>
-      <div class="lib-row-main">
-        <div class="lib-title-line"><span class="lib-title">${esc(r.title)}</span>${r.dup ? '<span class="dup-mini">DUPLICADO</span>' : ''}</div>
-        <div class="lib-meta"><b>${esc(r.diploma)}</b> · ${esc(r.module)} · ${r.year}</div>
-        <div class="lib-path">${esc(r.path)}</div>
-      </div>
-      <div class="lib-row-side"><span class="state-badge state-${r.state}">${libStateLabel(r.state)}</span><span class="lib-pages">${r.pages} pp.</span></div>
-    </div>`).join('');
+    const grouped = [];
+    list.forEach(r => {
+      const key = `${r.diploma}`;
+      let g = grouped.find(x => x.key === key);
+      if (!g) { g = { key, diploma: r.diploma, list: [] }; grouped.push(g); }
+      g.list.push(r);
+    });
+    grouped.sort((a, b) => a.diploma.localeCompare(b.diploma, 'es'));
+    $('#libList').innerHTML = grouped.map(g => `
+      <div class="lib-group-head"><span>${esc(g.diploma)}</span><small>${g.list.length} PDFs · carpeta ${esc((g.list[0].path || '').split('/')[0])}/ · ${[...new Set(g.list.map(x => x.module))].length} módulos</small></div>
+      ${g.list.map(r => {
+        const c = (window.DIPLOMAS.find(d => d.code === r.code) || {});
+        const color = c.color || '#5f7a4b';
+        const folder = (r.path || '').split('/').slice(0, 2).join('/');
+        return `<div class="lib-row lib-row-cover ${app.selectedResource === r.id ? 'selected' : ''}" data-resource="${r.id}" tabindex="0" role="button">
+          <span class="lib-cover" style="--cc:${color};--cc2:${color}33" aria-hidden="true">
+            <i>PDF</i><b>${esc((r.title || 'PDF').slice(0, 18))}</b><small>${esc(r.code || '')} · ${r.pages} pp</small><em>${r.state === 'markdown' ? 'MD ✓' : r.state === 'procesado' ? '…°' : '—'}</em>
+          </span>
+          <div class="lib-row-main">
+            <div class="lib-title-line"><span class="lib-title">${esc(r.title)}</span>${r.dup ? '<span class="dup-mini">DUPLICADO</span>' : ''}</div>
+            <div class="lib-meta"><b>${esc(r.diploma)}</b> · ${esc(r.module)} · ${r.year} · ${r.pages} pp</div>
+            <div class="lib-path"><span>Carpeta</span>${esc(folder)}<i>·</i><span>Markdown</span>${esc(mdPath(r))}</div>
+            <div class="lib-tags">${(r.tags || []).slice(0, 4).map(t => `<span>#${esc(t)}</span>`).join('')}</div>
+          </div>
+          <div class="lib-row-side"><span class="state-badge state-${r.state}">${libStateLabel(r.state)}</span><span class="lib-pages">${resourceProgress(r)}%</span></div>
+        </div>`;
+      }).join('')}
+    `).join('');
     $$('#libList .lib-row').forEach(el => {
       const open = () => {
         app.selectedResource = Number(el.dataset.resource);

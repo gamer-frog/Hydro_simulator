@@ -4,7 +4,7 @@
 const H = (t, status, horizon, effort, note, metric) => ({ t, status, horizon, effort, note, metric });
 
 window.ROADMAP = {
-  version: 'v4.1 · noviembre 2026',
+  version: 'v4.2 · noviembre 2026',
   northStar: 'Una app personal de estudio del cannabis medicinal en Argentina: entender un batch completo —de semilla a frasco— simulándolo, cruzándolo con tu biblioteca y viendo el porqué de cada evento.',
   statement: 'Verde no es un diario de cultivo. Es un laboratorio de comprensión: elegir cepa, configurar y SIMULAR todo el ciclo con timechart, un índice de sabiduría que conecta PDFs, y un banco de pruebas de estrategias comparables. El roadmap es la memoria del proyecto: lo que ya está, lo que falta, lo que aprendimos de otras apps y lo que decidimos no copiar.',
   horizons: [
@@ -310,6 +310,8 @@ window.ROADMAP = {
         H('Metadata visible por PDF: ruta, md, hash, idioma, tags', 'done', 'h0', 'S', 'Trazabilidad mínima en la ficha del recurso.', '7 campos'),
         H('Pipeline de digestión con % por etapa', 'done', 'h0', 'S', 'Ingesta, OCR, metadata, Markdown, embeddings, grafo.', '7 etapas'),
         H('Exportar el índice de sabiduría en Markdown', 'done', 'h0', 'S', 'Curso, módulo, estado, ruta Markdown, hash y vínculos en un solo archivo.', '1 archivo'),
+        H('Tapas de PDF por curso/carpeta', 'done', 'h0', 'M', 'Ingesta visual: cada PDF con tapa, curso, módulo, carpeta física y ruta Markdown.', '28 tapas'),
+        H('Vista digerida como datos que emergen', 'done', 'h0', 'M', 'Guía completa desde los Markdown: listos, cruces entre cursos y huecos de digestión.', '3 emergencias'),
         H('Parser real de PDF → Markdown estructurado', 'now', 'h1', 'L', 'Encabezados, tablas, figuras, notas al pie y fórmulas.', '28/28 PDFs'),
         H('OCR de respaldo para PDFs escaneados', 'now', 'h1', 'L', 'Con confianza por página y corrección manual.', '>95% texto'),
         H('Metadata automática: curso, módulo, año, idioma, conceptos', 'next', 'h1', 'M', 'Sugerir y dejar confirmar; nunca sobrescribir el original.', '10 campos'),
