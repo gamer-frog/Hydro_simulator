@@ -6,6 +6,53 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const norm = (s) => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
+  /* ---------- parser real PDF → Markdown (pdf.js, local) ---------- */
+  if (window.pdfjsLib) {
+    try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch {}
+  }
+  async function pdfToMarkdown(file, title) {
+    if (!window.pdfjsLib || !file) return { md: '', pages: 0, chars: 0, headings: [], failed: true, reason: 'pdf.js no cargado' };
+    try {
+      const buf = await file.arrayBuffer();
+      const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
+      const pages = pdf.numPages;
+      const out = [`# ${title}`, '', `> Convertido desde PDF: ${file.name} · ${pages} páginas · sin subir a terceros.`, ''];
+      const headings = [];
+      let chars = 0;
+      for (let p = 1; p <= pages; p++) {
+        const page = await pdf.getPage(p);
+        const tc = await page.getTextContent();
+        let txt = '';
+        tc.items.forEach((it, i) => {
+          const s = String(it.str || '');
+          if (!s) return;
+          txt += s;
+          if (it.hasEOL) txt += '\n';
+          else if (it.transform && tc.items[i + 1]?.transform && Math.abs(tc.items[i + 1].transform[5] - it.transform[5]) > 3) txt += '\n';
+          else txt += ' ';
+        });
+        const clean = txt.replace(/[ \t]+/g, ' ').replace(/\n\s*\n+/g, '\n\n').trim();
+        chars += clean.length;
+        if (!clean) continue;
+        out.push(`## Página ${p}`);
+        const lines = clean.split('\n').map(x => x.trim()).filter(Boolean);
+        for (const line of lines) {
+          if (line.length <= 70 && (line === line.toUpperCase() && /[A-ZÁÉÍÓÚÑ]/.test(line) || /^M[óo]dulo/.test(line) || /^Cap[íi]tulo/.test(line))) {
+            if (headings.length < 20) headings.push(line.slice(0, 80));
+            out.push(`\n### ${line}\n`);
+          } else if (line.length > 1) {
+            out.push(line);
+          }
+        }
+        out.push('');
+      }
+      const md = out.join('\n').slice(0, 60000);
+      return { md, pages, chars, headings, failed: false };
+    } catch (e) {
+      return { md: '', pages: 0, chars: 0, headings: [], failed: true, reason: String(e && e.message || e).slice(0, 120) };
+    }
+  }
+
   const STAGES = [
     { name: 'Plántula', from: 1, pill: 'PLÁNTULA' },
     { name: 'Crecimiento', from: 12, pill: 'CRECIMIENTO' },
@@ -1922,7 +1969,7 @@
       const f = e.target.files?.[0];
       if (f) { $('#dropTitle').textContent = f.name; $('#dropSub').textContent = `${(f.size / 1024 / 1024).toFixed(1)} MB · listo para indexar`; }
     });
-    $('#addForm')?.addEventListener('submit', (e) => {
+    $('#addForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const file = $('#fileInput')?.files?.[0];
       const diploma = $('#addDiploma')?.value || 'Cultivo Interior';
@@ -1934,24 +1981,35 @@
         const other = norm(r.title);
         return other === cleanTitle || (cleanTitle.length > 4 && other.includes(cleanTitle)) || (other.length > 4 && cleanTitle.includes(other));
       });
+      const status = $('#parseStatus');
+      if (status) status.textContent = 'Convirtiendo con pdf.js…';
+      let parsed = { md: '', pages: file ? 1 : 0, chars: 0, headings: [], failed: true, reason: 'sin archivo' };
+      if (file) parsed = await pdfToMarkdown(file, title.charAt(0).toUpperCase() + title.slice(1));
+      const ok = file && !parsed.failed;
       const resource = {
         id: Math.max(...allResources().map(r => r.id), 0) + 1,
         title: title.charAt(0).toUpperCase() + title.slice(1),
-        diploma, code: 'AP', module, year: 2026, pages: 1, state: 'pendiente',
-        tags: ['aporte', diploma.toLowerCase()], path: rawPath,
+        diploma, code: 'AP', module, year: 2026,
+        pages: ok ? parsed.pages : 1,
+        state: ok ? 'markdown' : 'pendiente',
+        tags: ['aporte', diploma.toLowerCase(), ...(parsed.headings || []).slice(0, 3).map(h => norm(h).slice(0, 20))],
+        path: rawPath,
         dup: existing ? (existing.dup || 'manual') : null, updated: '6 nov 2026',
-        summary: 'Recurso aportado por el usuario. Pendiente de procesamiento a Markdown para búsqueda semántica.'
+        summary: ok ? (parsed.md.replace(/^#.*$/m, '').trim().slice(0, 220) || 'Markdown generado desde el PDF.') : 'PDF agregado sin archivo legible o sin texto extraíble. Pendiente de procesamiento.',
+        mdText: ok ? parsed.md.slice(0, 20000) : '',
+        mdChars: parsed.chars || 0
       };
       app.userResources.push(resource);
       app.selectedResource = resource.id;
       persist();
       $('#addModal').classList.remove('open');
       $('#addForm').reset();
+      if (status) status.textContent = 'Listo: se extrae texto página por página y se crea el Markdown con metadata y hash.';
       $('#dropTitle').textContent = 'Arrastrá un PDF o hacé clic';
-      $('#dropSub').textContent = 'Máx. 40 MB · se indexa localmente';
+      $('#dropSub').textContent = 'Máx. 40 MB · se procesa localmente, sin subir a terceros';
       libFiltersReady = false;
       renderLibrary();
-      showToast(existing ? 'Aportado y vinculado a un duplicado existente.' : 'Recurso añadido al índice.');
+      showToast(ok ? `Convertido: ${parsed.pages} páginas · ${fmt(parsed.chars)} caracteres → Markdown.` : `Agregado pendiente (${parsed.reason || 'sin texto extraíble'}).`);
     });
   }
 

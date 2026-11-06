@@ -10,10 +10,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="views.css" />
-  <link rel="stylesheet" href="panels.css" />
-  <link rel="stylesheet" href="verde-v3.css" />
+  <link rel="stylesheet" href="styles.css?v=43" />
+  <link rel="stylesheet" href="views.css?v=43" />
+  <link rel="stylesheet" href="panels.css?v=43" />
+  <link rel="stylesheet" href="verde-v3.css?v=43" />
 </head>
 <body>
   <div class="app">
@@ -49,13 +49,6 @@
           <button class="nav-item" data-nav="process" title="Proceso"><span class="nav-ico">◷</span><span class="nav-text">Proceso</span></button>
           <button class="nav-item" data-nav="roadmap" title="Roadmap"><span class="nav-ico">◇</span><span class="nav-text">Roadmap</span><em id="navRoad">0%</em></button>
         </nav>
-      </div>
-
-      <div class="legal-mini">
-        <div class="legal-mini-top"><span class="live-dot"></span><b>Autocultivo · AR</b><span class="legal-mini-year">2026</span></div>
-        <div class="legal-mini-space"><strong>15</strong><span>m² máx.<br>3 × 5 m</span></div>
-        <div class="legal-mini-plants"><span>9 plantas autoflorecientes</span><span class="legal-check">✓</span></div>
-        <p>Marco educativo. Verificá tu inscripción REPROCANN y la normativa vigente.</p>
       </div>
 
       <div class="side-user">
@@ -692,7 +685,7 @@
 
   <div class="modal-backdrop" id="resultModal"><div class="modal result-modal"><button class="modal-close" data-close="resultModal" aria-label="Cerrar">×</button><span class="section-kicker">RESULTADO DE TEMPORADA</span><h2 id="resultTitle">Cosecha completada.</h2><div class="result-grid"><div><span>COSECHA TOTAL</span><b id="resultYield">—</b></div><div><span>COSTO ESTIMADO</span><b id="resultCost">—</b></div><div><span>COSTO POR GRAMO</span><b id="resultPerGram">—</b></div><div><span>PLANTAS SANAS</span><b id="resultHealthy">—</b></div></div><p class="result-copy" id="resultCopy"></p><div class="result-lessons" id="resultLessons"></div><div class="result-actions"><button class="btn btn-ghost" data-close="resultModal">Seguir revisando</button><button class="btn btn-lime" id="restartFromResult">Nueva temporada <span>↺</span></button></div></div></div>
 
-  <div class="modal-backdrop" id="addModal"><div class="modal add-modal"><button class="modal-close" data-close="addModal" aria-label="Cerrar">×</button><span class="section-kicker">APORTAR A LA BIBLIOTECA</span><h2>Sumá un PDF con su origen.</h2><p>El archivo queda pendiente de procesamiento. Guardamos la diplomatura y la carpeta para que nunca pierda contexto.</p><form id="addForm"><label class="dropzone" id="dropzone"><input type="file" id="fileInput" accept="application/pdf" /><span class="drop-ico">⇧</span><b id="dropTitle">Arrastrá un PDF o hacé clic</b><small id="dropSub">Máx. 40 MB · se indexa localmente</small></label><div class="control-row"><label class="field"><span>Diplomatura</span><select id="addDiploma"><option>Cultivo Interior</option><option>Agroecología Aplicada</option><option>Cannabis Medicinal</option><option>Extracción y Transformados</option><option>Gestión y Presupuesto</option></select></label><label class="field"><span>Módulo / clase</span><input id="addModule" placeholder="Ej. Módulo 4 · Riego" /></label></div><label class="field"><span>Carpeta de origen</span><input id="addPath" placeholder="Ej. 02_Diplomaturas/CultivoInterior/M4/riego.pdf" /></label><div class="quick-note"><span>ⓘ</span>Se guarda metadato y nombre de archivo en esta demo. El texto se procesará a Markdown en la próxima etapa.</div><button class="btn btn-lime full" type="submit">Añadir al índice <span>+</span></button></form></div></div>
+  <div class="modal-backdrop" id="addModal"><div class="modal add-modal"><button class="modal-close" data-close="addModal" aria-label="Cerrar">×</button><span class="section-kicker">APORTAR A LA BIBLIOTECA · PARSER REAL</span><h2>Sumá un PDF y convertilo a Markdown.</h2><p>El parser extrae texto con pdf.js y genera Markdown estructurado (título, páginas, encabezados). El PDF original queda en `pdf/`, el Markdown en `md/`.</p><form id="addForm"><label class="dropzone" id="dropzone"><input type="file" id="fileInput" accept="application/pdf" /><span class="drop-ico">⇧</span><b id="dropTitle">Arrastrá un PDF o hacé clic</b><small id="dropSub">Máx. 40 MB · se procesa localmente, sin subir a terceros</small></label><div class="control-row"><label class="field"><span>Diplomatura</span><select id="addDiploma"><option>Cultivo Interior</option><option>Agroecología Aplicada</option><option>Cannabis Medicinal</option><option>Extracción y Transformados</option><option>Gestión y Presupuesto</option></select></label><label class="field"><span>Módulo / clase</span><input id="addModule" placeholder="Ej. Módulo 4 · Riego" /></label></div><label class="field"><span>Carpeta de origen</span><input id="addPath" placeholder="Ej. 02_Diplomaturas/CultivoInterior/M4/riego.pdf" /></label><div class="quick-note"><span>ⓘ</span><span id="parseStatus">Listo: se extrae texto página por página y se crea el Markdown con metadata y hash.</span></div><button class="btn btn-lime full" type="submit">Añadir y convertir a Markdown <span>+</span></button></form></div></div>
 
   <div class="modal-backdrop" id="strainModal"><div class="strain-sheet" id="strainSheet"></div></div>
 
@@ -715,9 +708,10 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="library.js"></script>
-  <script src="strains.js"></script>
-  <script src="roadmap.js"></script>
-  <script src="game.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="library.js?v=43"></script>
+  <script src="strains.js?v=43"></script>
+  <script src="roadmap.js?v=43"></script>
+  <script src="game.js?v=43"></script>
 </body>
 </html>

@@ -1033,3 +1033,21 @@ button.book-row{appearance:none;-webkit-appearance:none}
 .oracle-fragment q{display:block;font-size:10px;line-height:1.55;color:#b7c2a6;font-style:italic;quotes:'“' '”'}
 .oracle-fragment small{display:block;font:400 7px var(--mono);color:#6d7760;margin-top:4px;overflow-wrap:anywhere}
 .msg-body .cite{font:500 8px var(--mono);color:#8b947e;background:rgba(235,241,214,.05);border-radius:4px;padding:2px 5px;margin-right:3px}
+
+/* ---- biblioteca más clara (v4.3) ---- */
+.lib-mode b{font-size:12.5px !important}
+.lib-mode small{font-size:10px !important;line-height:1.45}
+.digest-copy h2{font-size:28px !important}
+.digest-copy p{font-size:12px !important;line-height:1.6}
+.lib-cover{width:74px !important;height:98px !important;padding:9px 8px 7px !important}
+.lib-cover b{font-size:10px !important;line-height:1.3}
+.lib-cover small{font-size:7.5px !important}
+.lib-cover i{font-size:8px !important}
+.lib-title{font-size:12px !important;font-weight:700}
+.lib-meta{font-size:10px !important}
+.lib-path{font-size:9px !important}
+.emergent-card>b{font-size:13px !important}
+.emergent-card>p{font-size:10.5px !important;line-height:1.6}
+.emergent-list button{font-size:11px !important}
+.wisdom-head h2{font-size:22px !important}
+.wisdom-head p{font-size:11px !important}
