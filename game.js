@@ -45,11 +45,6 @@
       { name: 'Golpe sagrado', icon: '⚔', type: 'damage', cost: 18, damage: [24, 34], range: 1, color: '#ffd36e' },
       { name: 'Remo', icon: '✧', type: 'remove', cost: 16, color: '#b895ff' }
     ] },
-    ranger: { label: 'CAZADOR', body: 3, head: 3, hp: 105, mana: 95, skills: [
-      { name: 'Flecha certera', icon: '➶', type: 'damage', cost: 16, damage: [22, 32], range: 6, color: '#c9e177' },
-      { name: 'Hierbas', icon: '✚', type: 'healAlly', cost: 20, heal: 30, color: '#8ee2a3' },
-      { name: 'Flecha venenosa', icon: '☠', type: 'damage', cost: 27, damage: [32, 43], range: 7, color: '#b895ff' }
-    ] }
   };
   const STEP_DURATION = .115;
   const NPC_AIM_DURATION = .58;
@@ -770,8 +765,8 @@
     if (!player) return;
     $('healthBar').style.width = `${player.hp / player.maxHp * 100}%`;
     $('healthValue').textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
-    $('manaBar').style.width = `${player.mana / player.maxMana * 100}%`;
-    $('manaValue').textContent = `${Math.floor(player.mana)} / ${player.maxMana}`;
+    $('manaBar').style.width = `${player.maxMana ? player.mana / player.maxMana * 100 : 0}%`;
+    $('manaValue').textContent = player.maxMana ? `${Math.floor(player.mana)} / ${player.maxMana}` : '—';
     $('healthPotionCount').textContent = potionInventory.health;
     $('manaPotionCount').textContent = potionInventory.mana;
     $('healthPotion').disabled = !player.alive || potionInventory.health <= 0 || player.hp >= player.maxHp;
