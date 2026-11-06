@@ -1014,3 +1014,15 @@ body.side-collapsed .side-user{justify-content:center;border-top:0;margin-top:8p
 .emergent-foot b{color:#b9c4a9}
 @media(max-width:1080px){.emergent-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:700px){.emergent-grid{grid-template-columns:1fr}.lib-cover{width:52px;height:70px}.lib-group-head{flex-direction:column;align-items:flex-start;gap:2px}.lib-group-head small{text-align:left}}
+
+/* ---- fix barras blancas: fondo explícito sin depender de variables ---- */
+.book-index{background:#10140d !important;border:1px solid rgba(235,241,214,.12) !important}
+.book-row{background:#10140d !important;color:#f2efdf !important}
+.book-row:hover{background:#151b10 !important}
+.book-batch-line{background:#10140d !important;border:1px solid rgba(235,241,214,.12) !important;color:#f2efdf !important}
+.book-row .book-num{color:#8b947e !important}
+.book-row .book-copy b{color:#e6ebd9 !important}
+.book-row .book-copy small{color:#8b947e !important}
+.book-row .book-arrow{color:#6d7760 !important}
+.book-row-roadmap{background:linear-gradient(90deg,rgba(216,242,107,.07),#10140d 55%) !important}
+button.book-row{appearance:none;-webkit-appearance:none}
