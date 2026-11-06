@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HydroHarvest — Hydroponics Business Simulator</title>
+<meta name="description" content="HydroHarvest is a 3D hydroponics business simulation sandbox. Grow NFT leafy greens, Dutch bucket tomatoes and vertical towers, manage pH / EC / water, beat the market, fulfil contracts and build your indoor farming empire." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<canvas id="scene"></canvas>
+
+<!-- ══════════ TOP HUD ══════════ -->
+<header id="hud" class="hidden-until-start">
+  <div class="hud-group hud-left">
+    <div class="logo"><span class="logo-leaf">🌱</span><div class="logo-text"><strong>HYDROHARVEST</strong><small>HYDROPONICS BUSINESS SIM</small></div></div>
+    <div class="pill" id="day-pill" title="Day & time of day">
+      <span id="weather-icon">☀️</span>
+      <div class="day-pill-text"><strong id="day-label">Day 1</strong><small id="clock-label">06:00 · Sunny 27°C</small></div>
+    </div>
+    <div class="speed-group" role="group" aria-label="Simulation speed">
+      <button class="speed-btn" id="btn-pause" title="Pause (Space)">⏸</button>
+      <button class="speed-btn active" id="btn-s1" title="Normal speed (1)">▶</button>
+      <button class="speed-btn" id="btn-s2" title="Fast (2)">▶▶</button>
+      <button class="speed-btn" id="btn-s3" title="Very fast (3)">▶▶▶</button>
+    </div>
+  </div>
+
+  <div class="hud-group hud-right">
+    <div class="cash-block" id="cash-block" title="Cash on hand">
+      <small>CASH</small><strong id="cash-label">$2,500</strong>
+    </div>
+    <div class="rep-block" title="Reputation — earn it by delivering contracts on time">
+      <small>REPUTATION</small><strong id="rep-label">★★★☆☆</strong>
+    </div>
+    <div class="networth-block" title="Net worth = cash + inventory value + bed value">
+      <small>NET WORTH</small><strong id="networth-label">$2,500</strong>
+    </div>
+    <nav class="hud-buttons">
+      <button class="hud-btn accent" id="btn-build" title="Build a new grow bed (B)">🛠️ <span>Build</span></button>
+      <button class="hud-btn" id="btn-market" title="Sell produce at market prices (M)">📈 <span>Market</span></button>
+      <button class="hud-btn" id="btn-contracts" title="Contracts & orders (C)">📋 <span>Contracts</span><b class="badge hidden" id="contracts-badge">0</b></button>
+      <button class="hud-btn" id="btn-upgrades" title="Upgrades & equipment (U)">⚙️ <span>Upgrades</span></button>
+      <button class="hud-btn" id="btn-goals" title="Milestones & rewards (G)">🎯 <span>Goals</span></button>
+      <button class="hud-btn icon-only" id="btn-mute" title="Toggle sound">🔊</button>
+      <button class="hud-btn icon-only" id="btn-help" title="How to play (H)">❔</button>
+      <button class="hud-btn icon-only" id="btn-menu" title="Menu">☰</button>
+    </nav>
+  </div>
+</header>
+
+<!-- ══════════ BED PANEL (left) ══════════ -->
+<aside id="bed-panel" class="hidden">
+  <div class="panel-head">
+    <div>
+      <small class="panel-kicker">GROW UNIT</small>
+      <h2 id="bed-title">NFT Channel Table</h2>
+    </div>
+    <div class="panel-head-right">
+      <span class="status-dot" id="bed-status-dot" title="Condition"></span>
+      <button class="icon-btn" id="bed-close" title="Close (Esc)">✕</button>
+    </div>
+  </div>
+
+  <!-- Empty bed: pick a crop -->
+  <div id="seed-section">
+    <p class="panel-sub">Choose what to plant <span class="dim">(deducts seed cost per bed)</span></p>
+    <div id="seed-options"></div>
+  </div>
+
+  <!-- Growing bed -->
+  <div id="grow-section" class="hidden">
+    <div class="crop-row">
+      <div class="crop-icon" id="crop-icon">🥬</div>
+      <div class="crop-meta">
+        <strong id="crop-name">Lettuce</strong>
+        <small id="crop-stage">Seedling · Day 1 of ~2</small>
+      </div>
+      <div class="crop-health"><small>HEALTH</small><strong id="health-label">100</strong></div>
+    </div>
+    <div class="bar-block"><div class="bar-label"><span>GROWTH</span><span id="growth-pct">0%</span></div><div class="bar growth"><div id="growth-fill"></div></div></div>
+    <div class="bar-block"><div class="bar-label"><span>💧 NUTRIENT SOLUTION</span><span id="water-label">40 / 40 L</span></div><div class="bar water"><div id="water-fill"></div></div></div>
+    <div class="meter-row">
+      <div class="meter ph"><div class="bar-label"><span>pH</span><span id="ph-label">6.2</span></div><div class="meter-track"><div class="meter-ideal" id="ph-ideal"></div><div class="meter-pin" id="ph-pin"></div></div></div>
+      <div class="meter ec"><div class="bar-label"><span>EC <em>mS/cm</em></span><span id="ec-label">1.9</span></div><div class="meter-track"><div class="meter-ideal" id="ec-ideal"></div><div class="meter-pin" id="ec-pin"></div></div></div>
+    </div>
+    <p id="condition-hint" class="condition-hint">Conditions are perfect. Plants are thriving.</p>
+    <div class="dose-row">
+      <button class="dose-btn" id="dose-water" title="Refill nutrient solution (+30 L)">💧 Refill <small>$3</small></button>
+      <button class="dose-btn" id="dose-ec" title="Add concentrated A+B nutrients (+0.4 EC)">🧪 Nutrients <small>$2</small></button>
+      <button class="dose-btn" id="dose-phdown" title="Lower pH by 0.4 (pH Up)">⬇️ pH− <small>$1</small></button>
+      <button class="dose-btn" id="dose-phup" title="Raise pH by 0.4 (pH Down)">⬆️ pH+ <small>$1</small></button>
+    </div>
+    <div class="panel-actions">
+      <button class="btn primary big" id="btn-harvest" disabled>Harvest</button>
+      <button class="btn ghost" id="btn-clear" title="Remove crop and keep the bed">🗑️ Clear</button>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════ BUILD BAR ══════════ -->
+<div id="build-bar" class="hidden">
+  <div class="build-hint">BUILD MODE — click a free spot in the greenhouse · <b>Esc</b> to cancel</div>
+  <div class="build-cards" id="build-cards"></div>
+</div>
+
+<!-- ══════════ NEXT GOAL TRACKER ══════════ -->
+<button id="goals-mini" title="Open goals"><span>🎯</span><span id="goals-mini-text">First Sprout — plant your first crop ($75)</span></button>
+
+<!-- toasts + floating popups -->
+<div id="toasts"></div>
+<div id="popups"></div>
+
+<!-- ══════════ MODALS ══════════ -->
+<div class="modal hidden" id="modal-market" role="dialog" aria-modal="true">
+  <div class="modal-card wide">
+    <div class="modal-head"><div><small class="panel-kicker">PRODUCE EXCHANGE</small><h2>Market Prices <span class="live-dot"></span></h2></div><button class="icon-btn" data-close-modal>✕</button></div>
+    <p class="modal-sub">Prices drift every day. Sell now or hold stock for a better day — or lock premium rates in <button class="link-like" id="market-to-contracts">Contracts</button>.</p>
+    <div id="market-rows" class="market-rows"></div>
+    <div class="modal-foot"><div>Inventory value: <strong id="market-inventory-value">$0</strong></div><button class="btn primary" id="market-sell-all">Sell Everything</button></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-contracts" role="dialog" aria-modal="true">
+  <div class="modal-card wide">
+    <div class="modal-head"><div><small class="panel-kicker">ORDER BOARD</small><h2>Contracts</h2></div><button class="icon-btn" data-close-modal>✕</button></div>
+    <p class="modal-sub">Fulfil orders before the deadline for a <strong>+35% premium</strong> and reputation. Fail one and your name takes a hit.</p>
+    <h3 class="section-title">Available Offers</h3>
+    <div id="contract-offers" class="contract-list"></div>
+    <h3 class="section-title">Active Orders</h3>
+    <div id="contract-active" class="contract-list"></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-upgrades" role="dialog" aria-modal="true">
+  <div class="modal-card wide">
+    <div class="modal-head"><div><small class="panel-kicker">EQUIPMENT SHOP</small><h2>Upgrades</h2></div><button class="icon-btn" data-close-modal>✕</button></div>
+    <div id="upgrade-grid" class="upgrade-grid"></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-goals" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <div class="modal-head"><div><small class="panel-kicker">MILESTONES</small><h2>Goals &amp; Rewards</h2></div><button class="icon-btn" data-close-modal>✕</button></div>
+    <div id="goals-list" class="goals-list"></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-help" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <div class="modal-head"><div><small class="panel-kicker">GROWER HANDBOOK</small><h2>How to Play</h2></div><button class="icon-btn" data-close-modal>✕</button></div>
+    <div class="help-body">
+      <h3>🌱 1 · Plant</h3><p>Click a grow bed to select it, pick a crop, and watch it germinate. Leaves like Lettuce thrive in <b>NFT channels</b>, fruiting crops (Tomato, Pepper, Cucumber) need <b>Dutch buckets</b>, Strawberries love <b>Vertical Towers</b>.</p>
+      <h3>💧 2 · Care</h3><p>Each bed sips nutrient solution. Keep <b>pH between 5.5–6.5</b> and <b>EC near the crop's ideal band</b>. If the tank runs dry or chemistry drifts off, growth stalls and plants sicken. Use the dose buttons — or buy the <b>Auto-Doser</b> and relax.</p>
+      <h3>📈 3 · Sell</h3><p>Harvested produce goes to your warehouse. Prices move daily — open <b>Market (M)</b> to sell, or lock in premiums via <b>Contracts (C)</b>. Reputation makes buyers pay more.</p>
+      <h3>🏭 4 · Expand</h3><p><b>Build (B)</b> lets you place more beds anywhere in the greenhouse. Reinvest in <b>LEDs, HVAC, rainwater harvesting and marketing</b>. Weather shifts daily — heatwaves punish unshaded crops.</p>
+      <h3>⌨️ Keys</h3><p class="keys"><kbd>Space</kbd> pause · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> speed / build-card · <kbd>B</kbd> build · <kbd>M</kbd> market · <kbd>C</kbd> contracts · <kbd>U</kbd> upgrades · <kbd>G</kbd> goals · <kbd>H</kbd> help · <kbd>Q</kbd>/<kbd>E</kbd> rotate · <kbd>WASD</kbd>/<kbd>arrows</kbd> pan · <kbd>wheel</kbd> zoom · <kbd>Esc</kbd> close/cancel</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-menu" role="dialog" aria-modal="true">
+  <div class="modal-card narrow">
+    <div class="modal-head"><div><small class="panel-kicker">PAUSED</small><h2>Menu</h2></div><button class="icon-btn" data-close-modal>✕</button></div>
+    <div class="menu-actions">
+      <button class="btn primary big" id="menu-resume">▶ Resume</button>
+      <button class="btn" id="menu-save">💾 Save Game</button>
+      <button class="btn" id="menu-help">❔ How to Play</button>
+      <button class="btn" id="menu-mute">🔊 Toggle Sound</button>
+      <button class="btn danger" id="menu-restart">↻ Restart Run</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-gameover" role="dialog" aria-modal="true">
+  <div class="modal-card narrow center">
+    <div class="gameover-stamp">BANKRUPT</div>
+    <p class="modal-sub">The bank called in the greenhouse. Your hydroponic journey ends… this time.</p>
+    <div class="gameover-stats" id="gameover-stats"></div>
+    <button class="btn primary big" id="gameover-restart">🌱 Start a New Farm</button>
+  </div>
+</div>
+
+<!-- ══════════ TITLE SCREEN ══════════ -->
+<div id="title-screen">
+  <div class="title-inner">
+    <div class="title-badge">3D SANDBOX · DESKTOP</div>
+    <h1 class="title-logo">HYDRO<span>HARVEST</span></h1>
+    <p class="title-tag">Grow greens in water. Beat the market.<br/>Build your hydroponic empire — one nutrient film at a time.</p>
+    <div class="title-actions">
+      <button class="btn primary huge" id="btn-new-game">🌱 New Game</button>
+      <button class="btn huge hidden" id="btn-continue">▶ Continue</button>
+    </div>
+    <div class="title-tips"><span>🥬 Leafy NFT</span><span>🍅 Fruiting buckets</span><span>🍓 Tower strawberries</span><span>📈 Live market</span></div>
+  </div>
+  <div class="title-foot">HydroHarvest — a hydroponics business simulación sandbox · progress saves locally in your browser</div>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script src="js/data.js"></script>
+<script src="js/world.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
