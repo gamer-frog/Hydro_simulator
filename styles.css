@@ -133,3 +133,24 @@
  .roadmap-card{padding:12px}
  .roadmap-card li{font-size:9px}
 }
+
+/* Combat HUD interactions */
+.arena-layout{grid-template-columns:minmax(0,1fr)}
+.arena-layout.scoreboard-open{grid-template-columns:minmax(0,1fr) 250px}
+.scoreboard-toggle{height:27px;padding:0 9px;border:1px solid #62563a;background:#292b20;color:#dec98e;font:8px var(--mono);letter-spacing:.7px;white-space:nowrap;transition:background .15s,border-color .15s}
+.scoreboard-toggle:hover,.scoreboard-toggle:focus-visible,.scoreboard-toggle[aria-expanded="true"]{border-color:#bca265;background:#383525;outline:none}
+.scoreboard-toggle:first-letter{font-size:14px;color:var(--gold)}
+.match-actions{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.spell-slot.active-spell{border-color:#ddbd70;background:#393523;box-shadow:inset 0 0 0 1px #8e774a,0 0 12px #d5ae6626}
+.spell-slot.active-spell .spell-name{color:#f0d892}
+.spell-slot[aria-pressed="true"]:after{content:'LISTO';position:absolute;right:3px;top:3px;color:#edcf82;font:6px var(--mono);letter-spacing:.4px}
+.spell-hint{min-width:145px;padding-left:9px}
+@media(max-width:1050px){.arena-layout.scoreboard-open{grid-template-columns:minmax(0,1fr) 220px}}
+@media(max-width:760px){
+ .arena-layout.scoreboard-open{display:block}
+ .arena-layout.scoreboard-open .side-panel{display:flex;margin-top:12px;max-height:70vh;overflow:auto}
+ .scoreboard-toggle{height:26px;padding:0 6px;font-size:6px;letter-spacing:.3px}
+ .match-actions{gap:4px}
+ .spell-hint{min-width:0;padding-left:3px}
+}
+@media(max-width:430px){.scoreboard-toggle span{display:none}.scoreboard-toggle{width:29px;padding:0;font-size:0}.scoreboard-toggle:first-letter{font-size:16px}}
