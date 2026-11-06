@@ -229,20 +229,33 @@ async function syncGitHub(show = true) {
 /* ------------------------------------------------------------------ */
 /* Trello machine state                                                */
 /* ------------------------------------------------------------------ */
+function trelloCardProjectId(card) {
+  const labels = (card.labels || []).map(label => String(label.name || '').trim().toLowerCase()).filter(Boolean);
+  const matches = state.projects.filter(project => labels.some(label =>
+    label === `project:${project.id}` || label === project.id.toLowerCase() ||
+    label === `repo:${project.repo}` || label === project.repo.toLowerCase() ||
+    label === project.name.toLowerCase()
+  ));
+  return matches.length === 1 ? matches[0].id : null;
+}
+
 function boardColumns() {
   if (trello.live && trello.lists.length) {
+    const visibleIds = scopedProjectIds();
     return trello.lists.map(list => ({
       key: list.id,
       name: list.name,
       short: list.name.length > 12 ? list.name.slice(0, 11) + '…' : list.name,
-      cards: trello.cards.filter(card => card.idList === list.id).slice(0, 8).map((card, i) => {
+      cards: trello.cards.filter(card => card.idList === list.id && visibleIds.has(trelloCardProjectId(card))).slice(0, 8).map(card => {
         const labelNames = (card.labels || []).map(l => l.name).filter(Boolean);
-        const agent = state.agents.find(a => `${card.name} ${card.desc || ''} ${labelNames.join(' ')}`.toLowerCase().includes(a.name.toLowerCase())) || state.agents[i % state.agents.length];
+        const projectId = trelloCardProjectId(card);
+        const agent = state.agents.find(a => a.projectId === projectId && `${card.name} ${card.desc || ''} ${labelNames.join(' ')}`.toLowerCase().includes(a.name.toLowerCase()));
         return {
           id: card.id,
           name: card.name,
           agent: agent?.id,
-          color: card.labels?.[0]?.color || '#b7c8ad',
+          projectId,
+          color: card.labels?.[0]?.color || projectById(projectId).color,
           labels: labelNames,
           url: card.shortUrl || `https://trello.com/c/${card.id}`,
           live: true
@@ -250,9 +263,10 @@ function boardColumns() {
       })
     }));
   }
+  const visibleIds = scopedProjectIds();
   const order = ['backlog', 'ready', 'working', 'review', 'done'];
   return order.map(key => {
-    const missions = state.missions.filter(m => m.status === key);
+    const missions = state.missions.filter(m => visibleIds.has(m.projectId) && m.status === key);
     return {
       key,
       name: STATUS[key].es,

@@ -286,7 +286,7 @@ function renderSyncStatus() {
 }
 
 function updateHomeReplay() {
-  const events = eventsUpTo();
+  const events = scopedEventsUpTo();
   const agentIds = new Set(events.map(e => e.agentId));
   if ($('#liveAgentCount')) $('#liveAgentCount').textContent = agentIds.size;
   if ($('#liveSignalCount')) $('#liveSignalCount').textContent = events.length;

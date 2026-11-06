@@ -134,7 +134,7 @@ function syncWorldLive() {
 function renderWorldSignals() {
   const el = $('#worldSignals');
   if (!el) return;
-  const events = eventsUpTo().sort((a, b) => a.agoSeconds - b.agoSeconds).slice(0, 5);
+  const events = scopedEventsUpTo().sort((a, b) => a.agoSeconds - b.agoSeconds).slice(0, 5);
   if (!events.length) {
     el.innerHTML = `<div class="empty-state">Sin señales en este instante.</div>`;
     return;
@@ -153,7 +153,7 @@ function renderWorldSignals() {
 function renderRoomList() {
   const el = $('#roomList');
   if (!el) return;
-  el.innerHTML = state.projects.map(p => {
+  el.innerHTML = scopedProjects().map(p => {
     const agents = state.agents.filter(a => a.projectId === p.id);
     const active = agents.filter(a => a.status !== 'idle').length;
     return `<button class="room-list-row" data-room-jump="${esc(p.id)}">

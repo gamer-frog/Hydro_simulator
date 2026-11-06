@@ -194,14 +194,29 @@ function saveRequests() {
   try { localStorage.setItem('conductor.requests', JSON.stringify(localRequests.slice(0, 20))); } catch (_) {}
 }
 
-const projectById = id => state.projects.find(p => p.id === id) || state.projects[0] || { id: '', name: 'Sin repo', repo: '', color: '#aab5a9' };
+const projectById = id => state.projects.find(p => p.id === id) || { id: '', name: 'Sin repo', repo: '', color: '#aab5a9' };
 const agentById = id => state.agents.find(a => a.id === id) || state.agents[0] || FALLBACK.agents[0];
 
+function normalizedRepo(value) {
+  return String(value || '').trim().replace(/^https?:\/\/github\.com\//i, '').replace(/\.git$/i, '').replace(/\/$/, '').toLowerCase();
+}
+function repoMatches(left, right) {
+  const a = normalizedRepo(left), b = normalizedRepo(right);
+  return Boolean(a && b && a === b);
+}
+function normalizeScope(kind, id) {
+  if (kind === 'all' || !id) return { kind: 'all', id: 'all' };
+  const exists = kind === 'division' ? state.divisions.some(item => item.id === id)
+    : kind === 'client' ? state.clients.some(item => item.id === id)
+      : kind === 'project' ? state.projects.some(item => item.id === id)
+        : kind === 'repo' ? state.projects.some(item => repoMatches(item.repo, id)) : false;
+  return exists ? { kind, id } : { kind: 'all', id: 'all' };
+}
 function scopedProjectIds() {
   const { kind, id } = scopeFilter || { kind: 'all', id: 'all' };
   if (!id || kind === 'all') return new Set(state.projects.map(project => project.id));
   if (kind === 'project') return new Set(state.projects.some(project => project.id === id) ? [id] : []);
-  if (kind === 'repo') return new Set(state.projects.filter(project => project.repo === id || project.name === id).map(project => project.id));
+  if (kind === 'repo') return new Set(state.projects.filter(project => repoMatches(project.repo, id)).map(project => project.id));
   if (kind === 'client') return new Set(state.projects.filter(project => project.clientId === id).map(project => project.id));
   if (kind === 'division') {
     const clientIds = new Set(state.clients.filter(client => client.divisionId === id).map(client => client.id));
