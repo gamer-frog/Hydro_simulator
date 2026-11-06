@@ -93,3 +93,43 @@
  .spell-slot{padding-left:19px}
  .spell-name{font-size:7px}
 }
+
+/* Project roadmap */
+.project-roadmap{margin:18px 0 24px;padding:20px;border:1px solid #343d30;background:linear-gradient(145deg,#1b231b,#171d17);box-shadow:0 12px 30px #080c0866}
+.roadmap-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:12px}
+.project-roadmap h2{margin:7px 0 0;color:#e8e4d4;font-size:23px;font-weight:500;letter-spacing:-.6px}
+.project-roadmap h2 em{color:var(--gold);font-family:Georgia,serif;font-weight:400}
+.roadmap-version,.roadmap-step{color:#a7ad97;font:7px var(--mono);letter-spacing:1px}
+.roadmap-version{padding:7px 9px;border:1px solid #404738;background:#20271e;white-space:nowrap}
+.roadmap-intro{max-width:920px;margin:0 0 14px;color:#a8af9e;font-size:11px;line-height:1.65}
+.roadmap-now{display:flex;align-items:flex-start;gap:11px;margin:0 0 14px;padding:12px;border:1px solid #665637;background:#2b291e}
+.roadmap-pulse{width:7px;height:7px;flex:none;margin-top:3px;border-radius:50%;background:#c9a65d;box-shadow:0 0 10px #c9a65d88}
+.roadmap-now div{display:grid;gap:5px}.roadmap-now b{color:#e4cc91;font:8px var(--mono);letter-spacing:.7px}.roadmap-now span:not(.roadmap-pulse){color:#c3c4b3;font-size:10px;line-height:1.5}
+.roadmap-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.roadmap-card{min-width:0;padding:13px;border:1px solid #30392e;background:#1a211a}
+.roadmap-step{color:#c3a86b}.roadmap-card h3{margin:7px 0 9px;color:#e4e3d6;font-size:13px;font-weight:600}
+.roadmap-card ul{display:grid;gap:7px;margin:0;padding:0;list-style:none}
+.roadmap-card li{position:relative;padding-left:13px;color:#a6ad9e;font-size:9px;line-height:1.5}
+.roadmap-card li:before{content:'·';position:absolute;left:2px;color:#9eaa8d;font-size:15px;line-height:11px}
+.roadmap-card li.done:before{content:'✓';color:#9db37b;font-size:9px;line-height:13px}
+.roadmap-card code{padding:1px 4px;border:1px solid #3b4436;background:#202820;color:#d0c28f;font:8px var(--mono)}
+.roadmap-tech{grid-column:1/-1}.roadmap-note{margin:12px 0 0;color:#828c7d;font-size:9px;line-height:1.55}.roadmap-note b{color:#c8bb91}
+@media(min-width:761px){
+ html,body{overflow:hidden}
+ .app-shell{min-height:min(640px,100dvh)}
+ .rail{position:sticky;top:0;height:100dvh}
+ .main-view{height:100dvh;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-color:#434c3e #171d17;scrollbar-width:thin}
+ .arena-layout{flex:0 0 auto}
+ .game-frame{height:clamp(280px,52vh,620px);flex:none}
+ .side-panel{position:sticky;top:12px;align-self:start}
+}
+@media(max-width:760px){
+ .project-roadmap{margin:14px 0 18px;padding:14px}
+ .roadmap-heading{align-items:flex-start;flex-direction:column;gap:9px}
+ .project-roadmap h2{font-size:20px}
+ .roadmap-intro{font-size:10px}
+ .roadmap-grid{grid-template-columns:1fr}
+ .roadmap-tech{grid-column:auto}
+ .roadmap-card{padding:12px}
+ .roadmap-card li{font-size:9px}
+}
