@@ -41,6 +41,8 @@
     ] }
   };
   const STEP_DURATION = .115;
+  const NPC_AIM_DURATION = .58;
+  const NPC_MELEE_ACCURACY = .78;
   const images = new Map();
   let mapData, grhs, characters;
   let W = 800, H = 480, dpr = 1, tilePx = 32;
@@ -58,7 +60,7 @@
     maxMana: index === 0 ? CLASS_PROFILES.warrior.mana : 0,
     alive: true, kills: 0,
     heading: index === 1 ? 'W' : 'S', step: null, stepTime: 0, aiTimer: rand(.2, 1),
-    attackCd: rand(.2, .8), flash: 0, respawn: 0, bodyFrameTime: Math.random() * 2,
+    attackCd: rand(.2, .8), flash: 0, respawn: 0, bodyFrameTime: Math.random() * 2, aim: null,
     skillCooldowns: [0, 0, 0]
   }));
   const player = fighters[0];
@@ -210,6 +212,44 @@
     const [x, y] = position(actor);
     floatingTexts.push({ x, y, text, kind, age: 0 });
   }
+  function addFloatingTextAt(x, y, text, kind) {
+    floatingTexts.push({ x, y, text, kind, age: 0 });
+  }
+  function beginNpcAim(actor, target) {
+    const [x, y] = actorTile(target);
+    actor.heading = x < actorTile(actor)[0] ? 'W' : x > actorTile(actor)[0] ? 'E' : y < actorTile(actor)[1] ? 'N' : 'S';
+    actor.aim = { targetId: target.id, x, y, remaining: NPC_AIM_DURATION };
+    actor.attackCd = rand(.85, 1.15);
+  }
+  function resolveNpcAim(actor) {
+    const aim = actor.aim;
+    actor.aim = null;
+    if (!aim) return;
+    const target = byId[aim.targetId];
+    if (!actor.alive || !target?.alive) return;
+    const [x, y] = actorTile(target);
+    if (x !== aim.x || y !== aim.y) {
+      addFloatingTextAt(aim.x, aim.y, 'ESQUIVADO', 'miss');
+      return;
+    }
+    if (Math.random() > NPC_MELEE_ACCURACY) {
+      addFloatingTextAt(aim.x, aim.y, 'FALLÓ', 'miss');
+      return;
+    }
+    actor.flash = .1;
+    const damage = Math.ceil(rand(11, 18)); target.hp = Math.max(0, target.hp - damage); target.flash = .22;
+    addFloatingText(target, `-${damage}`, 'damage');
+    tone(155 + Math.random() * 50, .07);
+    if (target.hp <= 0) kill(target, actor);
+    refreshHud();
+  }
+  function updateNpcAims(dt) {
+    for (const actor of fighters.slice(1)) {
+      if (!actor.aim) continue;
+      actor.aim.remaining -= dt;
+      if (actor.aim.remaining <= 0) resolveNpcAim(actor);
+    }
+  }
   function castSkill(index) {
     if (gameOver || paused || !player.alive) return;
     const skill = CLASS_PROFILES[currentClass].skills[index], target = byId[selected];
@@ -258,7 +298,8 @@
     });
   }
   function kill(victim, attacker) {
-    victim.alive = false; victim.respawn = 2.4; victim.step = null;
+    victim.alive = false; victim.respawn = 2.4; victim.step = null; victim.aim = null;
+    for (const actor of fighters) if (actor.aim?.targetId === victim.id) actor.aim = null;
     attacker.kills++;
     if (attacker === player) kills++;
     const feed = $('killFeed'), line = document.createElement('div'); line.className = 'feed-line';
@@ -274,7 +315,7 @@
   }
   function respawn(actor) {
     const [x, y] = findOpen(actor.homeX, actor.homeY);
-    Object.assign(actor, { x, y, hp: actor === player ? player.maxHp : 100, mana: actor === player ? player.maxMana : 0, alive: true, step: null, respawn: 0, flash: .6, attackCd: .7 });
+    Object.assign(actor, { x, y, hp: actor === player ? player.maxHp : 100, mana: actor === player ? player.maxMana : 0, alive: true, step: null, respawn: 0, flash: .6, attackCd: .7, aim: null });
   }
   function selectTarget(actor) {
     if (!actor || actor === player || !actor.alive) return;
@@ -309,11 +350,9 @@
       actor.aiTimer -= dt;
       const target = nearestEnemy(actor);
       if (!target) continue;
+      if (actor.aim) continue;
       if (distance(actor, target) <= 1) {
-        if (actor.attackCd <= 0) {
-          attack(actor, target);
-          actor.attackCd = rand(.7, 1.1);
-        }
+        if (actor.attackCd <= 0) beginNpcAim(actor, target);
       } else if (actor.aiTimer <= 0) {
         const step = nextPathStep(actor, target);
         if (step) startStep(actor, step[0], step[1]);
@@ -338,7 +377,7 @@
     for (const effect of spellEffects) effect.age += dt;
     while (floatingTexts.length && floatingTexts[0].age > 1.05) floatingTexts.shift();
     while (spellEffects.length && spellEffects[0].age > spellEffects[0].duration) spellEffects.shift();
-    updatePlayer(); updateBots(dt);
+    updatePlayer(); updateNpcAims(dt); updateBots(dt);
     if (remaining <= 0) endMatch(false);
     refreshHud();
   }
@@ -415,6 +454,24 @@
     }
   }
   function drawCombatEffects(cameraX, cameraY, now) {
+    for (const actor of fighters.slice(1)) {
+      const aim = actor.aim;
+      if (!aim) continue;
+      const [sx, sy] = screenTile(aim.x, aim.y, cameraX, cameraY);
+      const x = sx + tilePx / 2, y = sy + tilePx / 2;
+      const pulse = .5 + Math.sin(now / 90) * .16;
+      ctx.save(); ctx.globalAlpha = .72 + pulse * .28;
+      ctx.strokeStyle = '#ff685b'; ctx.fillStyle = '#ff685b';
+      ctx.lineWidth = Math.max(2, tilePx * .065); ctx.shadowColor = '#f04438'; ctx.shadowBlur = tilePx * .35;
+      ctx.beginPath(); ctx.arc(x, y, tilePx * (.28 + pulse * .035), 0, Math.PI * 2); ctx.stroke();
+      const arm = tilePx * .42, gap = tilePx * .17;
+      ctx.beginPath();
+      ctx.moveTo(x - arm, y); ctx.lineTo(x - gap, y); ctx.moveTo(x + gap, y); ctx.lineTo(x + arm, y);
+      ctx.moveTo(x, y - arm); ctx.lineTo(x, y - gap); ctx.moveTo(x, y + gap); ctx.lineTo(x, y + arm); ctx.stroke();
+      ctx.shadowBlur = 4; ctx.textAlign = 'center'; ctx.font = `700 ${Math.max(9, tilePx * .27)}px DM Sans, sans-serif`;
+      ctx.fillStyle = '#fff0d4'; ctx.fillText(`${actor.name.split(' ')[0]} · APUNTANDO`, x, sy - 4);
+      ctx.restore();
+    }
     for (const effect of spellEffects) {
       const progress = effect.age / effect.duration;
       const [x0, y0] = screenTile(effect.x, effect.y, cameraX, cameraY);
@@ -435,7 +492,7 @@
       const [sx, sy] = screenTile(item.x, item.y, cameraX, cameraY), progress = item.age / 1.05;
       ctx.save(); ctx.globalAlpha = Math.min(1, (1 - progress) * 2.5);
       ctx.textAlign = 'center'; ctx.font = `800 ${Math.max(14, tilePx * .48)}px DM Sans, sans-serif`;
-      ctx.fillStyle = item.kind === 'heal' ? '#9fe58e' : '#ff8274'; ctx.shadowColor = '#11150f'; ctx.shadowBlur = 5;
+      ctx.fillStyle = item.kind === 'heal' ? '#9fe58e' : item.kind === 'miss' ? '#ffd27a' : '#ff8274'; ctx.shadowColor = '#11150f'; ctx.shadowBlur = 5;
       ctx.fillText(item.text, sx + tilePx / 2, sy - tilePx * .18 - progress * tilePx * .8);
       ctx.restore();
     }
@@ -482,7 +539,7 @@
     $('resultSub').textContent = won ? 'El Robledal recuerda tu nombre.' : 'La arena volverá a abrir sus puertas.';
   }
   function resetGame() {
-    for (const actor of fighters) Object.assign(actor, { x: actor.homeX, y: actor.homeY, hp: actor === player ? player.maxHp : 100, mana: actor === player ? player.maxMana : 0, alive: true, kills: 0, step: null, stepTime: 0, respawn: 0, flash: 0, attackCd: rand(.2, .8), aiTimer: rand(.2, 1), skillCooldowns: [0, 0, 0] });
+    for (const actor of fighters) Object.assign(actor, { x: actor.homeX, y: actor.homeY, hp: actor === player ? player.maxHp : 100, mana: actor === player ? player.maxMana : 0, alive: true, kills: 0, step: null, stepTime: 0, respawn: 0, flash: 0, attackCd: rand(.2, .8), aiTimer: rand(.2, 1), aim: null, skillCooldowns: [0, 0, 0] });
     floatingTexts.length = 0; spellEffects.length = 0;
     selected = 'luna'; kills = 0; remaining = 180; elapsed = 0; gameOver = false; paused = false; keys.clear();
     $('resultPanel').classList.add('hidden'); $('battleLog').innerHTML = '<div class="empty-log">Las hazañas de la arena aparecerán aquí.</div>';
