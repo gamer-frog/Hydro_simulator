@@ -48,7 +48,6 @@
   // Consumable values are prototype tuning placeholders, not published AO/Imperium data.
   const POTION_EFFECTS = { health: 45, mana: 35 };
   const potionInventory = { health: 3, mana: 3 };
-  const NPC_MELEE_ACCURACY = .78;
   const images = new Map();
   let mapData, grhs, characters;
   let W = 800, H = 480, dpr = 1, tilePx = 32;
@@ -67,7 +66,8 @@
       alive: true, kills: 0,
       heading: index === 1 ? 'W' : 'S', step: null, stepTime: 0, aiTimer: rand(.2, 1),
       attackCd: rand(.2, .8), flash: 0, respawn: 0, bodyFrameTime: Math.random() * 2, aim: null,
-      immobilized: 0, skillCooldowns: Array(profile.skills.length).fill(0)
+      immobilized: 0, retreatTimer: 0, retreatTargetId: null,
+      skillCooldowns: Array(profile.skills.length).fill(0)
     };
   });
   const player = fighters[0];
@@ -210,6 +210,18 @@
     }
     return null;
   }
+  function retreatStep(actor, target) {
+    const [x, y] = actorTile(actor), [tx, ty] = actorTile(target);
+    const options = [[0, -1], [1, 0], [0, 1], [-1, 0]]
+      .filter(([dx, dy]) => isOpen(x + dx, y + dy) && !occupied(x + dx, y + dy, actor))
+      .map(([dx, dy]) => ({ dx, dy, distance: Math.abs(x + dx - tx) + Math.abs(y + dy - ty) }));
+    const safest = Math.max(0, ...options.map(option => option.distance));
+    const choices = options.filter(option => option.distance === safest);
+    if (!choices.length || safest <= Math.abs(x - tx) + Math.abs(y - ty)) return null;
+    const heading = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] }[actor.heading];
+    choices.sort((a, b) => Number(b.dx === -heading[0] && b.dy === -heading[1]) - Number(a.dx === -heading[0] && a.dy === -heading[1]));
+    return [choices[0].dx, choices[0].dy];
+  }
   function attack(actor = player, targetOverride = null) {
     if (gameOver || paused || !actor.alive || actor.attackCd > 0) return false;
     const target = targetOverride || byId[selected];
@@ -233,9 +245,16 @@
     floatingTexts.push({ x, y, text, kind, age: 0 });
   }
   function beginNpcAim(actor, target, skill = null) {
-    const [x, y] = actorTile(target);
+    const [x, y] = actorTile(target), [fromX, fromY] = position(actor);
     actor.heading = x < actorTile(actor)[0] ? 'W' : x > actorTile(actor)[0] ? 'E' : y < actorTile(actor)[1] ? 'N' : 'S';
-    actor.aim = { targetId: target.id, x, y, remaining: skill ? rand(.65, .95) : NPC_AIM_DURATION, skill };
+    const errorAngle = rand(0, Math.PI * 2), errorRadius = rand(0, skill ? .56 : .44);
+    const duration = skill ? rand(.7, 1.05) : NPC_AIM_DURATION;
+    actor.aim = {
+      targetId: target.id, x, y, fromX, fromY,
+      errorX: Math.cos(errorAngle) * errorRadius, errorY: Math.sin(errorAngle) * errorRadius,
+      elapsed: 0, duration, remaining: duration,
+      phase: rand(0, Math.PI * 2), cursorX: fromX, cursorY: fromY, skill
+    };
     actor.attackCd = skill ? rand(1.2, 1.7) : rand(.85, 1.15);
   }
   function resolveNpcAim(actor) {
@@ -244,13 +263,9 @@
     if (!aim) return;
     const target = byId[aim.targetId];
     if (!actor.alive || !target?.alive) return;
-    const [x, y] = actorTile(target);
-    if (x !== aim.x || y !== aim.y) {
-      addFloatingTextAt(aim.x, aim.y, 'ESQUIVADO', 'miss');
-      return;
-    }
-    if (Math.random() > (aim.skill ? .72 : NPC_MELEE_ACCURACY)) {
-      addFloatingTextAt(aim.x, aim.y, 'FALLÓ', 'miss');
+    const [x, y] = position(target);
+    if (Math.hypot(x - aim.cursorX, y - aim.cursorY) > .42) {
+      addFloatingTextAt(aim.cursorX, aim.cursorY, x !== aim.x || y !== aim.y ? 'ESQUIVADO' : 'FALLÓ', 'miss');
       return;
     }
     actor.flash = .1;
@@ -271,9 +286,18 @@
   }
   function updateNpcAims(dt) {
     for (const actor of fighters.slice(1)) {
-      if (!actor.aim) continue;
-      actor.aim.remaining -= dt;
-      if (actor.aim.remaining <= 0) resolveNpcAim(actor);
+      const aim = actor.aim;
+      if (!aim) continue;
+      aim.elapsed += dt;
+      aim.remaining = Math.max(0, aim.duration - aim.elapsed);
+      const progress = clamp(aim.elapsed / aim.duration, 0, 1);
+      const eased = progress * progress * (3 - 2 * progress);
+      const endX = aim.x + aim.errorX, endY = aim.y + aim.errorY;
+      const dx = endX - aim.fromX, dy = endY - aim.fromY, length = Math.hypot(dx, dy) || 1;
+      const wobble = Math.sin(aim.elapsed * 13 + aim.phase) * Math.min(.2, length * .035) * Math.sin(Math.PI * progress);
+      aim.cursorX = aim.fromX + dx * eased - dy / length * wobble;
+      aim.cursorY = aim.fromY + dy * eased + dx / length * wobble;
+      if (aim.remaining <= 0) resolveNpcAim(actor);
     }
   }
   function isSelfTarget(skill) { return skill?.type === 'heal' || skill?.type === 'remove'; }
@@ -393,7 +417,7 @@
   }
   function respawn(actor) {
     const [x, y] = findOpen(actor.homeX, actor.homeY);
-    Object.assign(actor, { x, y, hp: actor === player ? player.maxHp : 100, mana: actor === player ? player.maxMana : 0, alive: true, step: null, respawn: 0, flash: .6, attackCd: .7, aim: null });
+    Object.assign(actor, { x, y, hp: actor.maxHp, mana: actor.maxMana, alive: true, step: null, stepTime: 0, respawn: 0, flash: .6, attackCd: .7, aim: null, immobilized: 0, retreatTimer: 0, retreatTargetId: null, skillCooldowns: Array(CLASS_PROFILES[actor.className].skills.length).fill(0) });
   }
   function selectTarget(actor) {
     if (!actor || actor === player || !actor.alive) return;
@@ -485,6 +509,13 @@
       if (!actor.alive || actor.step) continue;
       actor.aiTimer -= dt;
       const profile = CLASS_PROFILES[actor.className];
+      const removeIndex = profile.skills.findIndex((skill, i) => skill.type === 'remove' && actor.mana >= skill.cost && actor.skillCooldowns[i] <= 0);
+      if (actor.immobilized > 0 && removeIndex >= 0) {
+        const skill = profile.skills[removeIndex];
+        actor.mana -= skill.cost; actor.skillCooldowns[removeIndex] = 5; actor.immobilized = 0;
+        addFloatingText(actor, 'REMO', 'heal'); actor.flash = .2; tone(520, .15);
+        continue;
+      }
       if (actor.aim) continue;
       const heal = profile.skills.find((skill, i) => skill.type === 'heal' && actor.hp < actor.maxHp * .58 && actor.mana >= skill.cost && actor.skillCooldowns[i] <= 0);
       if (heal && actor.attackCd <= 0) {
@@ -502,6 +533,17 @@
         const { skill, index } = ranged[Math.floor(Math.random() * ranged.length)];
         actor.mana -= skill.cost; actor.skillCooldowns[index] = rand(4, 7);
         beginNpcAim(actor, target, skill); continue;
+      }
+      const prefersDistance = actor.className === 'mage' || actor.className === 'ranger';
+      const shouldRetreat = (prefersDistance && d <= 1) || (actor.hp <= actor.maxHp * .32 && d <= 2);
+      if (shouldRetreat && actor.retreatTimer <= 0) {
+        const step = retreatStep(actor, target);
+        if (step) {
+          startStep(actor, step[0], step[1]);
+          actor.retreatTimer = .55; actor.retreatTargetId = target.id;
+          actor.aiTimer = rand(.14, .24);
+          continue;
+        }
       }
       if (d <= 1) {
         if (actor.attackCd <= 0) beginNpcAim(actor, target);
@@ -612,22 +654,26 @@
     }
   }
   function drawCombatEffects(cameraX, cameraY, now) {
-    for (const actor of fighters.slice(1)) {
+    const aimColors = ['#ff685b', '#64d8d0', '#e8b75f'];
+    for (const [index, actor] of fighters.slice(1).entries()) {
       const aim = actor.aim;
       if (!aim) continue;
-      const [sx, sy] = screenTile(aim.x, aim.y, cameraX, cameraY);
+      const [fromX, fromY] = screenTile(aim.fromX, aim.fromY, cameraX, cameraY);
+      const [sx, sy] = screenTile(aim.cursorX, aim.cursorY, cameraX, cameraY);
       const x = sx + tilePx / 2, y = sy + tilePx / 2;
-      const pulse = .5 + Math.sin(now / 90) * .16;
+      const color = aimColors[index % aimColors.length];
+      const pulse = .5 + Math.sin(now / 90 + aim.phase) * .16;
       ctx.save(); ctx.globalAlpha = .72 + pulse * .28;
-      ctx.strokeStyle = '#ff685b'; ctx.fillStyle = '#ff685b';
-      ctx.lineWidth = Math.max(2, tilePx * .065); ctx.shadowColor = '#f04438'; ctx.shadowBlur = tilePx * .35;
-      ctx.beginPath(); ctx.arc(x, y, tilePx * (.28 + pulse * .035), 0, Math.PI * 2); ctx.stroke();
+      ctx.strokeStyle = color; ctx.fillStyle = color;
+      ctx.lineWidth = Math.max(2, tilePx * .055); ctx.shadowColor = color; ctx.shadowBlur = tilePx * .3;
+      ctx.beginPath(); ctx.moveTo(fromX + tilePx / 2, fromY + tilePx / 2); ctx.lineTo(x, y); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, tilePx * (.27 + pulse * .035), 0, Math.PI * 2); ctx.stroke();
       const arm = tilePx * .42, gap = tilePx * .17;
       ctx.beginPath();
       ctx.moveTo(x - arm, y); ctx.lineTo(x - gap, y); ctx.moveTo(x + gap, y); ctx.lineTo(x + arm, y);
       ctx.moveTo(x, y - arm); ctx.lineTo(x, y - gap); ctx.moveTo(x, y + gap); ctx.lineTo(x, y + arm); ctx.stroke();
       ctx.shadowBlur = 4; ctx.textAlign = 'center'; ctx.font = `700 ${Math.max(9, tilePx * .27)}px DM Sans, sans-serif`;
-      ctx.fillStyle = '#fff0d4'; ctx.fillText(`${actor.name.split(' ')[0]} · APUNTANDO`, x, sy - 4);
+      ctx.fillStyle = '#fff0d4'; ctx.fillText(`${actor.name.split(' ')[0]} · ${aim.skill ? 'APUNTANDO HECHIZO' : 'APUNTANDO'}`, x, sy - 4);
       ctx.restore();
     }
     if (placingNpc && placementTile) {
@@ -671,6 +717,22 @@
       ctx.restore();
     }
   }
+  function drawUserCursor() {
+    if (!pointerCanvas || placingNpc) return;
+    const { x, y } = pointerCanvas;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.shadowColor = '#080b07'; ctx.shadowBlur = 3;
+    ctx.beginPath();
+    ctx.moveTo(1, 1); ctx.lineTo(1, 19); ctx.lineTo(6, 14); ctx.lineTo(10, 23);
+    ctx.lineTo(14, 21); ctx.lineTo(10, 12); ctx.lineTo(18, 12); ctx.closePath();
+    ctx.fillStyle = '#fff3cf'; ctx.fill();
+    ctx.strokeStyle = '#171a13'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.strokeStyle = '#d5ae66'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.restore();
+  }
   function draw() {
     ctx.clearRect(0, 0, W, H);
     if (!mapData) {
@@ -680,7 +742,7 @@
     const [cx, cy] = position(player), now = performance.now();
     const range = visibleRange(cx, cy);
     ctx.imageSmoothingEnabled = false;
-    drawGround(range, now, cx, cy); drawWorldLayer(range, now, cx, cy); drawCombatEffects(cx, cy, now);
+    drawGround(range, now, cx, cy); drawWorldLayer(range, now, cx, cy); drawCombatEffects(cx, cy, now); drawUserCursor();
   }
   function refreshHud() {
     if (!player) return;
