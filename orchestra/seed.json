@@ -17,7 +17,12 @@
       "color": "#8faa7d",
       "issuesOpen": 4,
       "progress": 68,
-      "room": {"x": 1, "y": 2, "w": 48, "h": 43}
+      "room": {
+        "x": 1,
+        "y": 2,
+        "w": 48,
+        "h": 43
+      }
     },
     {
       "id": "project-atlas",
@@ -28,7 +33,12 @@
       "color": "#c99b7e",
       "issuesOpen": 5,
       "progress": 42,
-      "room": {"x": 51, "y": 15, "w": 48, "h": 43}
+      "room": {
+        "x": 51,
+        "y": 15,
+        "w": 48,
+        "h": 43
+      }
     },
     {
       "id": "project-signal",
@@ -39,7 +49,12 @@
       "color": "#7d9f9d",
       "issuesOpen": 2,
       "progress": 81,
-      "room": {"x": 1, "y": 45, "w": 48, "h": 42}
+      "room": {
+        "x": 1,
+        "y": 45,
+        "w": 48,
+        "h": 42
+      }
     },
     {
       "id": "project-archive",
@@ -50,7 +65,12 @@
       "color": "#a89bb8",
       "issuesOpen": 1,
       "progress": 94,
-      "room": {"x": 51, "y": 57, "w": 48, "h": 42}
+      "room": {
+        "x": 51,
+        "y": 57,
+        "w": 48,
+        "h": 42
+      }
     }
   ],
   "missions": [
@@ -64,13 +84,17 @@
       "horizon": "now",
       "priority": "P1",
       "issue": 42,
-      "labels": ["UX", "P1"],
+      "labels": [
+        "UX",
+        "P1"
+      ],
       "startDay": 0,
       "durationDays": 3,
       "assignee": "luna",
       "type": "mission",
       "subtasks": 3,
-      "totalSubtasks": 5
+      "totalSubtasks": 5,
+      "dependsOn": []
     },
     {
       "id": "mission-events",
@@ -82,13 +106,17 @@
       "horizon": "now",
       "priority": "P0",
       "issue": 48,
-      "labels": ["infra", "P0"],
+      "labels": [
+        "infra",
+        "P0"
+      ],
       "startDay": 1,
       "durationDays": 4,
       "assignee": "nova",
       "type": "mission",
       "subtasks": 1,
-      "totalSubtasks": 6
+      "totalSubtasks": 6,
+      "dependsOn": []
     },
     {
       "id": "mission-sync",
@@ -100,13 +128,17 @@
       "horizon": "now",
       "priority": "P0",
       "issue": 51,
-      "labels": ["bug", "P0"],
+      "labels": [
+        "bug",
+        "P0"
+      ],
       "startDay": 0,
       "durationDays": 2,
       "assignee": "sol",
       "type": "mission",
       "subtasks": 4,
-      "totalSubtasks": 4
+      "totalSubtasks": 4,
+      "dependsOn": []
     },
     {
       "id": "mission-digest",
@@ -118,13 +150,19 @@
       "horizon": "week",
       "priority": "P2",
       "issue": 55,
-      "labels": ["loop", "report"],
+      "labels": [
+        "loop",
+        "report"
+      ],
       "startDay": 3,
       "durationDays": 1,
       "assignee": "orbit",
       "type": "loop",
       "subtasks": 0,
-      "totalSubtasks": 1
+      "totalSubtasks": 1,
+      "dependsOn": [
+        "mission-events"
+      ]
     },
     {
       "id": "mission-permissions",
@@ -136,13 +174,19 @@
       "horizon": "week",
       "priority": "P1",
       "issue": 59,
-      "labels": ["security", "P1"],
+      "labels": [
+        "security",
+        "P1"
+      ],
       "startDay": 2,
       "durationDays": 3,
       "assignee": "moss",
       "type": "mission",
       "subtasks": 5,
-      "totalSubtasks": 5
+      "totalSubtasks": 5,
+      "dependsOn": [
+        "mission-sync"
+      ]
     },
     {
       "id": "mission-demo",
@@ -154,13 +198,20 @@
       "horizon": "month",
       "priority": "P2",
       "issue": 63,
-      "labels": ["demo", "P2"],
+      "labels": [
+        "demo",
+        "P2"
+      ],
       "startDay": 8,
       "durationDays": 4,
       "assignee": "luna",
       "type": "mission",
       "subtasks": 0,
-      "totalSubtasks": 5
+      "totalSubtasks": 5,
+      "dependsOn": [
+        "mission-onboarding",
+        "mission-events"
+      ]
     },
     {
       "id": "mission-deploy-loop",
@@ -172,13 +223,17 @@
       "horizon": "now",
       "priority": "P2",
       "issue": 46,
-      "labels": ["loop", "ops"],
+      "labels": [
+        "loop",
+        "ops"
+      ],
       "startDay": 0,
       "durationDays": 10,
       "assignee": "orbit",
       "type": "loop",
       "subtasks": 0,
-      "totalSubtasks": 1
+      "totalSubtasks": 1,
+      "dependsOn": []
     },
     {
       "id": "mission-protocol",
@@ -190,13 +245,16 @@
       "horizon": "done",
       "priority": "P1",
       "issue": 38,
-      "labels": ["docs"],
+      "labels": [
+        "docs"
+      ],
       "startDay": 0,
       "durationDays": 1,
       "assignee": "nova",
       "type": "mission",
       "subtasks": 4,
-      "totalSubtasks": 4
+      "totalSubtasks": 4,
+      "dependsOn": []
     },
     {
       "id": "mission-previews",
@@ -208,13 +266,16 @@
       "horizon": "done",
       "priority": "P2",
       "issue": 44,
-      "labels": ["ci"],
+      "labels": [
+        "ci"
+      ],
       "startDay": 0,
       "durationDays": 2,
       "assignee": "sol",
       "type": "mission",
       "subtasks": 3,
-      "totalSubtasks": 3
+      "totalSubtasks": 3,
+      "dependsOn": []
     },
     {
       "id": "mission-memory",
@@ -226,13 +287,18 @@
       "horizon": "month",
       "priority": "P3",
       "issue": 61,
-      "labels": ["research"],
+      "labels": [
+        "research"
+      ],
       "startDay": 10,
       "durationDays": 5,
       "assignee": "pip",
       "type": "mission",
       "subtasks": 0,
-      "totalSubtasks": 3
+      "totalSubtasks": 3,
+      "dependsOn": [
+        "mission-protocol"
+      ]
     }
   ],
   "agents": [
@@ -246,9 +312,22 @@
       "heartbeatMinutes": 15,
       "lastAction": "Cerró el alcance del issue #42",
       "bio": "Convierte objetivos difusos en misiones pequeñas y verificables.",
-      "skills": ["planning", "issues", "grooming"],
-      "home": {"x": 54, "y": 57},
-      "avatar": {"bg": "#e5eedb", "skin": "#f0c9ae", "hair": "#3c302b", "shirt": "#7e9c72", "accessory": "bob"}
+      "skills": [
+        "planning",
+        "issues",
+        "grooming"
+      ],
+      "home": {
+        "x": 54,
+        "y": 57
+      },
+      "avatar": {
+        "bg": "#e5eedb",
+        "skin": "#f0c9ae",
+        "hair": "#3c302b",
+        "shirt": "#7e9c72",
+        "accessory": "bob"
+      }
     },
     {
       "id": "nova",
@@ -260,9 +339,22 @@
       "heartbeatMinutes": 15,
       "lastAction": "Comparó dos proveedores de colas",
       "bio": "Busca señales, lee documentación y trae opciones con evidencia.",
-      "skills": ["research", "benchmarks", "docs"],
-      "home": {"x": 52, "y": 54},
-      "avatar": {"bg": "#f4e4d6", "skin": "#d9a07f", "hair": "#6d3f2a", "shirt": "#c98d6c", "accessory": "curls"}
+      "skills": [
+        "research",
+        "benchmarks",
+        "docs"
+      ],
+      "home": {
+        "x": 52,
+        "y": 54
+      },
+      "avatar": {
+        "bg": "#f4e4d6",
+        "skin": "#d9a07f",
+        "hair": "#6d3f2a",
+        "shirt": "#c98d6c",
+        "accessory": "curls"
+      }
     },
     {
       "id": "sol",
@@ -274,9 +366,22 @@
       "heartbeatMinutes": 15,
       "lastAction": "Pusheó la rotación de claves",
       "bio": "Implementa, prueba y deja el cambio listo para review.",
-      "skills": ["typescript", "tests", "git"],
-      "home": {"x": 38, "y": 50},
-      "avatar": {"bg": "#e6edf3", "skin": "#efc7a8", "hair": "#25201d", "shirt": "#698798", "accessory": "glasses"}
+      "skills": [
+        "typescript",
+        "tests",
+        "git"
+      ],
+      "home": {
+        "x": 38,
+        "y": 50
+      },
+      "avatar": {
+        "bg": "#e6edf3",
+        "skin": "#efc7a8",
+        "hair": "#25201d",
+        "shirt": "#698798",
+        "accessory": "glasses"
+      }
     },
     {
       "id": "orbit",
@@ -288,9 +393,22 @@
       "heartbeatMinutes": 15,
       "lastAction": "Corrió el deploy check de la mañana",
       "bio": "Cuida los loops, los deploys y las señales de salud del sistema.",
-      "skills": ["ops", "loops", "monitoring"],
-      "home": {"x": 57, "y": 58},
-      "avatar": {"bg": "#e9e6f0", "skin": "#c98f6b", "hair": "#282233", "shirt": "#9285a6", "accessory": "headset"}
+      "skills": [
+        "ops",
+        "loops",
+        "monitoring"
+      ],
+      "home": {
+        "x": 57,
+        "y": 58
+      },
+      "avatar": {
+        "bg": "#e9e6f0",
+        "skin": "#c98f6b",
+        "hair": "#282233",
+        "shirt": "#9285a6",
+        "accessory": "headset"
+      }
     },
     {
       "id": "moss",
@@ -302,9 +420,22 @@
       "heartbeatMinutes": 15,
       "lastAction": "Dejó review en el PR #18",
       "bio": "Lee el cambio completo, señala riesgos y protege la calidad.",
-      "skills": ["review", "security", "testing"],
-      "home": {"x": 41, "y": 64},
-      "avatar": {"bg": "#eef0d9", "skin": "#b87e5e", "hair": "#54422e", "shirt": "#9daa65", "accessory": "cap"}
+      "skills": [
+        "review",
+        "security",
+        "testing"
+      ],
+      "home": {
+        "x": 41,
+        "y": 64
+      },
+      "avatar": {
+        "bg": "#eef0d9",
+        "skin": "#b87e5e",
+        "hair": "#54422e",
+        "shirt": "#9daa65",
+        "accessory": "cap"
+      }
     },
     {
       "id": "pip",
@@ -316,9 +447,22 @@
       "heartbeatMinutes": 15,
       "lastAction": "Verificó cuatro escenarios y volvió a esperar",
       "bio": "Reproduce, verifica y documenta los casos borde antes del cierre.",
-      "skills": ["qa", "regression", "docs"],
-      "home": {"x": 50, "y": 58},
-      "avatar": {"bg": "#f4e4e6", "skin": "#e4b18f", "hair": "#a35f4d", "shirt": "#d49b9a", "accessory": "bun"}
+      "skills": [
+        "qa",
+        "regression",
+        "docs"
+      ],
+      "home": {
+        "x": 50,
+        "y": 58
+      },
+      "avatar": {
+        "bg": "#f4e4e6",
+        "skin": "#e4b18f",
+        "hair": "#a35f4d",
+        "shirt": "#d49b9a",
+        "accessory": "bun"
+      }
     }
   ],
   "loops": [
@@ -376,29 +520,255 @@
     }
   ],
   "activity": [
-    {"id": "a01", "agentId": "sol", "projectId": "project-playground", "type": "push", "text": "push · feat(auth): rota claves por entorno", "agoSeconds": 35, "spot": {"x": 67, "y": 56}},
-    {"id": "a02", "agentId": "orbit", "projectId": "project-signal", "type": "run", "text": "deploy check · 3 servicios OK", "agoSeconds": 90, "spot": {"x": 63, "y": 62}},
-    {"id": "a03", "agentId": "luna", "projectId": "project-playground", "type": "comment", "text": "#42 queda listo para probar", "agoSeconds": 135, "spot": {"x": 43, "y": 60}},
-    {"id": "a04", "agentId": "nova", "projectId": "project-atlas", "type": "search", "text": "benchmark · colas de eventos", "agoSeconds": 205, "spot": {"x": 44, "y": 54}},
-    {"id": "a05", "agentId": "moss", "projectId": "project-atlas", "type": "review", "text": "review · PR #18 pide naming", "agoSeconds": 245, "spot": {"x": 63, "y": 52}},
-    {"id": "a06", "agentId": "pip", "projectId": "project-archive", "type": "idle", "text": "idle · sin misiones reclamadas", "agoSeconds": 300, "spot": {"x": 43, "y": 54}},
-    {"id": "a07", "agentId": "orbit", "projectId": "project-signal", "type": "loop", "text": "loop diario · reporte enviado", "agoSeconds": 370, "spot": {"x": 48, "y": 65}},
-    {"id": "a08", "agentId": "sol", "projectId": "project-playground", "type": "commit", "text": "commit · fix: serializa writes de sync", "agoSeconds": 460, "spot": {"x": 48, "y": 50}},
-    {"id": "a09", "agentId": "luna", "projectId": "project-playground", "type": "plan", "text": "mueve #59 a esta semana", "agoSeconds": 515, "spot": {"x": 58, "y": 52}},
-    {"id": "a10", "agentId": "moss", "projectId": "project-atlas", "type": "approve", "text": "approve · PR #16 listo", "agoSeconds": 580, "spot": {"x": 50, "y": 66}},
-    {"id": "a11", "agentId": "nova", "projectId": "project-atlas", "type": "note", "text": "nota · 2 proveedores cumplen SLA", "agoSeconds": 605, "spot": {"x": 61, "y": 48}},
-    {"id": "a12", "agentId": "orbit", "projectId": "project-signal", "type": "run", "text": "smoke test · 12/12", "agoSeconds": 760, "spot": {"x": 56, "y": 56}},
-    {"id": "a13", "agentId": "pip", "projectId": "project-archive", "type": "test", "text": "qa · 4 escenarios verificados", "agoSeconds": 700, "spot": {"x": 56, "y": 62}},
-    {"id": "a14", "agentId": "sol", "projectId": "project-playground", "type": "comment", "text": "#51 listo para review", "agoSeconds": 825, "spot": {"x": 54, "y": 64}},
-    {"id": "a15", "agentId": "luna", "projectId": "project-playground", "type": "heartbeat", "text": "heartbeat · 3 misiones en foco", "agoSeconds": 858, "spot": {"x": 52, "y": 55}},
-    {"id": "a16", "agentId": "nova", "projectId": "project-atlas", "type": "heartbeat", "text": "heartbeat · próxima revisión en 15m", "agoSeconds": 842, "spot": {"x": 52, "y": 58}},
-    {"id": "a17", "agentId": "moss", "projectId": "project-atlas", "type": "heartbeat", "text": "heartbeat · 2 reviews pendientes", "agoSeconds": 878, "spot": {"x": 46, "y": 56}},
-    {"id": "a18", "agentId": "pip", "projectId": "project-archive", "type": "idle", "text": "idle · esperando próximo heartbeat", "agoSeconds": 870, "spot": {"x": 50, "y": 58}},
-    {"id": "a19", "agentId": "moss", "projectId": "project-atlas", "type": "review", "text": "aprobó checklist de accesibilidad", "agoSeconds": 30, "spot": {"x": 58, "y": 58}},
-    {"id": "a20", "agentId": "nova", "projectId": "project-atlas", "type": "note", "text": "dejó 3 referencias en #48", "agoSeconds": 65, "spot": {"x": 47, "y": 58}}
+    {
+      "id": "a01",
+      "agentId": "sol",
+      "projectId": "project-playground",
+      "type": "push",
+      "text": "push · feat(auth): rota claves por entorno",
+      "agoSeconds": 35,
+      "spot": {
+        "x": 67,
+        "y": 56
+      }
+    },
+    {
+      "id": "a02",
+      "agentId": "orbit",
+      "projectId": "project-signal",
+      "type": "run",
+      "text": "deploy check · 3 servicios OK",
+      "agoSeconds": 90,
+      "spot": {
+        "x": 63,
+        "y": 62
+      }
+    },
+    {
+      "id": "a03",
+      "agentId": "luna",
+      "projectId": "project-playground",
+      "type": "comment",
+      "text": "#42 queda listo para probar",
+      "agoSeconds": 135,
+      "spot": {
+        "x": 43,
+        "y": 60
+      }
+    },
+    {
+      "id": "a04",
+      "agentId": "nova",
+      "projectId": "project-atlas",
+      "type": "search",
+      "text": "benchmark · colas de eventos",
+      "agoSeconds": 205,
+      "spot": {
+        "x": 44,
+        "y": 54
+      }
+    },
+    {
+      "id": "a05",
+      "agentId": "moss",
+      "projectId": "project-atlas",
+      "type": "review",
+      "text": "review · PR #18 pide naming",
+      "agoSeconds": 245,
+      "spot": {
+        "x": 63,
+        "y": 52
+      }
+    },
+    {
+      "id": "a06",
+      "agentId": "pip",
+      "projectId": "project-archive",
+      "type": "idle",
+      "text": "idle · sin misiones reclamadas",
+      "agoSeconds": 300,
+      "spot": {
+        "x": 43,
+        "y": 54
+      }
+    },
+    {
+      "id": "a07",
+      "agentId": "orbit",
+      "projectId": "project-signal",
+      "type": "loop",
+      "text": "loop diario · reporte enviado",
+      "agoSeconds": 370,
+      "spot": {
+        "x": 48,
+        "y": 65
+      }
+    },
+    {
+      "id": "a08",
+      "agentId": "sol",
+      "projectId": "project-playground",
+      "type": "commit",
+      "text": "commit · fix: serializa writes de sync",
+      "agoSeconds": 460,
+      "spot": {
+        "x": 48,
+        "y": 50
+      }
+    },
+    {
+      "id": "a09",
+      "agentId": "luna",
+      "projectId": "project-playground",
+      "type": "plan",
+      "text": "mueve #59 a esta semana",
+      "agoSeconds": 515,
+      "spot": {
+        "x": 58,
+        "y": 52
+      }
+    },
+    {
+      "id": "a10",
+      "agentId": "moss",
+      "projectId": "project-atlas",
+      "type": "approve",
+      "text": "approve · PR #16 listo",
+      "agoSeconds": 580,
+      "spot": {
+        "x": 50,
+        "y": 66
+      }
+    },
+    {
+      "id": "a11",
+      "agentId": "nova",
+      "projectId": "project-atlas",
+      "type": "note",
+      "text": "nota · 2 proveedores cumplen SLA",
+      "agoSeconds": 605,
+      "spot": {
+        "x": 61,
+        "y": 48
+      }
+    },
+    {
+      "id": "a12",
+      "agentId": "orbit",
+      "projectId": "project-signal",
+      "type": "run",
+      "text": "smoke test · 12/12",
+      "agoSeconds": 760,
+      "spot": {
+        "x": 56,
+        "y": 56
+      }
+    },
+    {
+      "id": "a13",
+      "agentId": "pip",
+      "projectId": "project-archive",
+      "type": "test",
+      "text": "qa · 4 escenarios verificados",
+      "agoSeconds": 700,
+      "spot": {
+        "x": 56,
+        "y": 62
+      }
+    },
+    {
+      "id": "a14",
+      "agentId": "sol",
+      "projectId": "project-playground",
+      "type": "comment",
+      "text": "#51 listo para review",
+      "agoSeconds": 825,
+      "spot": {
+        "x": 54,
+        "y": 64
+      }
+    },
+    {
+      "id": "a15",
+      "agentId": "luna",
+      "projectId": "project-playground",
+      "type": "heartbeat",
+      "text": "heartbeat · 3 misiones en foco",
+      "agoSeconds": 858,
+      "spot": {
+        "x": 52,
+        "y": 55
+      }
+    },
+    {
+      "id": "a16",
+      "agentId": "nova",
+      "projectId": "project-atlas",
+      "type": "heartbeat",
+      "text": "heartbeat · próxima revisión en 15m",
+      "agoSeconds": 842,
+      "spot": {
+        "x": 52,
+        "y": 58
+      }
+    },
+    {
+      "id": "a17",
+      "agentId": "moss",
+      "projectId": "project-atlas",
+      "type": "heartbeat",
+      "text": "heartbeat · 2 reviews pendientes",
+      "agoSeconds": 878,
+      "spot": {
+        "x": 46,
+        "y": 56
+      }
+    },
+    {
+      "id": "a18",
+      "agentId": "pip",
+      "projectId": "project-archive",
+      "type": "idle",
+      "text": "idle · esperando próximo heartbeat",
+      "agoSeconds": 870,
+      "spot": {
+        "x": 50,
+        "y": 58
+      }
+    },
+    {
+      "id": "a19",
+      "agentId": "moss",
+      "projectId": "project-atlas",
+      "type": "review",
+      "text": "aprobó checklist de accesibilidad",
+      "agoSeconds": 30,
+      "spot": {
+        "x": 58,
+        "y": 58
+      }
+    },
+    {
+      "id": "a20",
+      "agentId": "nova",
+      "projectId": "project-atlas",
+      "type": "note",
+      "text": "dejó 3 referencias en #48",
+      "agoSeconds": 65,
+      "spot": {
+        "x": 47,
+        "y": 58
+      }
+    }
   ],
   "trello": {
     "boardName": "Conductor · machine state",
-    "columns": ["backlog", "ready", "working", "review", "done"]
+    "columns": [
+      "backlog",
+      "ready",
+      "working",
+      "review",
+      "done"
+    ]
   }
 }

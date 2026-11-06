@@ -42,6 +42,8 @@ const ICONS = {
   external: '<path d="M14 3h7v7M10 14 21 3M21 14v7H3V3h7"/>',
   lock: '<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
   terminal: '<path d="m5 8 4 4-4 4M12 17h7"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1"/>',
+  alert: '<path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 9v5M12 17h.01"/>',
   dot: '<circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>'
 };
 
@@ -77,11 +79,11 @@ const FALLBACK = {
     { id: 'project-archive', name: 'Archive', repo: 'gamer-frog/archive', description: 'QA y memoria.', status: 'quiet', color: '#a89bb8', issuesOpen: 1, progress: 94, room: { x: 51, y: 57, w: 48, h: 42 } }
   ],
   missions: [
-    { id: 'mission-onboarding', projectId: 'project-playground', title: 'Rediseñar el flujo de onboarding', description: 'Reducir la fricción de entrada.', status: 'working', githubState: 'open', horizon: 'now', priority: 'P1', issue: 42, labels: ['UX', 'P1'], startDay: 0, durationDays: 3, assignee: 'luna', type: 'mission', subtasks: 3, totalSubtasks: 5 },
-    { id: 'mission-events', projectId: 'project-atlas', title: 'Migrar ingest de eventos a cola', description: 'Cola con reintentos idempotentes.', status: 'ready', githubState: 'open', horizon: 'now', priority: 'P0', issue: 48, labels: ['infra'], startDay: 1, durationDays: 4, assignee: 'nova', type: 'mission', subtasks: 1, totalSubtasks: 6 },
-    { id: 'mission-sync', projectId: 'project-playground', title: 'Arreglar race condition en sync', description: 'Serializar escrituras.', status: 'working', githubState: 'open', horizon: 'now', priority: 'P0', issue: 51, labels: ['bug'], startDay: 0, durationDays: 2, assignee: 'sol', type: 'mission', subtasks: 4, totalSubtasks: 4 },
-    { id: 'mission-permissions', projectId: 'project-atlas', title: 'Auditar permisos del bot', description: 'Revisar scopes y tokens.', status: 'review', githubState: 'open', horizon: 'week', priority: 'P1', issue: 59, labels: ['security'], startDay: 2, durationDays: 3, assignee: 'moss', type: 'mission', subtasks: 5, totalSubtasks: 5 },
-    { id: 'mission-demo', projectId: 'project-playground', title: 'Preparar demo para inversores', description: 'Un recorrido de tres minutos.', status: 'backlog', githubState: 'open', horizon: 'month', priority: 'P2', issue: 63, labels: ['demo'], startDay: 8, durationDays: 4, assignee: 'luna', type: 'mission', subtasks: 0, totalSubtasks: 5 }
+    { id: 'mission-onboarding', projectId: 'project-playground', title: 'Rediseñar el flujo de onboarding', description: 'Reducir la fricción de entrada.', status: 'working', githubState: 'open', horizon: 'now', priority: 'P1', issue: 42, labels: ['UX', 'P1'], dependsOn: [], startDay: 0, durationDays: 3, assignee: 'luna', type: 'mission', subtasks: 3, totalSubtasks: 5 },
+    { id: 'mission-events', projectId: 'project-atlas', title: 'Migrar ingest de eventos a cola', description: 'Cola con reintentos idempotentes.', status: 'ready', githubState: 'open', horizon: 'now', priority: 'P0', issue: 48, labels: ['infra'], dependsOn: [], startDay: 1, durationDays: 4, assignee: 'nova', type: 'mission', subtasks: 1, totalSubtasks: 6 },
+    { id: 'mission-sync', projectId: 'project-playground', title: 'Arreglar race condition en sync', description: 'Serializar escrituras.', status: 'working', githubState: 'open', horizon: 'now', priority: 'P0', issue: 51, labels: ['bug'], dependsOn: [], startDay: 0, durationDays: 2, assignee: 'sol', type: 'mission', subtasks: 4, totalSubtasks: 4 },
+    { id: 'mission-permissions', projectId: 'project-atlas', title: 'Auditar permisos del bot', description: 'Revisar scopes y tokens.', status: 'review', githubState: 'open', horizon: 'week', priority: 'P1', issue: 59, labels: ['security'], dependsOn: ['mission-sync'], startDay: 2, durationDays: 3, assignee: 'moss', type: 'mission', subtasks: 5, totalSubtasks: 5 },
+    { id: 'mission-demo', projectId: 'project-playground', title: 'Preparar demo para inversores', description: 'Un recorrido de tres minutos.', status: 'backlog', githubState: 'open', horizon: 'month', priority: 'P2', issue: 63, labels: ['demo'], dependsOn: ['mission-onboarding', 'mission-events'], startDay: 8, durationDays: 4, assignee: 'luna', type: 'mission', subtasks: 0, totalSubtasks: 5 }
   ],
   agents: [
     { id: 'luna', name: 'Luna', role: 'Planner', projectId: 'project-playground', model: 'Claude Sonnet', status: 'working', heartbeatMinutes: 15, lastAction: 'Cerró el alcance del issue #42', bio: 'Convierte objetivos difusos en misiones verificables.', skills: ['planning', 'issues'], home: { x: 54, y: 57 }, avatar: { bg: '#e5eedb', skin: '#f0c9ae', hair: '#3c302b', shirt: '#7e9c72', accessory: 'bob' } },
@@ -124,6 +126,9 @@ let projectFilter = 'all';
 
 const REPLAY_DURATION = 900;
 const replay = { at: REPLAY_DURATION, playing: false, speed: 1, timer: null, base: Date.now() };
+const syncMeta = { snapshotAt: null, githubAt: null, trelloAt: null, refreshing: false, timer: null };
+let activeDetail = null;
+let appliedHash = '';
 
 function normalizeState(raw) {
   const data = raw && typeof raw === 'object' ? raw : {};
@@ -142,7 +147,10 @@ function normalizeState(raw) {
     a.skills = Array.isArray(a.skills) ? a.skills : [];
     a.status = a.status || (a.lastHeartbeat ? 'working' : 'idle');
   });
-  data.missions.forEach(m => { m.projectId = m.projectId || data.projects[0]?.id; });
+  data.missions.forEach(m => {
+    m.projectId = m.projectId || data.projects[0]?.id;
+    m.dependsOn = Array.isArray(m.dependsOn) ? m.dependsOn.filter(dep => typeof dep === 'string') : [];
+  });
   data.activity = (Array.isArray(data.activity) ? data.activity : []).filter(e => e && e.agentId).map(e => ({ ...e, agoSeconds: clamp(Number(e.agoSeconds) || 0, 0, REPLAY_DURATION) }));
   data.loops = Array.isArray(data.loops) ? data.loops : [];
   return data;
@@ -172,6 +180,10 @@ const projectById = id => state.projects.find(p => p.id === id) || state.project
 const agentById = id => state.agents.find(a => a.id === id) || state.agents[0] || FALLBACK.agents[0];
 const missionById = id => state.missions.find(m => m.id === id);
 const isOpen = m => m.status !== 'done' && m.githubState !== 'closed';
+const isMissionComplete = m => Boolean(m && (m.status === 'done' || m.githubState === 'closed'));
+const missionDependencies = m => (m?.dependsOn || []).map(missionById).filter(Boolean);
+const missionBlockers = m => missionDependencies(m).filter(dep => !isMissionComplete(dep));
+const isBlocked = m => Boolean(m) && !isMissionComplete(m) && missionBlockers(m).length > 0;
 const statusData = key => STATUS[key] || STATUS.backlog;
 const typeIcon = type => type === 'commit' ? 'commit' : type === 'approve' ? 'approve' : type === 'heartbeat' ? 'heartbeat' : type === 'idle' ? 'idle' : type === 'plan' ? 'plan' : type === 'push' ? 'push' : type === 'comment' ? 'comment' : type === 'review' ? 'review' : type === 'run' ? 'run' : type === 'loop' ? 'loop' : type === 'test' ? 'test' : type === 'search' ? 'search' : type === 'note' ? 'note' : 'dot';
 
@@ -251,6 +263,17 @@ function eventsUpTo(at = replay.at) {
     .filter(e => REPLAY_DURATION - e.agoSeconds <= at)
     .sort((a, b) => a.agoSeconds - b.agoSeconds);
 }
+function eventAgeAt(event, at = replay.at) {
+  if (!event) return null;
+  return Math.max(0, at - (REPLAY_DURATION - event.agoSeconds));
+}
+function latestEventForAgent(agentId, at = replay.at) {
+  let latest = null;
+  for (const event of eventsUpTo(at)) {
+    if (event.agentId === agentId) latest = event;
+  }
+  return latest;
+}
 function replayMoment(at = replay.at) {
   return new Date(replay.base - ((REPLAY_DURATION - at) * 1000));
 }
@@ -262,21 +285,69 @@ function replayLabel(at = replay.at) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Navigation, sheets, replay                                          */
+/* Navigation, deep links, sheets and replay                           */
 /* ------------------------------------------------------------------ */
-function navigate(view) {
+const ROUTE_VIEWS = ['home', 'world', 'missions', 'agents', 'plan'];
+const DETAIL_VIEWS = { mission: 'missions', agent: 'agents', project: 'world' };
+const VIEW_TITLES = { home: 'Hoy', world: 'El estudio', missions: 'Misiones', agents: 'Agentes', plan: 'Plan' };
+
+function routeHash(view, kind, id) {
+  const base = `#/${ROUTE_VIEWS.includes(view) ? view : 'home'}`;
+  if (!kind || !id) return base;
+  return `${base}/${encodeURIComponent(kind)}/${encodeURIComponent(id)}`;
+}
+function parseRoute(hash = '') {
+  const clean = String(hash || '').replace(/^#\/?/, '').trim();
+  if (!clean) return { view: 'home', detail: null };
+  const parts = clean.split('/').filter(Boolean).map(part => {
+    try { return decodeURIComponent(part); } catch (_) { return part; }
+  });
+  const hasView = ROUTE_VIEWS.includes(parts[0]);
+  const view = hasView ? parts[0] : 'home';
+  const rest = hasView ? parts.slice(1) : parts;
+  const kind = rest[0];
+  const id = rest[1];
+  if (DETAIL_VIEWS[kind] && id) {
+    return { view: hasView ? view : DETAIL_VIEWS[kind], detail: { kind, id } };
+  }
+  return { view, detail: null };
+}
+function setRouteHash(view, kind, id, options = {}) {
+  const hash = routeHash(view, kind, id);
+  appliedHash = hash;
+  if (location.hash === hash) return;
+  if (options.replace) history.replaceState(null, '', hash);
+  else location.hash = hash;
+}
+function applyRouteFromHash(force = false) {
+  const hash = location.hash;
+  if (!force && hash === appliedHash) return;
+  appliedHash = hash;
+  const route = parseRoute(hash);
+  navigate(route.view, { updateHash: false, detail: route.detail });
+}
+function markDetail(kind, id, options = {}) {
+  activeDetail = { kind, id };
+  if (options.updateHash !== false) setRouteHash(currentView, kind, id);
+}
+function navigate(view, options = {}) {
   if (!view) return;
   const changed = currentView !== view;
   currentView = view;
+  if (options.updateHash !== false) setRouteHash(view, options.detail?.kind, options.detail?.id);
+  if (view === 'world') activeRoom = options.detail?.kind === 'project' ? options.detail.id : 'all';
   $$('.view').forEach(panel => panel.classList.toggle('active', panel.dataset.panel === view));
   $$('.side-nav [data-view], .bottom-nav [data-view]').forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
-  const titles = { home: 'Hoy', world: 'El estudio', missions: 'Misiones', agents: 'Agentes', plan: 'Plan' };
-  const crumb = $('#breadcrumb'); if (crumb) crumb.textContent = titles[view] || 'Hoy';
+  const crumb = $('#breadcrumb'); if (crumb) crumb.textContent = VIEW_TITLES[view] || 'Hoy';
   if (view === 'world') { renderWorld(); syncWorldLive(); }
   if (view === 'missions') renderMissions();
   if (view === 'agents') renderAgents();
   if (view === 'plan') renderPlan();
   if (view === 'home') { renderHome(); updateHomeReplay(); }
+  if (options.detail?.kind === 'mission' && typeof openMission === 'function') openMission(options.detail.id, { updateHash: false });
+  else if (options.detail?.kind === 'agent' && typeof openAgent === 'function') openAgent(options.detail.id, { updateHash: false });
+  else if (options.detail?.kind === 'project') activeDetail = null;
+  else if (activeDetail) { activeDetail = null; closeSheet({ updateHash: false }); }
   if (changed) window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -287,7 +358,9 @@ function openSheet(html) {
   sheet.scrollTop = 0;
   $('#sheetContent').scrollTop = 0;
 }
-function closeSheet() {
+function closeSheet(options = {}) {
+  if (activeDetail && options.updateHash !== false) setRouteHash(currentView, null, null, { replace: true });
+  activeDetail = null;
   const sheet = $('#detailSheet');
   if (sheet?.open) sheet.close();
 }
@@ -379,9 +452,14 @@ function renderSidebar() {
   if ($('#sidebarConnectionTitle')) $('#sidebarConnectionTitle').textContent = github.live ? 'GitHub sincronizado' : 'GitHub conectado';
   if ($('#sidebarConnectionText')) $('#sidebarConnectionText').textContent = conexionSummary();
 }
+function lastSyncLabel(timestamp) {
+  if (!timestamp) return 'sin sync';
+  return `hace ${relativeAgo((Date.now() - timestamp) / 1000)}`;
+}
 function conexionSummary() {
   const trelloReady = Boolean(connections.trelloKey && connections.trelloToken && connections.trelloBoard);
-  if (github.live && trello.live) return 'GitHub + Trello en vivo';
+  if (github.live && trello.live) return `GitHub + Trello · ${lastSyncLabel(syncMeta.githubAt)}`;
+  if (github.live) return `GitHub en vivo · ${lastSyncLabel(syncMeta.githubAt)}`;
   if (trelloReady) return 'Trello listo para sincronizar';
-  return 'Trello en modo demo';
+  return `Trello en demo · snapshot ${lastSyncLabel(syncMeta.snapshotAt)}`;
 }

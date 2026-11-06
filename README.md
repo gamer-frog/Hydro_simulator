@@ -35,13 +35,22 @@ crear un issue nuevo desde el formulario de pedido; nunca modifica uno existente
   mueven al lugar de su última acción y se puede reproducir la ventana de los
   últimos 15 minutos, cambiar la velocidad y filtrar por repo.
 - **Misiones**: issues agrupados por estado, filtros por repo, detalle de cada
-  misión con su máquina de estados y enlaces directos a GitHub.
+  misión con su máquina de estados y enlaces directos a GitHub. Las misiones con
+  `dependsOn` muestran su bloqueo y el protocolo rechaza el claim hasta que las
+  dependencias estén completas.
 - **Equipo**: la biblioteca de agentes estilo *Agent Agency*, con retrato, rol,
   skills, modelo, repo y última señal. Incluye el protocolo de incorporación.
 - **Plan**: Gantt de la semana, trabajo de mediano y largo plazo y loops
   recurrentes.
 - **Trello (opcional)**: un espejo de solo lectura del *machine state* con las
   cartas y las últimas acciones de los agentes.
+- **Ops health**: frescura de heartbeats, claims activos, conflictos, warnings y
+  última sincronización. El snapshot se refresca solo cada 60 segundos.
+- **Buscador de comandos**: `⌘K` / `Ctrl K` para saltar a cualquier vista, repo,
+  agente, misión o acción sin recorrer menús.
+- **Deep links**: cada vista y ficha tiene URL propia, por ejemplo
+  `#/missions/mission/mission-demo` o `#/agents/agent/luna`. Se puede compartir o
+  abrir directamente.
 
 ### Cómo correrla
 
@@ -101,18 +110,27 @@ tablero se arma con los datos de demo del snapshot.
 - Los loops recurrentes (triage, deploy check, digest, review) se muestran en
   **Plan**. Sus corridas también deberían dejar evidencia en el repo.
 
+### Atajos y rutas
+
+- `⌘K` / `Ctrl K`: abre el buscador global.
+- `↑` / `↓`: mueve la selección; `Enter` abre; `Esc` cierra.
+- `#/home`, `#/world`, `#/missions`, `#/agents`, `#/plan`: vistas.
+- `#/missions/mission/{id}` y `#/agents/agent/{id}`: fichas compartibles.
+- `#/world/project/{id}`: abre el estudio filtrado a un repo.
+
 ### Estructura del proyecto
 
 ```text
 index.html            Shell, vistas y diálogos
 styles.css            Sistema visual responsive (móvil primero)
-app-core.js           Iconos, estado normalizado, avatares, replay, helpers
-app-home.js           Vista Hoy
+app-core.js           Iconos, estado normalizado, avatares, replay, rutas y helpers
+app-home.js           Vista Hoy, ops health y frescura de heartbeats
 app-world.js          Oficina isométrica y replay sincronizado
-app-missions.js       Misiones, GitHub y tablero Trello
+app-missions.js       Misiones, dependencias, GitHub y tablero Trello
 app-agents.js         Biblioteca de agentes y ficha de detalle
 app-plan.js           Gantt, plan corto/medio/largo y loops
-app-actions.js        Eventos, formularios, conexiones y boot
+app-command.js        Command palette y búsqueda global
+app-actions.js        Eventos, formularios, conexiones, auto-refresh y boot
 orchestra/            Protocolo, seed, proyección y pruebas
 .github/ISSUE_TEMPLATE/  Plantilla de pedido de misión
 ORCHESTRATION.md      Protocolo de coordinación y límites

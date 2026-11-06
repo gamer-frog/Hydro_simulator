@@ -63,6 +63,18 @@ class ProtocolTest(unittest.TestCase):
         self.run_cli("release", "luna", "mission-onboarding", first["id"])
         self.assertEqual(self.mission()["claimStatus"], "available")
 
+    def test_blocked_missions_cannot_be_claimed(self):
+        state = self.state()
+        demo = next(mission for mission in state["missions"] if mission["id"] == "mission-demo")
+        self.assertTrue(demo["isBlocked"])
+        self.assertIn("mission-onboarding", demo["blockedBy"])
+        self.run_cli("claim", "luna", "mission-demo", ok=False)
+        # mission-memory depends on a completed mission, so it stays claimable.
+        self.run_cli("claim", "luna", "mission-memory")
+        memory = next(mission for mission in self.state()["missions"] if mission["id"] == "mission-memory")
+        self.assertFalse(memory["isBlocked"])
+        self.assertEqual(memory["claimStatus"], "claimed")
+
     def test_bad_history_fails_closed(self):
         events = self.root / "events"
         events.mkdir()

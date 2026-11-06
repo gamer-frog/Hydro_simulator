@@ -14,6 +14,7 @@ function renderHome() {
   renderMiniLoops();
   renderHomeIssues();
   renderMachinePreview();
+  renderOpsHealth();
   renderSidebar();
   updateReplayUI();
 }
@@ -98,7 +99,7 @@ function renderNowList() {
   el.innerHTML = events.map(e => {
     const agent = agentById(e.agentId);
     const p = projectById(e.projectId);
-    const secondsAgo = REPLAY_DURATION - e.agoSeconds;
+    const secondsAgo = eventAgeAt(e);
     return `<button class="now-row" data-agent="${esc(agent.id)}">
       ${miniFace(agent)}
       <span class="now-copy"><span class="now-name"><strong>${esc(agent.name)}</strong><span class="state-dot ${esc(agent.status)}"></span><span class="repo-mini">${esc(p.name)}</span></span><span class="now-action">${esc(e.text)}</span></span>
@@ -132,10 +133,10 @@ function renderMiniPlan() {
   el.innerHTML = items.length ? items.map(m => {
     const p = projectById(m.projectId);
     const a = agentById(m.assignee);
-    return `<button class="mini-plan-row" data-mission="${esc(m.id)}">
+    return `<button class="mini-plan-row ${isBlocked(m) ? 'blocked' : ''}" data-mission="${esc(m.id)}">
       <span class="plan-date">${esc(dateOffsetLabel(m.startDay || 0))}</span>
       <span class="plan-dot" style="background:${esc(p.color)}"></span>
-      <span class="plan-copy"><strong>${esc(m.title)}</strong><small>${esc(p.name)} · ${esc(HORIZONS[m.horizon] || '')}</small></span>
+      <span class="plan-copy"><strong>${esc(m.title)}</strong><small>${esc(p.name)} · ${esc(HORIZONS[m.horizon] || '')}${isBlocked(m) ? ' · bloqueada' : ''}</small></span>
       ${miniFace(a)}
     </button>`;
   }).join('') : '<div class="empty-state">No hay misiones próximas.</div>';
@@ -178,6 +179,68 @@ function renderMachinePreview() {
         </div>`;
       }).join('') || '<div class="board-empty">—</div>'}
     </div>`).join('');
+}
+
+function agentFreshness(agent) {
+  const latest = latestEventForAgent(agent.id, REPLAY_DURATION);
+  const heartbeatSeconds = Number(agent.heartbeatMinutes) || state.workspace?.heartbeatMinutes || 15;
+  const threshold = heartbeatSeconds * 60 * 2;
+  let seconds = latest ? eventAgeAt(latest, REPLAY_DURATION) : null;
+  if (seconds == null && agent.lastHeartbeat) seconds = (Date.now() - new Date(agent.lastHeartbeat).getTime()) / 1000;
+  const status = seconds == null ? 'stale' : seconds <= threshold ? 'fresh' : 'stale';
+  return { latest, seconds, status, threshold, label: seconds == null ? 'sin señal' : relativeAgo(seconds) };
+}
+
+function renderOpsHealth() {
+  const el = $('#opsGrid');
+  if (!el) return;
+  const freshness = state.agents.map(agent => ({ agent, ...agentFreshness(agent) }));
+  const freshCount = freshness.filter(item => item.status === 'fresh').length;
+  const warnings = Array.isArray(state.protocol?.warnings) ? state.protocol.warnings : [];
+  const conflicts = state.missions.filter(m => m.claimStatus === 'conflict').length;
+  const claimed = state.missions.filter(m => m.claimStatus === 'claimed').length;
+  const sourceLabel = sourceMode === 'repo' ? 'state.json' : 'fallback local';
+  const coordinationState = warnings.length || conflicts ? 'warn' : 'ok';
+  const coordinationLabel = warnings.length ? `${warnings.length} warnings` : conflicts ? `${conflicts} conflictos` : 'sin conflictos';
+  const githubState = github.live ? 'ok' : 'muted';
+  const githubLabel = github.live ? `live · ${lastSyncLabel(syncMeta.githubAt)}` : 'demo · snapshot local';
+  el.innerHTML = `
+    <article class="ops-card ${sourceMode === 'repo' ? 'ok' : 'muted'}">
+      <span class="ops-card-top">Fuente <span class="ops-signal"></span></span>
+      <strong>${esc(sourceLabel)}</strong>
+      <small>último fetch ${esc(lastSyncLabel(syncMeta.snapshotAt))}</small>
+    </article>
+    <article class="ops-card ${freshCount === state.agents.length ? 'ok' : 'warn'}">
+      <span class="ops-card-top">Heartbeat <span class="ops-signal"></span></span>
+      <strong>${freshCount}/${state.agents.length}</strong>
+      <small>frescos · umbral ${Math.round((freshness[0]?.threshold || 1800) / 60)}m</small>
+    </article>
+    <article class="ops-card ${coordinationState}">
+      <span class="ops-card-top">Coordinación <span class="ops-signal"></span></span>
+      <strong>${claimed} <small>claims</small></strong>
+      <small>${esc(coordinationLabel)}</small>
+    </article>
+    <article class="ops-card ${githubState}">
+      <span class="ops-card-top">GitHub <span class="ops-signal"></span></span>
+      <strong>${github.live ? 'live' : 'demo'}</strong>
+      <small>${esc(githubLabel)}</small>
+    </article>`;
+  const agents = $('#opsAgents');
+  if (agents) {
+    agents.innerHTML = freshness.map(item => `
+      <button class="ops-agent ${item.status}" data-agent="${esc(item.agent.id)}" title="${esc(item.agent.name)} · ${esc(item.label)}">
+        <span class="state-dot ${esc(item.agent.status)}"></span>
+        <span>${esc(item.agent.name)}</span>
+        <small>${esc(item.label)}</small>
+      </button>`).join('');
+  }
+  const auto = $('#opsAutoLabel');
+  if (auto) auto.textContent = syncMeta.refreshing ? 'actualizando…' : `auto · ${lastSyncLabel(syncMeta.snapshotAt)}`;
+}
+
+function renderSyncStatus() {
+  if (currentView === 'home') renderOpsHealth();
+  renderSidebar();
 }
 
 function updateHomeReplay() {

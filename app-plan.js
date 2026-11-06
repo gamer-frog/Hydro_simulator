@@ -37,10 +37,11 @@ function renderGantt() {
     const start = clamp(m.startDay || 0, 0, 6);
     const duration = clamp(m.durationDays || 1, 1, 7 - start);
     const type = m.type === 'loop' ? 'loop' : m.status;
-    const label = m.type === 'loop' ? '↻ loop' : statusData(m.status).es;
+    const blocked = isBlocked(m);
+    const label = m.type === 'loop' ? '↻ loop' : blocked ? `${statusData(m.status).es} · bloq.` : statusData(m.status).es;
     return `<div class="gantt-row">
       <div class="gantt-label"><i style="background:${esc(p.color)}"></i><span title="${esc(m.title)}">${esc(m.title)}</span></div>
-      <div class="gantt-track"><div class="gantt-bar ${esc(type)}" style="grid-column:${start + 1} / span ${duration}" title="${esc(m.title)} · ${esc(label)}">${esc(label)}</div></div>
+      <div class="gantt-track"><div class="gantt-bar ${esc(type)} ${blocked ? 'is-blocked' : ''}" style="grid-column:${start + 1} / span ${duration}" title="${esc(m.title)} · ${esc(label)}">${esc(label)}</div></div>
     </div>`;
   }).join('');
   el.innerHTML = `<div class="gantt-inner">${head}${rows || '<div class="empty-state">No hay trabajo agendado para los próximos días.</div>'}</div>`;

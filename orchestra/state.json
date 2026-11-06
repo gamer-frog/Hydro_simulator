@@ -94,8 +94,11 @@
       "type": "mission",
       "subtasks": 3,
       "totalSubtasks": 5,
+      "dependsOn": [],
       "claims": [],
-      "claimStatus": "available"
+      "claimStatus": "available",
+      "blockedBy": [],
+      "isBlocked": false
     },
     {
       "id": "mission-events",
@@ -117,8 +120,11 @@
       "type": "mission",
       "subtasks": 1,
       "totalSubtasks": 6,
+      "dependsOn": [],
       "claims": [],
-      "claimStatus": "available"
+      "claimStatus": "available",
+      "blockedBy": [],
+      "isBlocked": false
     },
     {
       "id": "mission-sync",
@@ -140,8 +146,11 @@
       "type": "mission",
       "subtasks": 4,
       "totalSubtasks": 4,
+      "dependsOn": [],
       "claims": [],
-      "claimStatus": "available"
+      "claimStatus": "available",
+      "blockedBy": [],
+      "isBlocked": false
     },
     {
       "id": "mission-digest",
@@ -163,8 +172,15 @@
       "type": "loop",
       "subtasks": 0,
       "totalSubtasks": 1,
+      "dependsOn": [
+        "mission-events"
+      ],
       "claims": [],
-      "claimStatus": "available"
+      "claimStatus": "available",
+      "blockedBy": [
+        "mission-events"
+      ],
+      "isBlocked": true
     },
     {
       "id": "mission-permissions",
@@ -186,8 +202,15 @@
       "type": "mission",
       "subtasks": 5,
       "totalSubtasks": 5,
+      "dependsOn": [
+        "mission-sync"
+      ],
       "claims": [],
-      "claimStatus": "available"
+      "claimStatus": "available",
+      "blockedBy": [
+        "mission-sync"
+      ],
+      "isBlocked": true
     },
     {
       "id": "mission-demo",
@@ -209,8 +232,17 @@
       "type": "mission",
       "subtasks": 0,
       "totalSubtasks": 5,
+      "dependsOn": [
+        "mission-onboarding",
+        "mission-events"
+      ],
       "claims": [],
-      "claimStatus": "available"
+      "claimStatus": "available",
+      "blockedBy": [
+        "mission-onboarding",
+        "mission-events"
+      ],
+      "isBlocked": true
     },
     {
       "id": "mission-deploy-loop",
@@ -232,8 +264,11 @@
       "type": "loop",
       "subtasks": 0,
       "totalSubtasks": 1,
+      "dependsOn": [],
       "claims": [],
-      "claimStatus": "available"
+      "claimStatus": "available",
+      "blockedBy": [],
+      "isBlocked": false
     },
     {
       "id": "mission-protocol",
@@ -254,8 +289,11 @@
       "type": "mission",
       "subtasks": 4,
       "totalSubtasks": 4,
+      "dependsOn": [],
       "claims": [],
-      "claimStatus": "available"
+      "claimStatus": "available",
+      "blockedBy": [],
+      "isBlocked": false
     },
     {
       "id": "mission-previews",
@@ -276,8 +314,11 @@
       "type": "mission",
       "subtasks": 3,
       "totalSubtasks": 3,
+      "dependsOn": [],
       "claims": [],
-      "claimStatus": "available"
+      "claimStatus": "available",
+      "blockedBy": [],
+      "isBlocked": false
     },
     {
       "id": "mission-memory",
@@ -298,8 +339,13 @@
       "type": "mission",
       "subtasks": 0,
       "totalSubtasks": 3,
+      "dependsOn": [
+        "mission-protocol"
+      ],
       "claims": [],
-      "claimStatus": "available"
+      "claimStatus": "available",
+      "blockedBy": [],
+      "isBlocked": false
     }
   ],
   "agents": [

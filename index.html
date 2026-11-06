@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=14" />
+  <link rel="stylesheet" href="styles.css?v=16" />
 </head>
 <body>
   <div class="app-shell">
@@ -54,6 +54,9 @@
         </a>
         <div class="breadcrumbs"><span>Conductor Studio</span><span data-icon="chevron-right"></span><strong id="breadcrumb">Hoy</strong></div>
         <div class="appbar-actions">
+          <button class="command-trigger" id="commandButton" type="button" aria-label="Abrir buscador de comandos" title="Buscar · ⌘K">
+            <span data-icon="search"></span><kbd>⌘K</kbd>
+          </button>
           <button class="live-pill" id="livePill" type="button"><span class="live-dot"></span><span>REPLAY 15M</span></button>
           <button class="top-icon" id="settingsButton" type="button" aria-label="Conexiones"><span data-icon="sliders"></span></button>
           <span class="top-avatar">AL</span>
@@ -93,6 +96,20 @@
           </article>
 
           <div class="stat-grid" id="homeStats"></div>
+
+          <section class="block ops-block">
+            <div class="block-head">
+              <div>
+                <div class="eyebrow">OPS HEALTH</div>
+                <h2>Latido del sistema</h2>
+                <p class="block-sub">Frescura de heartbeats, claims activos y última sincronización. El auto-refresh corre cada 60 segundos.</p>
+              </div>
+              <button class="mini-button" id="opsRefresh" type="button"><span data-icon="refresh"></span> Actualizar</button>
+            </div>
+            <div class="ops-grid" id="opsGrid"></div>
+            <div class="ops-agents-head"><span>Heartbeat por agente</span><span id="opsAutoLabel">auto · sin sync</span></div>
+            <div class="ops-agents" id="opsAgents"></div>
+          </section>
 
           <div class="home-grid">
             <div class="home-col">
@@ -214,6 +231,7 @@
               <button class="active" data-status="open">Abiertas <span id="openCount">7</span></button>
               <button data-status="working">En curso</button>
               <button data-status="review">Review</button>
+              <button data-status="blocked">Bloqueadas <span id="blockedCount">3</span></button>
               <button data-status="done">Hechas</button>
             </div>
             <button class="filter-button" id="projectFilterButton" type="button"><span data-icon="filter"></span> <span id="projectFilterLabel">Todos los repos</span></button>
@@ -378,13 +396,29 @@
     </form>
   </dialog>
 
+  <dialog class="palette" id="commandPalette" aria-label="Buscar en Conductor">
+    <div class="palette-head">
+      <span class="palette-search-icon" data-icon="search"></span>
+      <input id="paletteInput" type="search" autocomplete="off" spellcheck="false" placeholder="Buscar misiones, agentes, repos o comandos…" aria-label="Buscar misiones, agentes, repos o comandos" />
+      <button class="palette-close" id="paletteClose" type="button" aria-label="Cerrar buscador"><span data-icon="x"></span></button>
+    </div>
+    <div class="palette-results" id="paletteResults"></div>
+    <div class="palette-foot">
+      <span><kbd>↑</kbd><kbd>↓</kbd> mover</span>
+      <span><kbd>↵</kbd> abrir</span>
+      <span><kbd>esc</kbd> cerrar</span>
+      <span class="palette-shortcut">⌘K / Ctrl K</span>
+    </div>
+  </dialog>
+
   <div id="toast" role="status" aria-live="polite"></div>
-  <script src="app-core.js?v=3"></script>
-  <script src="app-home.js?v=2"></script>
-  <script src="app-world.js?v=7"></script>
-  <script src="app-missions.js?v=2"></script>
-  <script src="app-agents.js?v=2"></script>
-  <script src="app-plan.js?v=2"></script>
-  <script src="app-actions.js?v=3"></script>
+  <script src="app-core.js?v=4"></script>
+  <script src="app-home.js?v=3"></script>
+  <script src="app-world.js?v=8"></script>
+  <script src="app-missions.js?v=3"></script>
+  <script src="app-agents.js?v=3"></script>
+  <script src="app-plan.js?v=3"></script>
+  <script src="app-command.js?v=1"></script>
+  <script src="app-actions.js?v=4"></script>
 </body>
 </html>

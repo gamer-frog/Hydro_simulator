@@ -124,7 +124,7 @@ function syncWorldLive() {
     const agents = state.agents.filter(a => a.projectId === p.id);
     const lead = latestByProject.get(p.id);
     const active = agents.filter(a => currentEventFor(a.id)).length;
-    label.textContent = lead ? `${active} activos · ${TYPE_LABEL[lead.type] || lead.type} ${relativeAgo(REPLAY_DURATION - lead.agoSeconds)}` : `${agents.length} agentes · ${p.issuesOpen || 0} issues`;
+    label.textContent = lead ? `${active} activos · ${TYPE_LABEL[lead.type] || lead.type} ${relativeAgo(eventAgeAt(lead))}` : `${agents.length} agentes · ${p.issuesOpen || 0} issues`;
   });
   renderWorldSignals();
 }
@@ -140,7 +140,7 @@ function renderWorldSignals() {
   el.innerHTML = events.map(e => {
     const agent = agentById(e.agentId);
     const p = projectById(e.projectId);
-    const secondsAgo = REPLAY_DURATION - e.agoSeconds;
+    const secondsAgo = eventAgeAt(e);
     return `<div class="signal-row">
       ${miniFace(agent)}
       <div class="signal-copy"><strong>${esc(agent.name)} <span class="signal-type">${esc(TYPE_LABEL[e.type] || e.type)}</span></strong><p>${esc(e.text)}</p><small>${esc(p.name)} · ${esc(relativeAgo(secondsAgo))}</small></div>
@@ -180,8 +180,5 @@ function renderWorldMachine() {
 }
 
 function jumpToRoom(projectId) {
-  activeRoom = projectId || 'all';
-  navigate('world');
-  $$('.room-chip').forEach(chip => chip.classList.toggle('active', chip.dataset.roomFilter === activeRoom));
-  $$('.room').forEach(room => room.classList.toggle('filtered', activeRoom !== 'all' && room.dataset.roomId !== activeRoom));
+  navigate('world', { detail: projectId ? { kind: 'project', id: projectId } : null });
 }

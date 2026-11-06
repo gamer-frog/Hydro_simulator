@@ -24,8 +24,46 @@ async function loadSnapshot() {
   } finally {
     clearTimeout(timeout);
   }
+  syncMeta.snapshotAt = Date.now();
   loadConnections();
   if (!connections.githubRepo) connections.githubRepo = state.workspace.repo;
+}
+
+async function refreshLiveSources(show = false) {
+  if (syncMeta.refreshing) return false;
+  syncMeta.refreshing = true;
+  if (currentView === 'home') renderOpsHealth();
+  try {
+    await loadSnapshot();
+    renderAll();
+    if (navigator.onLine) {
+      const stale = timestamp => !timestamp || Date.now() - timestamp > 240000;
+      if (stale(syncMeta.githubAt)) await syncGitHub(show);
+      if (connections.trelloKey && connections.trelloToken && connections.trelloBoard && stale(syncMeta.trelloAt)) await syncTrello(show);
+    }
+    if (show) toast('Estado actualizado');
+    return true;
+  } catch (_) {
+    if (show) toast('No se pudo actualizar el estado');
+    return false;
+  } finally {
+    syncMeta.refreshing = false;
+    renderSyncStatus();
+  }
+}
+
+function startAutoRefresh() {
+  clearInterval(syncMeta.timer);
+  syncMeta.timer = setInterval(() => {
+    if (document.visibilityState !== 'visible' || !navigator.onLine) return;
+    if (document.querySelector('dialog[open]:not(#detailSheet)')) return;
+    if (replay.playing || replay.at < REPLAY_DURATION) return;
+    refreshLiveSources(false);
+  }, 60000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' || !navigator.onLine) return;
+    if (!syncMeta.snapshotAt || Date.now() - syncMeta.snapshotAt > 60000) refreshLiveSources(false);
+  });
 }
 
 function openSettings() {
@@ -161,6 +199,8 @@ function clearConnections() {
   connections = { githubRepo: state.workspace.repo || 'gamer-frog/PlayGround', githubToken: '', trelloKey: '', trelloToken: '', trelloBoard: '' };
   github = { live: false, repo: connections.githubRepo, issues: [], updatedAt: null, error: null };
   trello = { live: false, lists: [], cards: [], actions: [], updatedAt: null, error: null };
+  syncMeta.githubAt = null;
+  syncMeta.trelloAt = null;
   const form = $('#settingsForm');
   if (form) {
     form.githubRepo.value = connections.githubRepo;
@@ -181,7 +221,13 @@ function openTrelloBoardOrSettings() {
 }
 
 function bindEvents() {
+  bindPalette();
+  window.addEventListener('hashchange', () => applyRouteFromHash());
+
   document.addEventListener('click', event => {
+    const copyLink = event.target.closest('[data-copy-link]');
+    if (copyLink) { event.preventDefault(); copyCurrentLink(); return; }
+
     const viewButton = event.target.closest('[data-view]');
     if (viewButton) { event.preventDefault(); navigate(viewButton.dataset.view); return; }
 
@@ -200,6 +246,8 @@ function bindEvents() {
     const roomFilter = event.target.closest('[data-room-filter]');
     if (roomFilter) {
       activeRoom = roomFilter.dataset.roomFilter;
+      if (activeRoom === 'all') setRouteHash('world', null, null);
+      else setRouteHash('world', 'project', activeRoom);
       $$('.room-chip').forEach(chip => chip.classList.toggle('active', chip.dataset.roomFilter === activeRoom));
       $$('.room').forEach(roomEl => roomEl.classList.toggle('filtered', activeRoom !== 'all' && roomEl.dataset.roomId !== activeRoom));
       return;
@@ -263,6 +311,7 @@ function bindEvents() {
   $('#livePill')?.addEventListener('click', () => navigate('world'));
   $('#syncGithubButton')?.addEventListener('click', () => syncGitHub(true));
   $('#syncGithubInline')?.addEventListener('click', () => syncGitHub(true));
+  $('#opsRefresh')?.addEventListener('click', () => refreshLiveSources(true));
   $('#openTrelloButton')?.addEventListener('click', openTrelloBoardOrSettings);
   $('#worldTrelloButton')?.addEventListener('click', openTrelloBoardOrSettings);
   $('#requestMissionButton')?.addEventListener('click', () => openRequest(state.projects[0]?.id));
@@ -297,6 +346,12 @@ async function boot() {
   await loadSnapshot();
   renderAll();
   updateReplayUI();
+  if (!location.hash) {
+    appliedHash = routeHash('home');
+    history.replaceState(null, '', appliedHash);
+  }
+  applyRouteFromHash(true);
+  startAutoRefresh();
   if (navigator.onLine) {
     setTimeout(() => syncGitHub(false), 300);
     if (connections.trelloKey && connections.trelloToken && connections.trelloBoard) setTimeout(() => syncTrello(false), 500);

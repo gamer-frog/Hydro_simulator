@@ -8,7 +8,7 @@ function renderAgents() {
   if (grid) {
     grid.innerHTML = state.agents.map(agent => {
       const p = projectById(agent.projectId);
-      const latest = currentEventFor(agent.id);
+      const latest = latestEventForAgent(agent.id);
       return `<button class="agent-card" data-agent="${esc(agent.id)}">
         <span class="agent-card-top">
           <span class="agent-portrait">${avatarSVG(agent)}</span>
@@ -18,7 +18,7 @@ function renderAgents() {
         <div class="agent-role">${esc(agent.role)}</div>
         <div class="agent-repo"><i style="background:${esc(p.color)}"></i>${esc(p.name)}</div>
         <div class="agent-last">${esc(latest?.text || agent.lastAction || 'Esperando el próximo heartbeat.')}</div>
-        <div class="agent-hb"><span></span> ${latest ? `señal ${esc(relativeAgo(REPLAY_DURATION - latest.agoSeconds))}` : 'sin señal reciente'} · ${esc(agent.model || 'modelo')}</div>
+        <div class="agent-hb"><span></span> ${latest ? `señal ${esc(relativeAgo(eventAgeAt(latest)))}` : 'sin señal reciente'} · ${esc(agent.model || 'modelo')}</div>
       </button>`;
     }).join('');
   }
@@ -37,11 +37,12 @@ function renderAgents() {
   if ($('#agentTotal')) $('#agentTotal').textContent = state.agents.length;
 }
 
-function openAgent(id) {
+function openAgent(id, options = {}) {
   const agent = agentById(id);
   const p = projectById(agent.projectId);
   const events = state.activity.filter(e => e.agentId === agent.id).sort((a, b) => a.agoSeconds - b.agoSeconds).slice(0, 5);
   const latest = events[0];
+  markDetail('agent', agent.id, options);
   openSheet(`
     <div class="sheet-hero">
       <span class="agent-portrait">${avatarSVG(agent)}</span>
@@ -60,10 +61,10 @@ function openAgent(id) {
         <div><span>Estado</span><strong style="display:flex;align-items:center;gap:5px;"><span class="state-dot ${esc(agent.status)}"></span>${esc(agent.status)}</strong></div>
         <div><span>Heartbeat</span><strong>cada ${esc(agent.heartbeatMinutes || 15)} min</strong></div>
         <div><span>Repo</span><strong>${esc(p.name)}</strong></div>
-        <div><span>Última señal</span><strong>${latest ? esc(relativeAgo(REPLAY_DURATION - latest.agoSeconds)) : 'sin señal'}</strong></div>
+        <div><span>Última señal</span><strong>${latest ? esc(relativeAgo(eventAgeAt(latest))) : 'sin señal'}</strong></div>
       </div>
     </div>
-    ${events.length ? `<div class="sheet-section"><div class="sheet-section-title">Lo último que hizo</div>${events.map(e => `<div class="activity-mini-row"><span class="activity-icon">${icon(typeIcon(e.type))}</span><div><p>${esc(e.text)}</p><small>${esc(TYPE_LABEL[e.type] || e.type)} · ${esc(relativeAgo(REPLAY_DURATION - e.agoSeconds))}</small></div></div>`).join('')}</div>` : ''}
+    ${events.length ? `<div class="sheet-section"><div class="sheet-section-title">Lo último que hizo</div>${events.map(e => `<div class="activity-mini-row"><span class="activity-icon">${icon(typeIcon(e.type))}</span><div><p>${esc(e.text)}</p><small>${esc(TYPE_LABEL[e.type] || e.type)} · ${esc(relativeAgo(eventAgeAt(e)))}</small></div></div>`).join('')}</div>` : ''}
     <div class="sheet-section">
       <div class="sheet-section-title">Protocolo</div>
       <p class="mission-detail-copy">Se registra, late cada 15 minutos y reclama una misión con un evento pusheado. Si dos agentes reclaman la misma misión, el sistema la marca como conflicto y ninguno avanza hasta acordar.</p>
@@ -71,6 +72,7 @@ function openAgent(id) {
     </div>
     <div class="sheet-actions">
       <button class="primary-button" data-prefill-agent="${esc(agent.id)}">${icon('plus')} Pedir una misión</button>
+      <button class="ghost-button" data-copy-link>${icon('link')} Copiar link</button>
       <a class="ghost-button" href="ORCHESTRATION.md" target="_blank" rel="noreferrer">Ver protocolo ${icon('arrow-up-right')}</a>
     </div>`);
 }

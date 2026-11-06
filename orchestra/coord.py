@@ -145,6 +145,26 @@ def project(root):
         active.sort(key=lambda claim: claim["claimId"])
         mission["claims"] = active
         mission["claimStatus"] = "available" if not active else "claimed" if len(active) == 1 else "conflict"
+
+    # Dependencies are seed metadata, not clock-based. A mission is blocked until
+    # every mission it depends on is done (or its GitHub issue is closed).
+    complete = {
+        mission["id"]
+        for mission in state["missions"]
+        if mission.get("status") == "done" or mission.get("githubState") == "closed"
+    }
+    for mission in state["missions"]:
+        deps = mission.get("dependsOn", [])
+        if not isinstance(deps, list):
+            deps = []
+        mission["dependsOn"] = [dep for dep in deps if isinstance(dep, str)]
+        mission["blockedBy"] = [
+            dep
+            for dep in mission["dependsOn"]
+            if dep in missions and dep != mission["id"] and dep not in complete
+        ]
+        mission["isBlocked"] = bool(mission["blockedBy"]) and mission.get("status") != "done"
+
     # Any malformed or ambiguous history may hide a claim. Fail closed globally.
     if warnings:
         for mission in state["missions"]:
@@ -221,6 +241,8 @@ def main(argv=None):
                 if args.command == "claim":
                     if state["protocol"]["warnings"]:
                         raise ValueError("protocol warnings make claims unsafe; reconcile history first")
+                    if mission.get("isBlocked"):
+                        raise ValueError("mission is blocked by " + ", ".join(mission["blockedBy"]))
                     if mission["claims"]:
                         raise ValueError("mission has active claims; reconcile or release them first")
                     event = append_event(args.root, "claim", args.agent, missionId=args.mission)

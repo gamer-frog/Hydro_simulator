@@ -14,9 +14,11 @@ function renderMissionToolbar() {
     open: state.missions.filter(isOpen).length,
     working: state.missions.filter(m => m.status === 'working').length,
     review: state.missions.filter(m => m.status === 'review').length,
+    blocked: state.missions.filter(m => isOpen(m) && isBlocked(m)).length,
     done: state.missions.filter(m => m.status === 'done').length
   };
   if ($('#openCount')) $('#openCount').textContent = counts.open;
+  if ($('#blockedCount')) $('#blockedCount').textContent = counts.blocked;
   $$('#statusFilters [data-status]').forEach(btn => btn.classList.toggle('active', btn.dataset.status === missionFilter));
   if ($('#projectFilterLabel')) {
     $('#projectFilterLabel').textContent = projectFilter === 'all' ? 'Todos los repos' : projectById(projectFilter).name;
@@ -27,6 +29,7 @@ function filteredMissions() {
   let items = state.missions.slice();
   if (projectFilter !== 'all') items = items.filter(m => m.projectId === projectFilter);
   if (missionFilter === 'open') items = items.filter(isOpen);
+  else if (missionFilter === 'blocked') items = items.filter(m => isOpen(m) && isBlocked(m));
   else if (missionFilter === 'done') items = items.filter(m => m.status === 'done' || m.githubState === 'closed');
   else items = items.filter(m => m.status === missionFilter);
   const rank = { working: 0, review: 1, ready: 2, backlog: 3, done: 4 };
@@ -50,11 +53,13 @@ function missionCardMarkup(m) {
   const stateInfo = statusData(m.status);
   const pct = m.totalSubtasks ? Math.round((m.subtasks / m.totalSubtasks) * 100) : (m.status === 'done' ? 100 : 0);
   const labels = (m.labels || []).slice(0, 3).map(l => `<span class="label-pill">${esc(l)}</span>`).join('');
-  return `<button class="mission-card ${esc(m.status)}" data-mission="${esc(m.id)}">
+  const blocked = isBlocked(m);
+  return `<button class="mission-card ${esc(m.status)} ${blocked ? 'blocked' : ''}" data-mission="${esc(m.id)}">
     <span class="mission-card-top">
       <span class="issue-number">#${esc(m.issue || '—')}</span>
       <span class="priority-badge ${String(m.priority || '').toLowerCase()}">${esc(m.priority || 'P2')}</span>
       ${m.type === 'loop' ? `<span class="label-pill">${icon('loop')} loop</span>` : ''}
+      ${blocked ? `<span class="blocked-badge" title="Espera ${esc(missionBlockers(m).map(dep => dep.title).join(', '))}">${icon('lock')} ${missionBlockers(m).length} dep</span>` : ''}
       <span class="mission-state ${esc(m.status)}">${esc(stateInfo.es)}</span>
     </span>
     <span class="mission-title">${esc(m.title)}</span>
@@ -162,9 +167,11 @@ async function syncGitHub(show = true) {
       const cached = JSON.parse(sessionStorage.getItem(cacheKey) || 'null');
       if (cached && Date.now() - cached.time < 120000) {
         github = { ...cached.data, live: true };
+        syncMeta.githubAt = cached.data.updatedAt || cached.time;
         renderGithubSource();
         if (currentView === 'home') renderHomeIssues();
         if (currentView === 'missions') { renderMissionList(); renderGithubIssues(); }
+        if (typeof renderSyncStatus === 'function') renderSyncStatus();
         return true;
       }
     } catch (_) {}
@@ -178,17 +185,19 @@ async function syncGitHub(show = true) {
     if (!Array.isArray(issues)) throw new Error('Respuesta inválida');
     const data = { repo, issues, updatedAt: Date.now(), error: null };
     github = { ...data, live: true };
+    syncMeta.githubAt = data.updatedAt;
     try { sessionStorage.setItem(cacheKey, JSON.stringify({ time: Date.now(), data })); } catch (_) {}
     renderGithubSource();
     if (currentView === 'home') renderHomeIssues();
     if (currentView === 'missions') { renderMissionList(); renderGithubIssues(); }
-    renderSidebar();
+    if (typeof renderSyncStatus === 'function') renderSyncStatus(); else renderSidebar();
     if (show) toast(`GitHub sincronizado · ${issues.filter(i => !i.pull_request).length} issues`);
     return true;
   } catch (err) {
     github.live = false;
     github.error = err.message;
     renderGithubSource();
+    if (typeof renderSyncStatus === 'function') renderSyncStatus();
     if (show) toast(`GitHub: ${err.message}. Sigo con el snapshot del repo.`);
     return false;
   }
@@ -328,16 +337,18 @@ async function syncTrello(show = true) {
       };
     }).filter(a => a.text);
     trello = { live: true, lists, cards, actions, updatedAt: Date.now(), error: null };
+    syncMeta.trelloAt = trello.updatedAt;
     renderTrelloBoard();
     renderWorldMachine();
     renderMachinePreview();
-    renderSidebar();
+    if (typeof renderSyncStatus === 'function') renderSyncStatus(); else renderSidebar();
     if (show) toast(`Trello conectado · ${cards.length} cartas en ${lists.length} listas`);
     return true;
   } catch (err) {
     trello.live = false;
     trello.error = err.message;
     renderTrelloBoard();
+    if (typeof renderSyncStatus === 'function') renderSyncStatus();
     if (show) toast(`Trello: ${err.message}. El tablero sigue en modo demo.`);
     return false;
   }
@@ -346,7 +357,7 @@ async function syncTrello(show = true) {
 /* ------------------------------------------------------------------ */
 /* Detail sheets                                                       */
 /* ------------------------------------------------------------------ */
-function openMission(id) {
+function openMission(id, options = {}) {
   const m = missionById(id);
   if (!m) return;
   const p = projectById(m.projectId);
@@ -355,14 +366,18 @@ function openMission(id) {
   const currentIndex = STATUS[m.status]?.order ?? 0;
   const pct = m.totalSubtasks ? Math.round((m.subtasks / m.totalSubtasks) * 100) : (m.status === 'done' ? 100 : 0);
   const recent = state.activity.filter(e => e.agentId === m.assignee).sort((a, b) => a.agoSeconds - b.agoSeconds).slice(0, 3);
+  const dependencies = missionDependencies(m);
+  const blockers = missionBlockers(m);
+  const blocked = isBlocked(m);
   const issueUrl = `https://github.com/${p.repo}/issues/${m.issue || ''}`;
+  markDetail('mission', m.id, options);
   openSheet(`
     <div class="sheet-hero" style="align-items:flex-start;">
       <span class="agent-portrait">${avatarSVG(agent)}</span>
       <div style="min-width:0;padding-right:34px;">
         <div class="eyebrow">ISSUE #${esc(m.issue || '—')} · ${esc(p.name)}</div>
         <h2 class="mission-sheet-title" style="margin-top:7px;">${esc(m.title)}</h2>
-        <span class="mission-state-big" style="color:${m.status === 'review' ? '#a98455' : m.status === 'done' ? '#95a096' : '#729170'}">${esc(statusData(m.status).es)} ${m.type === 'loop' ? '· loop' : ''}</span>
+        <span class="mission-state-big" style="color:${m.status === 'review' ? '#a98455' : m.status === 'done' ? '#95a096' : '#729170'}">${esc(statusData(m.status).es)} ${m.type === 'loop' ? '· loop' : ''} ${blocked ? '· bloqueada' : ''}</span>
       </div>
     </div>
     <div class="sheet-section">
@@ -376,13 +391,29 @@ function openMission(id) {
       <div class="mission-progress" style="margin-top:11px;"><span class="mission-progress-bar"><span style="width:${pct}%"></span></span><small>${m.totalSubtasks ? `${m.subtasks}/${m.totalSubtasks} subtareas` : 'Sin subtareas'}</small></div>
     </div>
     <div class="sheet-section">
+      <div class="sheet-section-title">Dependencias</div>
+      ${dependencies.length ? `<div class="dependency-list">${dependencies.map(dep => {
+        const complete = isMissionComplete(dep);
+        return `<button class="dependency-row ${complete ? 'done' : 'pending'}" data-mission="${esc(dep.id)}">
+          <span class="dependency-icon">${icon(complete ? 'check' : 'lock')}</span>
+          <span class="dependency-copy"><strong>${esc(dep.title)}</strong><small>#${esc(dep.issue || '—')} · ${esc(statusData(dep.status).es)}</small></span>
+          <span class="dependency-state">${complete ? 'lista' : 'pendiente'}</span>
+        </button>`;
+      }).join('')}</div>
+      <p class="mission-detail-copy dependency-note ${blocked ? 'warn' : 'ok'}">${blocked
+        ? `Bloqueada por ${blockers.length} ${blockers.length === 1 ? 'misión' : 'misiones'}. El protocolo rechaza cualquier claim hasta que estén completas.`
+        : 'Todas las dependencias están completas. La misión se puede reclamar.'}</p>`
+      : `<p class="mission-detail-copy dependency-note ok">${icon('check')} Sin dependencias. Cualquier agente puede reclamarla en el próximo heartbeat.</p>`}
+    </div>
+    <div class="sheet-section">
       <div class="sheet-section-title">Agente asignado</div>
       <div class="detail-kv"><div><span>Agente</span><strong>${esc(agent.name)} · ${esc(agent.role)}</strong></div><div><span>Heartbeat</span><strong>cada ${esc(agent.heartbeatMinutes || 15)} min</strong></div></div>
     </div>
-    ${recent.length ? `<div class="sheet-section"><div class="sheet-section-title">Últimas señales de ${esc(agent.name)}</div>${recent.map(e => `<div class="activity-mini-row"><span class="activity-icon">${icon(typeIcon(e.type))}</span><div><p>${esc(e.text)}</p><small>${esc(relativeAgo(REPLAY_DURATION - e.agoSeconds))} · ${esc(p.name)}</small></div></div>`).join('')}</div>` : ''}
+    ${recent.length ? `<div class="sheet-section"><div class="sheet-section-title">Últimas señales de ${esc(agent.name)}</div>${recent.map(e => `<div class="activity-mini-row"><span class="activity-icon">${icon(typeIcon(e.type))}</span><div><p>${esc(e.text)}</p><small>${esc(relativeAgo(eventAgeAt(e)))} · ${esc(p.name)}</small></div></div>`).join('')}</div>` : ''}
     <div class="sheet-section"><div class="sheet-section-title">Solo lectura</div><p class="mission-detail-copy">Los cambios de estado se hacen en GitHub o mediante el protocolo de agentes. Este visor no modifica issues.</p></div>
     <div class="sheet-actions">
       <a class="primary-button" href="${esc(issueUrl)}" target="_blank" rel="noreferrer">${icon('github')} Abrir issue</a>
+      <button class="ghost-button" data-copy-link>${icon('link')} Copiar link</button>
       <button class="ghost-button" data-prefill-mission="${esc(m.id)}">Pedir algo similar</button>
     </div>`);
 }
