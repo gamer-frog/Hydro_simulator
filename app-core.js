@@ -367,9 +367,9 @@ function replayLabel(at = replay.at) {
 /* ------------------------------------------------------------------ */
 /* Navigation, deep links, sheets and replay                           */
 /* ------------------------------------------------------------------ */
-const ROUTE_VIEWS = ['home', 'world', 'missions', 'agents', 'plan'];
+const ROUTE_VIEWS = ['home', 'world', 'missions', 'agents'];
 const DETAIL_VIEWS = { mission: 'missions', agent: 'agents', project: 'world' };
-const VIEW_TITLES = { home: '00 Brain', world: 'El estudio', missions: 'Misiones', agents: 'Agentes', plan: 'Plan' };
+const VIEW_TITLES = { home: '00 Brain', world: 'El estudio', missions: 'Misiones', agents: 'Agentes' };
 
 function routeHash(view, kind, id) {
   const base = `#/${ROUTE_VIEWS.includes(view) ? view : 'home'}`;
@@ -383,8 +383,9 @@ function parseRoute(hash = '') {
   const parts = clean.split('/').filter(Boolean).map(part => {
     try { return decodeURIComponent(part); } catch (_) { return part; }
   });
-  const hasView = ROUTE_VIEWS.includes(parts[0]);
-  const view = hasView ? parts[0] : 'home';
+  const legacyPlanRoute = parts[0] === 'plan';
+  const hasView = ROUTE_VIEWS.includes(parts[0]) || legacyPlanRoute;
+  const view = legacyPlanRoute ? 'missions' : hasView ? parts[0] : 'home';
   const rest = hasView ? parts.slice(1) : parts;
   let scope = { kind: 'all', id: 'all' };
   let detailParts = rest;
@@ -396,7 +397,7 @@ function parseRoute(hash = '') {
   const kind = detailParts[0];
   const id = detailParts[1];
   const detail = DETAIL_VIEWS[kind] && id ? { kind, id } : null;
-  return { view: hasView ? view : (detail ? DETAIL_VIEWS[kind] : 'home'), scope, detail };
+  return { view: hasView ? view : (detail ? DETAIL_VIEWS[kind] : 'home'), scope, detail, legacyPlanRoute };
 }
 function setRouteHash(view, kind, id, options = {}) {
   const hash = routeHash(view, kind, id);
@@ -413,6 +414,10 @@ function applyRouteFromHash(force = false) {
   scopeFilter = normalizeScope(route.scope?.kind, route.scope?.id);
   projectFilter = 'all';
   navigate(route.view, { updateHash: false, detail: route.detail });
+  if (route.legacyPlanRoute) {
+    setRouteHash(route.view, route.detail?.kind, route.detail?.id, { replace: true });
+    openPlanning();
+  }
 }
 function markDetail(kind, id, options = {}) {
   activeDetail = { kind, id };
@@ -428,9 +433,8 @@ function navigate(view, options = {}) {
   $$('.side-nav [data-view], .bottom-nav [data-view]').forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
   renderBreadcrumb();
   if (view === 'world') { renderWorld(); syncWorldLive(); }
-  if (view === 'missions') renderMissions();
+  if (view === 'missions') { renderMissions(); renderPlan(); }
   if (view === 'agents') renderAgents();
-  if (view === 'plan') renderPlan();
   if (view === 'home') { renderHome(); updateHomeReplay(); }
   if (options.detail?.kind === 'mission' && typeof openMission === 'function') openMission(options.detail.id, { updateHash: false });
   else if (options.detail?.kind === 'agent' && typeof openAgent === 'function') openAgent(options.detail.id, { updateHash: false });

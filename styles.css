@@ -718,7 +718,21 @@ button.attention-item:hover { border-color: #d7e1d1; background: #f7faf4; }
 .protocol-note { display: flex; gap: 7px; background: #f5f7f1; border-radius: 8px; padding: 9px; font-size: 8px; line-height: 1.5; color: #829186; margin-top: 10px; }
 .protocol-note svg { width: 13px; height: 13px; flex-shrink: 0; color: #7e9a79; }
 
-/* ---------- Plan ---------- */
+/* ---------- Mission planning disclosure ---------- */
+.planning-block { margin-top: 12px; padding: 0; overflow: hidden; scroll-margin-top: 16px; }
+.planning-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 16px; cursor: pointer; list-style: none; }
+.planning-summary::-webkit-details-marker { display: none; }
+.planning-summary > span:first-child { display: grid; gap: 3px; }
+.planning-summary .eyebrow { font-size: 7px; }
+.planning-summary strong { font-size: 12px; letter-spacing: -.2px; }
+.planning-summary small { color: #97a299; font-size: 8px; }
+.planning-chevron { color: #8c9a8d; transition: transform .18s ease; }
+.planning-block[open] .planning-chevron { transform: rotate(180deg); }
+.planning-content { display: grid; gap: 12px; padding: 0 16px 16px; }
+.planning-content .plan-summary { margin-bottom: 0; }
+.planning-content .gantt-block,
+.planning-content .plan-grid .block,
+.planning-content .loops-block { box-shadow: none; }
 .plan-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
 .plan-summary-card { background: #fff; border: 1px solid var(--line); border-radius: 13px; padding: 12px; }
 .plan-summary-card span { font: 500 7px var(--mono); color: #9ba69d; text-transform: uppercase; letter-spacing: .4px; }
@@ -788,7 +802,7 @@ button.attention-item:hover { border-color: #d7e1d1; background: #f7faf4; }
 .bottom-nav {
   position: fixed; z-index: 40; left: 50%; transform: translateX(-50%);
   bottom: calc(10px + env(safe-area-inset-bottom)); width: calc(100% - 20px); max-width: 430px;
-  height: 64px; display: grid; grid-template-columns: repeat(5, 1fr); align-items: center;
+  height: 64px; display: grid; grid-template-columns: repeat(4, 1fr); align-items: center;
   background: rgba(255, 255, 255, .94); border: 1px solid rgba(216, 222, 214, .9);
   border-radius: 20px; box-shadow: 0 12px 35px rgba(31, 49, 37, .14);
   backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);

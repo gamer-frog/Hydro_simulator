@@ -110,3 +110,11 @@ function renderLoopGrid() {
     </article>`;
   }).join('') : '<div class="empty-state">No hay loops configurados.</div>';
 }
+
+function openPlanning() {
+  navigate('missions');
+  const section = $('#planningSection');
+  if (!section) return;
+  section.open = true;
+  requestAnimationFrame(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+}

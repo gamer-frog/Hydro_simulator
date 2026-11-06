@@ -35,7 +35,7 @@ function paletteItems() {
   add('Navegar', 'El estudio', 'Oficina isométrica y replay', 'cube', 'estudio world oficina agentes replay', () => navigate('world'));
   add('Navegar', 'Misiones', 'Issues, estados y bloqueos', 'inbox', 'misiones missions issues github', () => navigate('missions'));
   add('Navegar', 'Agentes', 'Agent Agency y protocolo', 'users', 'agentes agents equipo agency', () => navigate('agents'));
-  add('Navegar', 'Plan', 'Corto, mediano y largo plazo', 'calendar', 'plan gantt roadmap loops', () => navigate('plan'));
+  add('Navegar', 'Horizontes y loops', 'Planificación dentro de Misiones', 'calendar', 'plan horizonte gantt roadmap loops', () => openPlanning());
 
   add('Acciones', 'Pedir una misión', 'Publica un issue en GitHub', 'plus', 'pedir crear mision issue request', () => openRequest());
   add('Acciones', 'Sincronizar GitHub', 'Trae issues y pulls en vivo', 'refresh', 'sync sincronizar github actualizar issues', () => syncGitHub(true));
