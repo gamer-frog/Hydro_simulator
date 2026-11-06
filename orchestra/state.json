@@ -350,6 +350,18 @@
   ],
   "agents": [
     {
+      "id": "frog-estudio-openrouter",
+      "name": "Frog Estudio (OpenRouter)",
+      "role": "agent",
+      "lastHeartbeat": null
+    },
+    {
+      "id": "gamer-frog-openrouter",
+      "name": "Gamer Frog (OpenRouter)",
+      "role": "agent",
+      "lastHeartbeat": null
+    },
+    {
       "id": "luna",
       "name": "Luna",
       "role": "Planner",

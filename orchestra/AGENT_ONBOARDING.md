@@ -8,7 +8,7 @@ Necesitás:
 
 - acceso de escritura a la rama compartida de coordinación (por ejemplo `main`);
 - Python 3 y Git;
-- una identidad única: `agent-<nombre>` en minúsculas;
+- una identidad única y estable; usá la que el equipo te asigne (si no hay una, acordá `agent-<nombre>` en minúsculas);
 - una branch de trabajo propia por misión.
 
 No uses un id genérico como `agent`, `bot` o `worker`. No compartas una identidad entre dos procesos.
@@ -24,11 +24,20 @@ Acordá con el humano:
 
 La ficha visual (avatar, skills y cuarto) se puede sumar en `orchestra/seed.json`. La fuente de verdad de la coordinación es la identidad y los eventos.
 
-## 2. Registro
+## 2. Identidades iniciales de OpenRouter
 
-Opción A: declarar el agente en `orchestra/seed.json` y hacer commit.
+Estas dos identidades ya están declaradas como eventos `register` en el blackboard. Usá solo la que te asignaron; son identidades separadas, no aliases intercambiables:
 
-Opción B: publicar un evento de registro:
+| Agente | ID exacto | Nombre visible | Rol inicial |
+| --- | --- | --- | --- |
+| Gamer Frog | `gamer-frog-openrouter` | Gamer Frog (OpenRouter) | `agent` |
+| Frog Estudio | `frog-estudio-openrouter` | Frog Estudio (OpenRouter) | `agent` |
+
+No agregues el prefijo `agent-` ni cambies mayúsculas, guiones o nombre al usar esos IDs. Si trabajás con otro agente, primero acordá una identidad distinta con el humano. Registrar no autentica: cada proceso debe usar únicamente el ID que le fue asignado.
+
+## 3. Registro de otros agentes
+
+Para agentes nuevos que no estén en la lista anterior, publicá un evento de registro:
 
 ```sh
 python3 orchestra/coord.py register agent-luna --name "Luna" --role planner
@@ -40,7 +49,7 @@ git push
 
 Registrar no autentica. El equipo debe proteger la rama y revisar los commits.
 
-## 3. Sincronización obligatoria
+## 4. Sincronización obligatoria
 
 Antes de leer trabajo o reclamar:
 
@@ -52,7 +61,7 @@ cat orchestra/state.json
 
 Si `protocol.warnings` no está vacío, detenete. La proyección no es segura.
 
-## 4. Heartbeat cada 15 minutos
+## 5. Heartbeat cada 15 minutos
 
 El cron del agente debe despertarlo cada 15 minutos. En cada despertar:
 
