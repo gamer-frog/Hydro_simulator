@@ -81,168 +81,72 @@
       </header>
 
       <main class="views">
-        <!-- ============================================================ INICIO · ÍNDICE -->
+        <!-- ============================================================ INICIO · ÍNDICE DE LIBRO -->
         <section class="view active" id="view-panel">
-          <div class="index-head">
-            <div class="index-head-copy">
-              <div class="eyebrow"><span class="live-dot"></span>VERDE <i>/</i> <span>ÍNDICE GENERAL · v2.7</span></div>
-              <h1>La app,<br><em>en un mapa.</em></h1>
-              <p class="lead">Cada sector abre una parte de Verde y muestra su estado real. Esto no es un diario: es un laboratorio para recorrer un batch completo, digerir tus cursos y comparar estrategias como un benchmark.</p>
-              <div class="index-hero-actions">
-                <button class="btn btn-lime" data-nav="sim">Abrir simulador batch <span>→</span></button>
-                <button class="btn btn-ghost" id="idxRunBatch">Correr benchmark <span>⚡</span></button>
-                <button class="btn btn-ghost" data-nav="roadmap">Roadmap <span>◇</span></button>
-              </div>
+          <div class="book-head">
+            <div class="eyebrow"><span class="live-dot"></span>VERDE <i>/</i> <span>ÍNDICE GENERAL</span></div>
+            <h1>El índice<br><em>de la app.</em></h1>
+            <p class="lead">Verde tiene 8 partes. Cada una se abre sola y se entiende sola: elegí una y empezá a leer.</p>
+          </div>
+
+          <div class="book-batch-line">
+            <span class="book-batch-dot" aria-hidden="true"><i></i></span>
+            <div class="book-batch-copy">
+              <b>Batch listo para simular</b>
+              <span id="idxNorthLabel">Día 1 de 75 · Plántula</span>
             </div>
-            <aside class="index-north">
-              <div class="north-glow"></div>
-              <span class="section-kicker">NORTH STAR</span>
-              <b>Entender el batch completo</b>
-              <p>Semilla a frasco. 75 días, 6 fases y 9 plantas en un timelapse con eventos. Una corrida se entiende entera, no día por día.</p>
-              <div class="north-progress"><i id="idxNorthBar"></i></div>
-              <div class="north-foot"><span id="idxNorthLabel">Día 1 de 75 · listo para simular</span><span id="idxNorthPct">1%</span></div>
-            </aside>
+            <div class="book-batch-actions">
+              <button class="btn btn-ghost" id="idxRunBatch">Correr benchmark <span>⚡</span></button>
+              <button class="btn btn-lime" data-nav="sim">Simular un batch <span>→</span></button>
+            </div>
           </div>
 
-          <div class="index-status">
-            <div class="is-cell"><span>BATCH ACTUAL</span><b><span id="idxSimDay">01</span><small>/ 75 días</small></b><i class="is-bar"><i id="idxSimProgress"></i></i></div>
-            <div class="is-cell"><span>PLANTAS ACTIVAS</span><b><span id="statPlants">9</span><small>/ 9 legales</small></b><span class="is-tag">15 m²</span></div>
-            <div class="is-cell"><span>SALUD MEDIA</span><b id="idxHealth">91%</b><span class="is-tag" id="idxHealthTag">ESTABLE</span></div>
-            <div class="is-cell"><span>BIBLIOTECA</span><b><span id="statDocs">28</span><small>PDFs</small></b><span class="is-tag">6 cursos</span></div>
-            <div class="is-cell"><span>PÁGINAS DIGERIDAS</span><b id="idxLibPct">67%</b><i class="is-bar"><i id="idxLibBar"></i></i></div>
-            <div class="is-cell"><span>COSTO DE TEMPORADA</span><b>$<span id="statBudget">406.890</span></b><span class="is-tag" id="statPerGram">$822 / g</span></div>
-            <div class="is-cell"><span>CONSULTAS AL ORÁCULO</span><b id="statQueries">0</b><span class="is-tag">LOCAL</span></div>
-            <div class="is-cell"><span>ROADMAP</span><b id="idxRoadmapDone">0/0</b><span class="is-tag">VIVO</span></div>
-          </div>
+          <nav class="book-index" aria-label="Índice de la app">
+            <button class="book-row" data-nav="sim">
+              <span class="book-num">01</span>
+              <span class="book-copy"><b>Simulador</b><small>Elegís la cepa, configurás y simulás todo el ciclo con timechart.</small></span>
+              <span class="book-arrow" aria-hidden="true">→</span>
+            </button>
+            <button class="book-row" data-nav="library">
+              <span class="book-num">02</span>
+              <span class="book-copy"><b>Biblioteca</b><small>Tus cursos y PDFs convertidos en un índice de sabiduría navegable.</small></span>
+              <span class="book-arrow" aria-hidden="true">→</span>
+            </button>
+            <button class="book-row" data-nav="strains">
+              <span class="book-num">03</span>
+              <span class="book-copy"><b>Cepas</b><small>14 autoflorecientes por Sativa, Indica y CBD, con su fuente anotada.</small></span>
+              <span class="book-arrow" aria-hidden="true">→</span>
+            </button>
+            <button class="book-row" data-nav="journal">
+              <span class="book-num">04</span>
+              <span class="book-copy"><b>Diario</b><small>La temporada semana a semana: ambiente, tareas y resultado.</small></span>
+              <span class="book-arrow" aria-hidden="true">→</span>
+            </button>
+            <button class="book-row" data-nav="oracle">
+              <span class="book-num">05</span>
+              <span class="book-copy"><b>Oráculo</b><small>Preguntás y la biblioteca responde citando la fuente exacta.</small></span>
+              <span class="book-arrow" aria-hidden="true">→</span>
+            </button>
+            <button class="book-row" data-nav="budget">
+              <span class="book-num">06</span>
+              <span class="book-copy"><b>Costos</b><small>El costo real por gramo según tus supuestos editables.</small></span>
+              <span class="book-arrow" aria-hidden="true">→</span>
+            </button>
+            <button class="book-row" data-nav="process">
+              <span class="book-num">07</span>
+              <span class="book-copy"><b>Proceso</b><small>Las 6 fases, su checklist y el marco legal argentino.</small></span>
+              <span class="book-arrow" aria-hidden="true">→</span>
+            </button>
+            <button class="book-row book-row-roadmap" data-nav="roadmap">
+              <span class="book-num">08</span>
+              <span class="book-copy"><b>Roadmap</b><small>Qué falta construir, qué aprendimos de otras apps y el backlog eterno.</small></span>
+              <span class="book-arrow" aria-hidden="true">→</span>
+            </button>
+          </nav>
 
-          <div class="index-grid">
-            <article class="idx-card idx-card-sim idx-span-3">
-              <div class="idx-card-top">
-                <span class="idx-num">01</span>
-                <span class="idx-kicker">SIMULADOR · BATCH COMPLETO</span>
-                <span class="phase-pill" id="idxPhasePill">PLÁNTULA</span>
-              </div>
-              <div class="idx-card-body">
-                <h2>Un batch,<br><em>en timelapse.</em></h2>
-                <p>Corré los 75 días de una vez o mirá el replay con eventos. Compará estrategias por rendimiento, costo por gramo y salud, con un score explicado.</p>
-                <div class="idx-timelapse" id="idxTimelapse">
-                  <div class="idx-tl-seg" style="--pct:14.7"><span>Plántula</span><i></i></div>
-                  <div class="idx-tl-seg" style="--pct:20"><span>Crecimiento</span><i></i></div>
-                  <div class="idx-tl-seg" style="--pct:13.3"><span>Prefloración</span><i></i></div>
-                  <div class="idx-tl-seg" style="--pct:26.7"><span>Floración</span><i></i></div>
-                  <div class="idx-tl-seg" style="--pct:13.3"><span>Maduración</span><i></i></div>
-                  <div class="idx-tl-seg" style="--pct:12"><span>Curado</span><i></i></div>
-                  <div class="idx-tl-playhead" id="idxPlayhead"></div>
-                </div>
-                <div class="idx-batch-readout">
-                  <div><span>DÍA</span><b id="idxBatchDay">01</b></div>
-                  <div><span>FASE</span><b id="idxBatchPhase">Plántula</b></div>
-                  <div><span>PRÓXIMO HITO</span><b id="idxMilestone">Día 12 · Crecimiento</b></div>
-                  <div><span>COSECHAS</span><b id="idxHarvest">0</b></div>
-                </div>
-                <div class="idx-mini-herd"><div class="idx-mini-lamp"></div><div class="idx-mini-plants" id="idxMiniPlants"></div></div>
-                <div class="idx-event-list" id="idxBatchEvents"></div>
-              </div>
-              <div class="idx-card-foot">
-                <div class="idx-foot-meta"><span class="live-dot"></span><span id="idxBatchState">LISTO PARA CORRER</span><span>·</span><span>3 ESTRATEGIAS</span></div>
-                <div class="idx-actions"><button class="text-link" data-nav="journal">Abrir diario <span>→</span></button><button class="btn btn-soft" data-nav="sim">Entrar al batch <span>→</span></button></div>
-              </div>
-            </article>
-
-            <article class="idx-card idx-card-library idx-span-3">
-              <div class="idx-card-top">
-                <span class="idx-num">02</span>
-                <span class="idx-kicker">BIBLIOTECA · ÍNDICE DE SABIDURÍA</span>
-                <span class="idx-mini-pill" id="idxLibMd">12 MD</span>
-              </div>
-              <div class="idx-card-body">
-                <h2>Tus cursos,<br><em>digeridos.</em></h2>
-                <p>Cada curso muestra su nombre y el % de PDFs ya convertidos a Markdown con metadata. Los extras declaran qué falta cargar y los tags cruzan información entre cursos.</p>
-                <div class="idx-course-list" id="idxCourseList"></div>
-                <div class="idx-extras" id="idxExtras"></div>
-              </div>
-              <div class="idx-card-foot">
-                <div class="idx-foot-meta"><span class="live-dot"></span><span>PIPELINE ACTIVO</span><span>·</span><span>METADATA + LINKS</span></div>
-                <div class="idx-actions"><button class="text-link" data-nav="library">Abrir biblioteca <span>→</span></button><button class="btn btn-soft" data-nav="library" data-libmode="digest">Ver índice <span>◈</span></button></div>
-              </div>
-            </article>
-
-            <article class="idx-card idx-span-2">
-              <div class="idx-card-top"><span class="idx-num">03</span><span class="idx-kicker">CEPAS</span><span class="idx-mini-pill">14 AUTOS</span></div>
-              <div class="idx-card-body compact">
-                <h2>Genética,<br><em>en foco.</em></h2>
-                <p>14 autoflorecientes con THC, ciclo, rendimiento, terpenos y notas de cultivo.</p>
-                <div class="idx-tags" id="idxStrainPicks"></div>
-              </div>
-              <div class="idx-card-foot"><span class="idx-foot-meta">CATÁLOGO CURADO</span><button class="text-link" data-nav="strains">Explorar <span>→</span></button></div>
-            </article>
-
-            <article class="idx-card idx-span-2">
-              <div class="idx-card-top"><span class="idx-num">04</span><span class="idx-kicker">DIARIO</span><span class="idx-mini-pill" id="idxWeekPill">S1</span></div>
-              <div class="idx-card-body compact">
-                <h2>El batch,<br><em>semana a semana.</em></h2>
-                <p>Ambiente, tareas, fotos y resultado. El contexto que convierte una corrida en aprendizaje.</p>
-                <div class="idx-week-rail" id="idxJournalWeeks"></div>
-              </div>
-              <div class="idx-card-foot"><span class="idx-foot-meta">11 SEMANAS · EXPORT MD</span><button class="text-link" data-nav="journal">Abrir <span>→</span></button></div>
-            </article>
-
-            <article class="idx-card idx-span-2 idx-card-oracle">
-              <div class="idx-card-top"><span class="idx-num">05</span><span class="idx-kicker">ORÁCULO IA</span><span class="idx-mini-pill lime">LOCAL</span></div>
-              <div class="idx-card-body compact">
-                <h2>Preguntá.<br><em>La biblioteca responde.</em></h2>
-                <p><b id="idxOracleQueries">0</b> consultas registradas. Cada respuesta cita curso, módulo y recurso.</p>
-                <div class="idx-ask"><span>“¿Cuándo cosechar una auto?”</span><button data-ask="¿Cuándo conviene cosechar una autofloreciente?" aria-label="Preguntar">→</button></div>
-              </div>
-              <div class="idx-card-foot"><span class="idx-foot-meta">6 DIPLOMATURAS</span><button class="text-link" data-nav="oracle">Consultar <span>→</span></button></div>
-            </article>
-
-            <article class="idx-card idx-span-2">
-              <div class="idx-card-top"><span class="idx-num">06</span><span class="idx-kicker">COSTOS</span><span class="idx-mini-pill">ARS 2026</span></div>
-              <div class="idx-card-body compact">
-                <h2>El costo real,<br><em>por gramo.</em></h2>
-                <p>Energía, insumos, amortización y escala. Editá supuestos y mirá el impacto.</p>
-                <div class="idx-kpi"><b id="idxCostGram">$822</b><span>por gramo</span><b id="idxCostTotal">$406.890</b><span>temporada</span></div>
-              </div>
-              <div class="idx-card-foot"><span class="idx-foot-meta">9 PLANTAS · 15 M²</span><button class="text-link" data-nav="budget">Ajustar <span>→</span></button></div>
-            </article>
-
-            <article class="idx-card idx-span-2">
-              <div class="idx-card-top"><span class="idx-num">07</span><span class="idx-kicker">PROCESO</span><span class="idx-mini-pill" id="idxProcessPill">0/24</span></div>
-              <div class="idx-card-body compact">
-                <h2>Las 6 fases,<br><em>sin saltos.</em></h2>
-                <p>Checklist operativa, foco de cada etapa y marco legal argentino.</p>
-                <div class="idx-phase-mini"><i></i><i></i><i></i><i></i><i></i><i></i></div>
-                <div class="idx-progress-line"><i id="idxProcessBar"></i></div>
-              </div>
-              <div class="idx-card-foot"><span class="idx-foot-meta">REPROCANN · 2026</span><button class="text-link" data-nav="process">Revisar <span>→</span></button></div>
-            </article>
-
-            <article class="idx-card idx-span-2 idx-card-roadmap">
-              <div class="idx-card-top"><span class="idx-num">08</span><span class="idx-kicker">ROADMAP VIVO</span><span class="idx-mini-pill lime" id="idxRoadPct">0%</span></div>
-              <div class="idx-card-body compact">
-                <h2>El camino<br><em>a seguir.</em></h2>
-                <p>Todo lo que queremos construir, ordenado por horizonte, impacto, esfuerzo y dependencia.</p>
-                <div class="idx-road-next"><span>PRÓXIMO</span><b id="idxRoadNext">Cargando roadmap…</b></div>
-              </div>
-              <div class="idx-card-foot"><span class="idx-foot-meta" id="idxRoadMeta">14 FRENTES · 200 HITOS · 20 APPS</span><button class="text-link" data-nav="roadmap">Ver roadmap <span>◇</span></button></div>
-            </article>
-          </div>
-
-          <div class="index-foot-grid">
-            <section class="idx-card idx-span-2">
-              <div class="idx-card-top"><span class="idx-kicker">INSIGHTS DE LA BIBLIOTECA</span><span class="idx-mini-pill">AUTO</span></div>
-              <div class="idx-card-body compact"><div class="idx-insights" id="idxInsights"></div></div>
-            </section>
-            <section class="idx-card idx-span-2">
-              <div class="idx-card-top"><span class="idx-kicker">RECIÉN DIGERIDO</span><span class="idx-mini-pill" id="idxRecentCount">3</span></div>
-              <div class="idx-card-body compact"><div class="idx-recent" id="idxRecent"></div></div>
-            </section>
-            <section class="idx-card idx-span-2">
-              <div class="idx-card-top"><span class="idx-kicker">ATAJOS DE NAVEGACIÓN</span><span class="idx-mini-pill">⌘K</span></div>
-              <div class="idx-card-body compact"><div class="idx-shortcuts" id="idxShortcuts"></div></div>
-            </section>
-          </div>
+          <p class="book-foot">¿No sabés por dónde empezar? <button class="text-link" data-nav="sim">Simulá un batch</button> o <button class="text-link" data-nav="roadmap">leé el roadmap</button>.</p>
+          <!-- Compatibilidad: IDs que usa renderPanel; ocultos, no visibles -->
+          <div hidden aria-hidden="true"><span id="idxSimDay"></span><span id="idxNorthPct"></span><span id="idxNorthBar"></span><span id="idxSimProgress"></span><span id="idxPlayhead"></span><span id="idxBatchDay"></span><span id="idxBatchPhase"></span><span id="idxPhasePill"></span><span id="idxHarvest"></span><span id="idxHealth"></span><span id="idxHealthTag"></span><span id="idxBatchState"></span><span id="idxMilestone"></span><span id="idxMiniPlants"></span><span id="idxBatchEvents"></span><span id="idxLibMd"></span><span id="idxLibPct"></span><span id="idxLibBar"></span><span id="idxCourseList"></span><span id="idxExtras"></span><span id="idxStrainPicks"></span><span id="idxWeekPill"></span><span id="idxJournalWeeks"></span><span id="idxOracleQueries"></span><span id="idxCostGram"></span><span id="idxCostTotal"></span><span id="idxProcessPill"></span><span id="idxProcessBar"></span><span id="idxRoadmapDone"></span><span id="idxRoadPct"></span><span id="idxRoadMeta"></span><span id="idxRoadNext"></span><span id="idxInsights"></span><span id="idxRecent"></span><span id="idxRecentCount"></span><span id="idxShortcuts"></span><span id="idxTimelapse"></span><span id="statDocs"></span><span id="statPlants"></span><span id="statQueries"></span><span id="statBudget"></span><span id="statPerGram"></span></div>
         </section>
 
         <!-- ============================================================ CEPAS -->

@@ -339,6 +339,7 @@ window.ROADMAP = {
       id: 'product', title: 'Producto y experiencia', icon: '◐', accent: 'lime',
       purpose: 'Densidad legible, atajos claros y una identidad que se recuerde.',
       items: [
+        H('Inicio como índice de libro simple', 'done', 'h0', 'M', '8 capítulos explicados en una línea cada uno; sin KPIs de plantas/salud/costo/oráculo. Solo franja mínima del batch para simular.', '8 capítulos'),
         H('Inicio como índice real de la aplicación', 'done', 'h0', 'M', 'Cada sector muestra estado y lleva a su parte.', '8 sectores'),
         H('Página de Roadmap viva y detallada', 'done', 'h0', 'M', 'Horizontes, métricas, riesgos, ingeniería inversa y backlog.', '14 frentes'),
         H('Layout compacto multipropósito', 'done', 'h0', 'M', 'Más columnas, menos aire desperdiciado.', '6 columnas'),

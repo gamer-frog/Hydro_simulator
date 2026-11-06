@@ -189,14 +189,14 @@
 
   function renderNav() {
     const docs = allResources().length;
-    $('#navDay').textContent = 'D' + String(game.day).padStart(2, '0');
-    $('#navWeek').textContent = 'S' + currentWeek();
-    $('#navDocs').textContent = docs;
-    $('#statDocs').textContent = docs;
-    $('#statPlants').textContent = activeCount();
-    $('#statQueries').textContent = app.queries;
-    $('#statBudget').textContent = fmt(budget().total);
-    $('#statPerGram').textContent = '$' + fmt(budget().perGram) + ' / g';
+    if ($('#navDay')) $('#navDay').textContent = 'D' + String(game.day).padStart(2, '0');
+    if ($('#navWeek')) $('#navWeek').textContent = 'S' + currentWeek();
+    if ($('#navDocs')) $('#navDocs').textContent = docs;
+    if ($('#statDocs')) $('#statDocs').textContent = docs;
+    if ($('#statPlants')) $('#statPlants').textContent = activeCount();
+    if ($('#statQueries')) $('#statQueries').textContent = app.queries;
+    if ($('#statBudget')) $('#statBudget').textContent = fmt(budget().total);
+    if ($('#statPerGram')) $('#statPerGram').textContent = '$' + fmt(budget().perGram) + ' / g';
     const rp = roadmapProgress();
     if ($('#navRoad')) $('#navRoad').textContent = rp.pct + '%';
   }
