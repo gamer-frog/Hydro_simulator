@@ -1,0 +1,190 @@
+/* Conductor — home view. */
+
+function renderHome() {
+  const now = new Date();
+  if ($('#todayLabel')) {
+    $('#todayLabel').textContent = new Intl.DateTimeFormat('es', { weekday: 'long', day: '2-digit', month: 'short' }).format(now).replace('.', '').replace(',', ' ·').toUpperCase();
+  }
+  renderHeroAvatars();
+  renderLiveCard();
+  renderHomeStats();
+  renderNowList();
+  renderStudioPreview();
+  renderMiniPlan();
+  renderMiniLoops();
+  renderHomeIssues();
+  renderMachinePreview();
+  renderSidebar();
+  updateReplayUI();
+}
+
+function renderHeroAvatars() {
+  const el = $('#heroAvatars');
+  if (!el) return;
+  const faces = state.agents.slice(0, 4).map(a => miniFace(a)).join('');
+  const extra = state.agents.length > 4 ? `<span class="more-face">+${state.agents.length - 4}</span>` : '';
+  const working = state.agents.filter(a => a.status !== 'idle').length;
+  el.innerHTML = `${faces}${extra}<span class="cluster-label"><strong>${working} en el estudio</strong><span>heartbeat cada 15 min</span></span>`;
+}
+
+function renderLiveCard() {
+  const events = eventsUpTo();
+  const agentIds = new Set(events.map(e => e.agentId));
+  const pushes = events.filter(e => e.type === 'push' || e.type === 'commit').length;
+  if ($('#liveAgentCount')) $('#liveAgentCount').textContent = agentIds.size || 0;
+  if ($('#liveSignalCount')) $('#liveSignalCount').textContent = events.length;
+  if ($('#livePushCount')) $('#livePushCount').textContent = pushes;
+  if ($('#pulseGraph')) $('#pulseGraph').innerHTML = pulseGraphSVG();
+  updateReplayUI();
+}
+
+function pulseGraphSVG() {
+  const bins = Array(15).fill(0);
+  state.activity.forEach(e => {
+    const idx = clamp(Math.floor((REPLAY_DURATION - e.agoSeconds) / 60), 0, 14);
+    bins[idx] += 1;
+  });
+  const max = Math.max(2, ...bins);
+  const width = 300, height = 78, base = 66, step = 20;
+  const points = bins.map((count, i) => {
+    const x = 6 + i * step;
+    const y = base - (count / max) * 43;
+    return [x, y, count];
+  });
+  let line = `M ${points[0][0]},${points[0][1]}`;
+  for (let i = 1; i < points.length; i++) {
+    const prev = points[i - 1], cur = points[i];
+    const mid = (prev[0] + cur[0]) / 2;
+    line += ` C ${mid},${prev[1]} ${mid},${cur[1]} ${cur[0]},${cur[1]}`;
+  }
+  const area = `${line} L${points[points.length - 1][0]},${height} L${points[0][0]},${height} Z`;
+  const dots = points.filter(p => p[2] > 0).map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.15" fill="#d4e9bf" opacity=".7"/>`).join('');
+  return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="Densidad de actividad en los últimos 15 minutos">
+    <defs>
+      <linearGradient id="pulseArea" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#b9dba0" stop-opacity=".28"/>
+        <stop offset="1" stop-color="#b9dba0" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <line x1="4" y1="${base}" x2="${width - 4}" y2="${base}" stroke="rgba(214,235,201,.14)" stroke-width=".7"/>
+    <path d="${area}" fill="url(#pulseArea)"/>
+    <path d="${line}" fill="none" stroke="#c8e3b1" stroke-width="1.35" stroke-linejoin="round" opacity=".92" vector-effect="non-scaling-stroke"/>
+    ${dots}
+    <line x1="${width - 8}" y1="20" x2="${width - 8}" y2="${base + 3}" stroke="rgba(218,238,204,.26)" stroke-width=".7" stroke-dasharray="2 3"/>
+    <circle cx="${width - 8}" cy="${points[14][1]}" r="1.8" fill="#e4f2d7"/>
+  </svg>`;
+}
+
+function renderHomeStats() {
+  const open = state.missions.filter(isOpen).length;
+  const working = state.missions.filter(m => m.status === 'working').length;
+  const loops = state.loops.filter(l => l.status === 'active').length;
+  const el = $('#homeStats');
+  if (!el) return;
+  el.innerHTML = `
+    <article class="stat-card"><div class="stat-top"><span>Issues</span><span class="stat-icon sage">${icon('git-issue')}</span></div><strong>${String(open).padStart(2, '0')}<small>issues</small></strong><div class="stat-foot">en ${state.projects.length} repos</div></article>
+    <article class="stat-card"><div class="stat-top"><span>En curso</span><span class="stat-icon peach">${icon('run')}</span></div><strong>${String(working).padStart(2, '0')}<small>misiones</small></strong><div class="stat-foot">${state.agents.filter(a => a.status !== 'idle').length} agentes despiertos</div></article>
+    <article class="stat-card"><div class="stat-top"><span>Loops hoy</span><span class="stat-icon blue">${icon('loop')}</span></div><strong>${String(loops).padStart(2, '0')}<small>activos</small></strong><div class="stat-foot">siguiente · ${state.loops.find(l => l.status === 'active')?.nextRun || '—'}</div></article>`;
+}
+
+function renderNowList() {
+  const el = $('#nowList');
+  if (!el) return;
+  const events = eventsUpTo().sort((a, b) => a.agoSeconds - b.agoSeconds).slice(0, 4);
+  if (!events.length) {
+    el.innerHTML = `<div class="now-empty">Todavía no hay señales en este punto del replay.</div>`;
+    return;
+  }
+  el.innerHTML = events.map(e => {
+    const agent = agentById(e.agentId);
+    const p = projectById(e.projectId);
+    const secondsAgo = REPLAY_DURATION - e.agoSeconds;
+    return `<button class="now-row" data-agent="${esc(agent.id)}">
+      ${miniFace(agent)}
+      <span class="now-copy"><span class="now-name"><strong>${esc(agent.name)}</strong><span class="state-dot ${esc(agent.status)}"></span><span class="repo-mini">${esc(p.name)}</span></span><span class="now-action">${esc(e.text)}</span></span>
+      <span class="now-time">${esc(relativeAgo(secondsAgo))}</span>
+    </button>`;
+  }).join('');
+}
+
+function renderStudioPreview() {
+  const el = $('#studioPreview');
+  if (!el) return;
+  const rooms = state.projects.map(p => {
+    const agents = state.agents.filter(a => a.projectId === p.id);
+    const faces = agents.slice(0, 3).map(a => miniFace(a)).join('');
+    const lead = currentEventFor(agents[0]?.id);
+    return `<button class="mini-room" data-room-jump="${esc(p.id)}">
+      <span class="mini-room-avatars">${faces || `<span class="mini-agent-face" style="background:${p.color}"></span>`}</span>
+      <span class="mini-room-copy"><strong>${esc(p.name)}</strong><small>${lead ? esc(lead.text.split('·')[0].trim()) : p.issuesOpen + ' issues'}</small></span>
+    </button>`;
+  }).join('');
+  el.innerHTML = `<div class="mini-room-grid">${rooms}</div>`;
+}
+
+function renderMiniPlan() {
+  const el = $('#miniPlan');
+  if (!el) return;
+  const items = state.missions
+    .filter(m => m.horizon !== 'done' && isOpen(m))
+    .sort((a, b) => (a.startDay || 0) - (b.startDay || 0))
+    .slice(0, 4);
+  el.innerHTML = items.length ? items.map(m => {
+    const p = projectById(m.projectId);
+    const a = agentById(m.assignee);
+    return `<button class="mini-plan-row" data-mission="${esc(m.id)}">
+      <span class="plan-date">${esc(dateOffsetLabel(m.startDay || 0))}</span>
+      <span class="plan-dot" style="background:${esc(p.color)}"></span>
+      <span class="plan-copy"><strong>${esc(m.title)}</strong><small>${esc(p.name)} · ${esc(HORIZONS[m.horizon] || '')}</small></span>
+      ${miniFace(a)}
+    </button>`;
+  }).join('') : '<div class="empty-state">No hay misiones próximas.</div>';
+}
+
+function renderMiniLoops() {
+  const el = $('#miniLoops');
+  if (!el) return;
+  el.innerHTML = state.loops.slice(0, 3).map(l => {
+    const a = agentById(l.agentId);
+    return `<div class="mini-loop">
+      <span class="loop-icon">${icon(l.status === 'active' ? 'loop' : 'pause')}</span>
+      <span class="loop-copy"><strong>${esc(l.name)}</strong><small>${esc(a.name)} · ${esc(l.nextRun || l.cron)}</small></span>
+      <span class="loop-time">${esc(l.cron)}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderHomeIssues() {
+  const el = $('#homeIssues');
+  if (!el) return;
+  const items = githubItems(4);
+  el.innerHTML = items.length ? items.map(item => issueRowMarkup(item, true)).join('') : '<div class="empty-state">No hay issues para mostrar.</div>';
+  const tag = $('#githubSourceTag');
+  if (tag) tag.innerHTML = `<span class="status-dot" style="background:${github.live ? '#7ca575' : '#c5ae85'}"></span> ${github.live ? `GitHub · ${github.repo}` : 'snapshot del repo · demo'}`;
+}
+
+function renderMachinePreview() {
+  const el = $('#machinePreview');
+  if (!el) return;
+  const columns = boardColumns().slice(1, 5);
+  el.innerHTML = columns.map(col => `
+    <div class="machine-col">
+      <div class="machine-col-title">${esc(col.short)}<span>${col.cards.length}</span></div>
+      ${col.cards.slice(0, 2).map(card => {
+        const agent = card.agent ? agentById(card.agent) : null;
+        return `<div class="machine-card" title="${esc(card.name)}">
+          <strong>${esc(card.name)}</strong>
+          <div class="machine-card-foot">${agent ? miniFace(agent) : `<span class="mini-agent-face" style="background:#dbe3d6"></span>`}<span class="machine-label" style="background:${card.color || '#b7c8ad'}"></span></div>
+        </div>`;
+      }).join('') || '<div class="board-empty">—</div>'}
+    </div>`).join('');
+}
+
+function updateHomeReplay() {
+  const events = eventsUpTo();
+  const agentIds = new Set(events.map(e => e.agentId));
+  if ($('#liveAgentCount')) $('#liveAgentCount').textContent = agentIds.size;
+  if ($('#liveSignalCount')) $('#liveSignalCount').textContent = events.length;
+  if ($('#livePushCount')) $('#livePushCount').textContent = events.filter(e => e.type === 'push' || e.type === 'commit').length;
+  if (currentView === 'home') renderNowList();
+}

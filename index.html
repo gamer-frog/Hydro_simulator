@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f3f3ed" />
+  <meta name="description" content="Conductor: un visor móvil para orquestar agentes que viven en GitHub." />
+  <title>Conductor — Agent studio</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231b3427'/%3E%3Cg fill='%23c9e3b7' transform='rotate(-25 32 32)'%3E%3Crect x='20' y='20' width='7' height='24' rx='3'/%3E%3Crect x='29' y='12' width='7' height='40' rx='3'/%3E%3Crect x='38' y='24' width='7' height='20' rx='3'/%3E%3C/g%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=14" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#home" data-go="home" aria-label="Conductor, inicio">
+        <span class="brand-mark"><i></i><i></i><i></i></span>
+        <span>conductor<span class="brand-dot">.</span></span>
+      </a>
+      <button class="workspace-switch" type="button" data-go="home">
+        <span class="workspace-icon">C</span>
+        <span class="workspace-name"><strong>Conductor Studio</strong><small>Agent workspace</small></span>
+        <span class="chevrons">⌃⌄</span>
+      </button>
+      <div class="nav-label">WORKSPACE</div>
+      <nav class="side-nav" aria-label="Navegación principal">
+        <button class="nav-item active" data-view="home"><span data-icon="home"></span>Hoy<span class="nav-live"></span></button>
+        <button class="nav-item" data-view="world"><span data-icon="cube"></span>El estudio</button>
+        <button class="nav-item" data-view="missions"><span data-icon="inbox"></span>Misiones<span class="nav-count" id="navMissionCount">7</span></button>
+        <button class="nav-item" data-view="agents"><span data-icon="users"></span>Agentes<span class="nav-count" id="navAgentCount">6</span></button>
+        <button class="nav-item" data-view="plan"><span data-icon="calendar"></span>Plan</button>
+      </nav>
+      <div class="nav-label projects-label">REPOS <button id="settingsMini" aria-label="Configurar conexiones"><span data-icon="sliders"></span></button></div>
+      <div class="project-nav" id="projectNav"></div>
+      <div class="sidebar-spacer"></div>
+      <button class="connection-card" id="sidebarConnection" type="button">
+        <span class="connection-icon"><span data-icon="plug"></span></span>
+        <span><strong id="sidebarConnectionTitle">GitHub conectado</strong><small id="sidebarConnectionText">Sincroniza issues en vivo</small></span>
+        <span class="chev-right">›</span>
+      </button>
+      <div class="profile">
+        <span class="profile-avatar">AL</span>
+        <span><strong>Alex</strong><small>Workspace owner</small></span>
+        <button class="dots" type="button" data-go="agents" aria-label="Ver agentes">···</button>
+      </div>
+    </aside>
+
+    <div class="app-main">
+      <header class="appbar">
+        <a class="mobile-brand" href="#home" data-go="home" aria-label="Conductor, inicio">
+          <span class="brand-mark"><i></i><i></i><i></i></span><span>conductor<span class="brand-dot">.</span></span>
+        </a>
+        <div class="breadcrumbs"><span>Conductor Studio</span><span data-icon="chevron-right"></span><strong id="breadcrumb">Hoy</strong></div>
+        <div class="appbar-actions">
+          <button class="live-pill" id="livePill" type="button"><span class="live-dot"></span><span>REPLAY 15M</span></button>
+          <button class="top-icon" id="settingsButton" type="button" aria-label="Conexiones"><span data-icon="sliders"></span></button>
+          <span class="top-avatar">AL</span>
+        </div>
+      </header>
+
+      <main class="page">
+        <section class="view active" data-panel="home">
+          <div class="greeting">
+            <div>
+              <div class="eyebrow"><span class="pulse-dot"></span><span id="todayLabel">VIERNES · 06 NOV</span></div>
+              <h1>Buenos días.<br /><em>El estudio está despierto.</em></h1>
+              <p class="lede">Seis agentes, cuatro repos y un tablero compartido. Esto es lo que pasó en los últimos 15 minutos.</p>
+            </div>
+            <button class="avatar-cluster" data-go="world" aria-label="Abrir el estudio de agentes" id="heroAvatars"></button>
+          </div>
+
+          <article class="live-card">
+            <div class="live-card-head">
+              <span class="live-label"><span class="live-dot"></span> LIVE · REPLAY</span>
+              <span class="mono" id="liveTimestamp">14:45 — 15:00</span>
+            </div>
+            <div class="live-summary">
+              <div><strong id="liveAgentCount">6</strong><span>agentes activos</span></div>
+              <div><strong id="liveSignalCount">18</strong><span>señales</span></div>
+              <div><strong id="livePushCount">3</strong><span>pushes</span></div>
+            </div>
+            <div class="pulse-graph" id="pulseGraph" aria-hidden="true"></div>
+            <div class="replay-row">
+              <button class="play-button" id="homePlay" type="button" aria-label="Reproducir los últimos 15 minutos"><span data-icon="play"></span></button>
+              <div class="replay-track">
+                <input id="homeReplay" type="range" min="0" max="900" value="900" step="5" aria-label="Replay de los últimos 15 minutos" />
+                <div class="replay-meta"><span>hace 15 min</span><span id="homeReplayLabel">ahora</span></div>
+              </div>
+              <button class="live-link" data-go="world" type="button">Ver el estudio <span>→</span></button>
+            </div>
+          </article>
+
+          <div class="stat-grid" id="homeStats"></div>
+
+          <div class="home-grid">
+            <div class="home-col">
+              <section class="block">
+                <div class="block-head">
+                  <div><div class="eyebrow">AHORA MISMO</div><h2>Lo que están haciendo</h2></div>
+                  <button class="text-btn" data-go="world">Abrir estudio <span>→</span></button>
+                </div>
+                <div class="now-list" id="nowList"></div>
+              </section>
+
+              <section class="block studio-preview-block">
+                <div class="block-head">
+                  <div><div class="eyebrow">EL ESTUDIO</div><h2>Cuatro cuartos, un sistema</h2></div>
+                  <button class="text-btn" data-go="world">Entrar <span>→</span></button>
+                </div>
+                <div class="studio-preview" id="studioPreview"></div>
+              </section>
+
+              <section class="block">
+                <div class="block-head">
+                  <div><div class="eyebrow">PRÓXIMAS</div><h2>El camino por delante</h2></div>
+                  <button class="text-btn" data-go="plan">Ver plan <span>→</span></button>
+                </div>
+                <div class="mini-plan" id="miniPlan"></div>
+              </section>
+            </div>
+
+            <div class="home-col">
+              <section class="block github-block">
+                <div class="block-head">
+                  <div><div class="eyebrow">GITHUB</div><h2>Issues del repo</h2></div>
+                  <button class="text-btn" id="syncGithubButton">Sincronizar <span>↻</span></button>
+                </div>
+                <div class="source-tag" id="githubSourceTag"><span class="status-dot"></span> repositorio conectado</div>
+                <div class="issue-list" id="homeIssues"></div>
+                <button class="block-link" id="homeRequestButton">Pedir una misión <span>→</span></button>
+              </section>
+
+              <section class="block">
+                <div class="block-head">
+                  <div><div class="eyebrow">TRELLO · MACHINE STATE</div><h2>En qué estado está todo</h2></div>
+                  <button class="text-btn" id="openTrelloButton">Conectar <span>↗</span></button>
+                </div>
+                <div class="machine-preview" id="machinePreview"></div>
+              </section>
+
+              <section class="block loops-mini-block">
+                <div class="block-head">
+                  <div><div class="eyebrow">LOOPS</div><h2>Lo que corre solo</h2></div>
+                  <button class="text-btn" data-go="plan">Ver loops <span>→</span></button>
+                </div>
+                <div class="mini-loops" id="miniLoops"></div>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" data-panel="world">
+          <div class="section-top">
+            <div>
+              <div class="eyebrow"><span class="pulse-dot"></span> LIVE WORLD</div>
+              <h1>El estudio<span class="dot-accent">.</span></h1>
+              <p class="lede">Cada cuarto es un repo. Cada agente deja una huella. Reproducí los últimos 15 minutos o mirá el estado actual.</p>
+            </div>
+            <button class="ghost-button" id="worldSettings" type="button"><span data-icon="sliders"></span> Conexiones</button>
+          </div>
+          <div class="world-layout">
+            <div class="world-card">
+              <div class="world-card-head">
+                <div class="world-status"><span class="live-dot"></span> EN VIVO <span class="world-sep">/</span> <span class="mono" id="worldClock">15:00</span></div>
+                <div class="room-filters" id="roomFilters"></div>
+              </div>
+              <div class="world-stage" id="worldStage" aria-label="Oficina isométrica de agentes"></div>
+              <div class="world-console">
+                <button class="play-button light" id="worldPlay" type="button" aria-label="Reproducir replay"><span data-icon="play"></span></button>
+                <div class="world-track">
+                  <input id="worldReplay" type="range" min="0" max="900" value="900" step="1" aria-label="Línea de tiempo del replay" />
+                  <div class="replay-meta"><span>hace 15 min</span><span id="worldReplayLabel">ahora</span></div>
+                </div>
+                <button class="speed-button" id="worldSpeed" type="button">1×</button>
+              </div>
+              <div class="world-footer">
+                <span><span class="legend-key live"></span> trabajando</span>
+                <span><span class="legend-key review"></span> revisando</span>
+                <span><span class="legend-key idle"></span> esperando heartbeat</span>
+                <button class="text-btn" id="replayReset">Volver al presente →</button>
+              </div>
+            </div>
+            <aside class="world-side">
+              <div class="side-card now-card">
+                <div class="block-head"><div><div class="eyebrow">AHORA EN EL ESTUDIO</div><h2>Últimas señales</h2></div><span class="live-tag"><span class="live-dot"></span>live</span></div>
+                <div class="signal-list" id="worldSignals"></div>
+              </div>
+              <div class="side-card">
+                <div class="block-head"><div><div class="eyebrow">CUARTOS</div><h2>Repos activos</h2></div></div>
+                <div class="room-list" id="roomList"></div>
+              </div>
+              <div class="side-card trello-side">
+                <div class="block-head"><div><div class="eyebrow">TRELLO</div><h2>Machine state</h2></div><span class="mini-source" id="worldTrelloSource">demo</span></div>
+                <div class="machine-mini" id="worldMachine"></div>
+                <button class="block-link" id="worldTrelloButton">Abrir tablero completo <span>→</span></button>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="view" data-panel="missions">
+          <div class="section-top">
+            <div>
+              <div class="eyebrow"><span class="pulse-dot"></span> GITHUB + AGENTES</div>
+              <h1>Misiones<span class="dot-accent">.</span></h1>
+              <p class="lede">Los pedidos entran por GitHub. Los agentes los toman, los mueven y dejan la evidencia.</p>
+            </div>
+            <button class="primary-button" id="requestMissionButton" type="button"><span data-icon="plus"></span> Pedir misión</button>
+          </div>
+          <div class="mission-toolbar">
+            <div class="segmented" id="statusFilters">
+              <button class="active" data-status="open">Abiertas <span id="openCount">7</span></button>
+              <button data-status="working">En curso</button>
+              <button data-status="review">Review</button>
+              <button data-status="done">Hechas</button>
+            </div>
+            <button class="filter-button" id="projectFilterButton" type="button"><span data-icon="filter"></span> <span id="projectFilterLabel">Todos los repos</span></button>
+          </div>
+          <div class="source-banner" id="githubBanner">
+            <span class="source-icon"><span data-icon="github"></span></span>
+            <span><strong>github.com/gamer-frog/PlayGround</strong><small>Issues y pulls en vivo. Cambios solo desde GitHub.</small></span>
+            <button class="mini-button" id="syncGithubInline">Sincronizar</button>
+          </div>
+          <div class="mission-list" id="missionList"></div>
+          <section class="block board-block">
+            <div class="block-head">
+              <div><div class="eyebrow">TRELLO API · MACHINE STATE</div><h2>Lo que dicen y hacen los agentes</h2><p class="block-sub">Un tablero para observar, no para editar. Conectá tu API key en ajustes.</p></div>
+              <span class="mini-source" id="trelloSource">demo</span>
+            </div>
+            <div class="trello-board" id="trelloBoard"></div>
+            <div class="trello-actions" id="trelloActions"></div>
+          </section>
+          <section class="block github-issues-block">
+            <div class="block-head">
+              <div><div class="eyebrow">GITHUB ISSUES · LIVE</div><h2>Actividad del repositorio</h2></div>
+              <a class="text-btn" id="repoLink" href="https://github.com/gamer-frog/PlayGround" target="_blank" rel="noreferrer">Abrir repo <span>↗</span></a>
+            </div>
+            <div class="issue-list large" id="githubIssues"></div>
+          </section>
+        </section>
+
+        <section class="view" data-panel="agents">
+          <div class="section-top">
+            <div>
+              <div class="eyebrow"><span class="pulse-dot"></span> AGENT AGENCY</div>
+              <h1>El equipo<span class="dot-accent">.</span></h1>
+              <p class="lede">Personalidades distintas, un mismo protocolo. Todos se registran, laten cada 15 minutos y reclaman trabajo sin pisarse.</p>
+            </div>
+            <button class="ghost-button" id="registerAgentButton" type="button"><span data-icon="book"></span> Cómo se unen</button>
+          </div>
+          <div class="agency-banner">
+            <div class="agency-copy">
+              <span class="agency-stamp">AGENT<br />AGENCY</span>
+              <div><strong>Una biblioteca de agentes con oficio.</strong><p>Fichas, skills y última señal. El avatar es la interfaz; el repo es la fuente de verdad.</p></div>
+            </div>
+            <div class="agency-faces" id="agencyFaces"></div>
+          </div>
+          <div class="agent-toolbar">
+            <span class="toolbar-title">Todos los agentes <span id="agentTotal">6</span></span>
+            <span class="heartbeat-note"><span class="live-dot"></span> heartbeat cada 15 min</span>
+          </div>
+          <div class="agent-grid" id="agentGrid"></div>
+          <section class="onboarding-block">
+            <div class="block-head">
+              <div><div class="eyebrow">PROTOCOLO ESTÁNDAR</div><h2>Cómo entra un agente nuevo</h2><p class="block-sub">Un camino corto. Sin colisiones, sin misiones huérfanas.</p></div>
+              <button class="text-btn" id="readProtocolButton">Leer protocolo <span>↗</span></button>
+            </div>
+            <div class="steps" id="agentSteps"></div>
+            <div class="protocol-note"><span data-icon="shield"></span><span><strong>Regla de oro:</strong> un reclamo solo cuenta cuando el evento está pusheado a la rama compartida. El heartbeat no reserva trabajo.</span></div>
+          </section>
+        </section>
+
+        <section class="view" data-panel="plan">
+          <div class="section-top">
+            <div>
+              <div class="eyebrow"><span class="pulse-dot"></span> SHORT · MID · LONG</div>
+              <h1>Plan<span class="dot-accent">.</span></h1>
+              <p class="lede">Qué viene ahora, qué corre todos los días y qué estás construyendo para el mes que viene.</p>
+            </div>
+            <button class="ghost-button" data-go="missions" type="button"><span data-icon="inbox"></span> Ver misiones</button>
+          </div>
+          <div class="plan-summary" id="planSummary"></div>
+          <section class="block gantt-block">
+            <div class="block-head">
+              <div><div class="eyebrow">CORTO PLAZO</div><h2>Esta semana</h2></div>
+              <span class="week-chip" id="weekChip">SEMANA 45</span>
+            </div>
+            <div class="gantt" id="gantt"></div>
+          </section>
+          <div class="plan-grid">
+            <section class="block">
+              <div class="block-head"><div><div class="eyebrow">MEDIANO PLAZO</div><h2>Lo que viene después</h2></div></div>
+              <div class="after-list" id="afterList"></div>
+            </section>
+            <section class="block">
+              <div class="block-head"><div><div class="eyebrow">LARGO PLAZO</div><h2>Este mes</h2></div></div>
+              <div class="month-track" id="monthTrack"></div>
+            </section>
+          </div>
+          <section class="block loops-block">
+            <div class="block-head">
+              <div><div class="eyebrow">RECURRENTE</div><h2>Loops diarios y semanales</h2><p class="block-sub">Corren solos. Cada corrida deja una señal en el repo.</p></div>
+              <span class="mini-source"><span class="live-dot"></span> 3 activos</span>
+            </div>
+            <div class="loop-grid" id="loopGrid"></div>
+          </section>
+        </section>
+
+        <footer class="page-footer">
+          <span>CONDUCTOR <b>✳</b> REPO AS BACKEND</span>
+          <span>Los agentes viven en GitHub. La app solo muestra el estado.</span>
+        </footer>
+      </main>
+    </div>
+
+    <nav class="bottom-nav" aria-label="Navegación móvil">
+      <button class="active" data-view="home"><span data-icon="home"></span><span>Hoy</span></button>
+      <button data-view="world"><span data-icon="cube"></span><span>Estudio</span></button>
+      <button data-view="missions" class="bottom-main"><span class="bottom-main-icon" data-icon="plus"></span><span>Misiones</span></button>
+      <button data-view="agents"><span data-icon="users"></span><span>Equipo</span></button>
+      <button data-view="plan"><span data-icon="calendar"></span><span>Plan</span></button>
+    </nav>
+  </div>
+
+  <dialog class="sheet" id="detailSheet">
+    <div class="sheet-grab"></div>
+    <button class="sheet-close" id="closeSheet" aria-label="Cerrar"><span data-icon="x"></span></button>
+    <div id="sheetContent"></div>
+  </dialog>
+
+  <dialog class="modal" id="requestDialog">
+    <div class="modal-head">
+      <div><div class="eyebrow">NUEVO PEDIDO</div><h2>Pedir una misión<span>.</span></h2><p>Se publica como GitHub issue. Los agentes lo levantan en el próximo heartbeat.</p></div>
+      <button class="sheet-close" id="closeRequest" aria-label="Cerrar"><span data-icon="x"></span></button>
+    </div>
+    <form id="requestForm">
+      <label>Título<input name="title" required maxlength="90" placeholder="Ej. Conectar alertas de deploy a Slack" /></label>
+      <label>Descripción<textarea name="description" rows="4" maxlength="1200" placeholder="¿Qué hay que lograr? ¿Cómo sabemos que está listo?"></textarea></label>
+      <label>Repo<select name="project" id="requestProject"></select></label>
+      <div class="form-row">
+        <label>Prioridad<select name="priority"><option>P1</option><option>P0</option><option>P2</option><option>P3</option></select></label>
+        <label>Horizonte<select name="horizon"><option value="now">Ahora</option><option value="week">Esta semana</option><option value="month">Este mes</option></select></label>
+      </div>
+      <label>Etiquetas<input name="labels" value="mission,agent-ready" maxlength="60" /></label>
+      <label class="check-row"><input type="checkbox" name="openGithub" checked /> Abrir el issue en GitHub al enviar</label>
+      <p class="form-note"><span data-icon="info"></span> Sin token de GitHub se abre el formulario oficial de issue. Con token, Conductor lo crea por API. Esta app nunca edita el estado desde el navegador.</p>
+      <div class="modal-actions">
+        <button class="ghost-button" type="button" id="cancelRequest">Cancelar</button>
+        <button class="primary-button" type="submit">Publicar pedido <span>→</span></button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="settingsDialog">
+    <div class="modal-head">
+      <div><div class="eyebrow">CONEXIONES</div><h2>Fuentes de datos<span>.</span></h2><p>GitHub es la fuente de verdad. Trello es el espejo de la máquina de estados.</p></div>
+      <button class="sheet-close" id="closeSettings" aria-label="Cerrar"><span data-icon="x"></span></button>
+    </div>
+    <form id="settingsForm">
+      <div class="settings-section">
+        <div class="settings-title"><span class="settings-number">01</span><div><strong>GitHub</strong><small>Issues, repo y señal pública</small></div><span class="connection-status" id="githubStatus">conectado</span></div>
+        <label>Repositorio<input name="githubRepo" placeholder="owner/repo" /></label>
+        <label>Token personal <span class="optional">(opcional, scopes issues:write)</span><input name="githubToken" type="password" autocomplete="off" placeholder="ghp_…" /></label>
+      </div>
+      <div class="settings-section">
+        <div class="settings-title"><span class="settings-number">02</span><div><strong>Trello</strong><small>Board de machine state en vivo</small></div><span class="connection-status muted" id="trelloStatus">demo</span></div>
+        <label>API key<input name="trelloKey" autocomplete="off" placeholder="key de trello.com/app-key" /></label>
+        <label>Token<input name="trelloToken" type="password" autocomplete="off" placeholder="token con scope read" /></label>
+        <label>Board ID<input name="trelloBoard" autocomplete="off" placeholder="ej. 5f2…" /></label>
+      </div>
+      <p class="form-note warn"><span data-icon="shield"></span> Las credenciales se guardan solo en este navegador. No las uses en una deployment público. Para producción, montá un proxy de solo lectura.</p>
+      <div class="modal-actions">
+        <button class="ghost-button" type="button" id="clearConnections">Limpiar</button>
+        <button class="primary-button" type="submit">Guardar y sincronizar <span>→</span></button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="app-core.js?v=3"></script>
+  <script src="app-home.js?v=2"></script>
+  <script src="app-world.js?v=7"></script>
+  <script src="app-missions.js?v=2"></script>
+  <script src="app-agents.js?v=2"></script>
+  <script src="app-plan.js?v=2"></script>
+  <script src="app-actions.js?v=3"></script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+name: Misión para agentes
+description: Pedir una misión que un agente puede tomar en su próximo heartbeat.
+title: "[Misión] "
+labels: ["mission", "agent-ready"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Este issue es el pedido humano. Un agente lo tomará con el protocolo de `orchestra/AGENT_ONBOARDING.md`.
+        El estado de coordinación vive en `orchestra/state.json`; el issue no reemplaza un `claim`.
+  - type: input
+    id: objective
+    attributes:
+      label: Objetivo
+      description: ¿Qué hay que lograr en una frase?
+      placeholder: "Ej. Conectar alertas de deploy a Slack"
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto
+      description: Links, restricciones, repositorios y decisiones previas.
+      placeholder: "¿Dónde está el código? ¿Qué intentamos antes?"
+  - type: dropdown
+    id: repo
+    attributes:
+      label: Repositorio
+      options:
+        - gamer-frog/PlayGround
+        - gamer-frog/atlas
+        - gamer-frog/signal
+        - gamer-frog/archive
+    validations:
+      required: true
+  - type: dropdown
+    id: horizon
+    attributes:
+      label: Horizonte
+      options:
+        - Ahora
+        - Esta semana
+        - Este mes
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridad
+      options:
+        - P0
+        - P1
+        - P2
+        - P3
+    validations:
+      required: true
+  - type: dropdown
+    id: role
+    attributes:
+      label: Perfil que debería tomarlo
+      options:
+        - Planner
+        - Builder
+        - Researcher
+        - Reviewer
+        - Operator
+        - QA
+        - Cualquiera disponible
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Definición de terminado
+      description: Evidencia concreta que el agente debe dejar.
+      placeholder: |
+        - [ ] Tests pasan
+        - [ ] PR abierto con resumen
+        - [ ] Captura o demo
+  - type: checkboxes
+    id: protocol
+    attributes:
+      label: Protocolo
+      options:
+        - label: Entiendo que el agente debe publicar un evento claim antes de empezar.
+          required: true
+        - label: Entiendo que este visor no edita el estado del issue.
+          required: true
