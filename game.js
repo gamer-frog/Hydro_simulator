@@ -17,11 +17,30 @@
   const HEADINGS = { N: 1, E: 2, S: 3, W: 4 };
   const DELTAS = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] };
   const names = Object.fromEntries(ACTORS.map(actor => [actor.id, actor.name]));
+  const CLASS_PROFILES = {
+    warrior: { label: 'GUERRERO', body: 1, head: 1, hp: 130, mana: 70, skills: [
+      { name: 'Golpe poderoso', icon: '⚔', type: 'damage', cost: 14, damage: [25, 34], range: 1 },
+      { name: 'Vendaje', icon: '✚', type: 'heal', cost: 18, heal: 32 },
+      { name: 'Carga', icon: '➤', type: 'damage', cost: 24, damage: [35, 44], range: 2 }
+    ] },
+    mage: { label: 'MAGO', body: 2, head: 2, hp: 90, mana: 130, skills: [
+      { name: 'Bola de fuego', icon: '✹', type: 'damage', cost: 22, damage: [27, 38], range: 7 },
+      { name: 'Curar', icon: '✚', type: 'heal', cost: 24, heal: 36 },
+      { name: 'Rayo', icon: 'ϟ', type: 'damage', cost: 32, damage: [39, 51], range: 8 }
+    ] },
+    ranger: { label: 'CAZADOR', body: 3, head: 3, hp: 105, mana: 95, skills: [
+      { name: 'Flecha certera', icon: '➶', type: 'damage', cost: 16, damage: [22, 32], range: 6 },
+      { name: 'Hierbas', icon: '✚', type: 'heal', cost: 20, heal: 30 },
+      { name: 'Flecha venenosa', icon: '☠', type: 'damage', cost: 27, damage: [32, 43], range: 7 }
+    ] }
+  };
+  const STEP_DURATION = .115;
   const images = new Map();
   let mapData, grhs, characters;
   let W = 800, H = 480, dpr = 1, tilePx = 32;
   let elapsed = 0, remaining = 180, gameOver = false, paused = false;
-  let selected = 'luna', kills = 0;
+  let selected = 'luna', kills = 0, currentClass = 'warrior';
+  const floatingTexts = [], spellEffects = [];
   let audioOn = true, audioReady = false, audioCtx;
   const keys = new Set();
   let joystickKey = null;
@@ -35,27 +54,33 @@
   let lastToast = 0;
 
   function loadImage(id) {
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       const image = new Image();
       image.onload = () => resolve([id, image]);
-      image.onerror = () => reject(new Error(`Could not load AO graphics/${id}.png`));
+      image.onerror = () => {
+        console.warn(`No se pudo cargar assets/ao/graphics/${id}.png; se dibujará el mapa sin esa lámina.`);
+        resolve([id, null]);
+      };
       image.src = `${MAP_URL}graphics/${id}.png`;
     });
   }
   async function loadAssets() {
     try {
       [mapData, grhs, characters] = await Promise.all(['map.json', 'grhs.json', 'characters.json'].map(name => fetch(MAP_URL + name).then(response => {
-        if (!response.ok) throw new Error(`Could not load ${name}`);
+        if (!response.ok) throw new Error(`Could not load ${name}: ${response.status}`);
         return response.json();
       })));
       const ids = [...new Set(Object.values(grhs).flatMap(def => def.image ? [def.image] : []))];
-      for (const [id, image] of await Promise.all(ids.map(loadImage))) images.set(id, image);
+      const loaded = await Promise.all(ids.map(loadImage));
+      for (const [id, image] of loaded) if (image) images.set(id, image);
+      const missing = ids.length - images.size;
+      if (missing) toast(`${missing} láminas de mapa no cargaron; el resto del mundo sigue disponible.`);
       const positions = [[48, 43], [52, 43], [50, 48], [44, 46]];
       fighters.forEach((actor, i) => { [actor.x, actor.y] = findOpen(positions[i][0], positions[i][1]); actor.homeX = actor.x; actor.homeY = actor.y; });
       refreshHud();
     } catch (error) {
       console.error(error);
-      toast('No se pudieron cargar los recursos de Argentum Online.');
+      toast('No se pudieron cargar los datos del mundo. Revisá que el sitio esté servido por HTTP.');
     }
   }
   function resize() {
