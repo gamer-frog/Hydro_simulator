@@ -17,34 +17,37 @@
 </head>
 <body>
   <div class="app">
-    <aside class="sidebar">
-      <a class="brand" href="#" data-nav="panel" aria-label="Verde, inicio">
-        <span class="brand-mark">
-          <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 31c1.6-11 8.8-17.4 24-20-1.6 11-8.8 17.4-24 20Z" fill="currentColor"/><path d="M10 32c5.6-8 11.6-13 19.4-16.4" stroke="#0d110b" stroke-width="1.7" fill="none"/></svg>
-        </span>
-        <span class="brand-type">verde<small>cultivo con criterio</small></span>
-      </a>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-row">
+        <a class="brand" href="#" data-nav="panel" aria-label="Verde, inicio">
+          <span class="brand-mark">
+            <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 31c1.6-11 8.8-17.4 24-20-1.6 11-8.8 17.4-24 20Z" fill="currentColor"/><path d="M10 32c5.6-8 11.6-13 19.4-16.4" stroke="#0d110b" stroke-width="1.7" fill="none"/></svg>
+          </span>
+          <span class="brand-type">verde<small>cultivo con criterio</small></span>
+        </a>
+        <button class="side-collapse" id="sideCollapse" type="button" aria-label="Plegar barra lateral" aria-expanded="true" title="Plegar / desplegar barra">⟨</button>
+      </div>
 
       <div class="side-scroll">
-        <p class="side-label">Explorar</p>
+        <p class="side-label" data-label="Explorar"><span>Explorar</span><i></i></p>
         <nav class="side-nav" aria-label="Explorar">
-          <button class="nav-item active" data-nav="panel"><span class="nav-ico">◐</span><span>Inicio</span></button>
-          <button class="nav-item" data-nav="strains"><span class="nav-ico">❧</span><span>Cepas</span><em>14</em></button>
-          <button class="nav-item" data-nav="journal"><span class="nav-ico">▤</span><span>Diario</span><em id="navWeek">S1</em></button>
+          <button class="nav-item active" data-nav="panel" title="Inicio"><span class="nav-ico">◐</span><span class="nav-text">Inicio</span></button>
+          <button class="nav-item" data-nav="strains" title="Cepas"><span class="nav-ico">❧</span><span class="nav-text">Cepas</span><em>14</em></button>
+          <button class="nav-item" data-nav="journal" title="Diario"><span class="nav-ico">▤</span><span class="nav-text">Diario</span><em id="navWeek">S1</em></button>
         </nav>
 
-        <p class="side-label">Cultivar</p>
+        <p class="side-label" data-label="Cultivar"><span>Cultivar</span><i></i></p>
         <nav class="side-nav" aria-label="Cultivar">
-          <button class="nav-item" data-nav="sim"><span class="nav-ico">✳</span><span>Simulador</span><em id="navDay">D01</em></button>
-          <button class="nav-item" data-nav="library"><span class="nav-ico">▦</span><span>Biblioteca</span><em id="navDocs">28</em></button>
-          <button class="nav-item" data-nav="oracle"><span class="nav-ico">◈</span><span>Oráculo</span><i class="beta">IA</i></button>
+          <button class="nav-item" data-nav="sim" title="Simulador"><span class="nav-ico">✳</span><span class="nav-text">Simulador</span><em id="navDay">D01</em></button>
+          <button class="nav-item" data-nav="library" title="Biblioteca"><span class="nav-ico">▦</span><span class="nav-text">Biblioteca</span><em id="navDocs">28</em></button>
+          <button class="nav-item" data-nav="oracle" title="Oráculo"><span class="nav-ico">◈</span><span class="nav-text">Oráculo</span><i class="beta">IA</i></button>
         </nav>
 
-        <p class="side-label">Planificar</p>
+        <p class="side-label" data-label="Planificar"><span>Planificar</span><i></i></p>
         <nav class="side-nav" aria-label="Planificar">
-          <button class="nav-item" data-nav="budget"><span class="nav-ico">◫</span><span>Costos</span></button>
-          <button class="nav-item" data-nav="process"><span class="nav-ico">◷</span><span>Proceso</span></button>
-          <button class="nav-item" data-nav="roadmap"><span class="nav-ico">◇</span><span>Roadmap</span><em id="navRoad">0%</em></button>
+          <button class="nav-item" data-nav="budget" title="Costos"><span class="nav-ico">◫</span><span class="nav-text">Costos</span></button>
+          <button class="nav-item" data-nav="process" title="Proceso"><span class="nav-ico">◷</span><span class="nav-text">Proceso</span></button>
+          <button class="nav-item" data-nav="roadmap" title="Roadmap"><span class="nav-ico">◇</span><span class="nav-text">Roadmap</span><em id="navRoad">0%</em></button>
         </nav>
       </div>
 
@@ -257,13 +260,17 @@
 
           <div class="strain-toolbar">
             <label class="search-field"><span>⌕</span><input id="strainSearch" type="search" placeholder="Buscar por nombre, efecto, aroma o terpeno…" /></label>
+            <select id="strainCategory" class="select" aria-label="Categoría"><option value="all">Sativa · Indica · CBD · Híbrida</option><option value="sativa">Sativa</option><option value="indica">Indica</option><option value="cbd">CBD</option><option value="hibrida">Híbrida</option></select>
             <select id="strainDifficulty" class="select"><option value="all">Toda dificultad</option><option>Fácil</option><option>Media</option><option>Alta</option></select>
             <select id="strainEffect" class="select"><option value="all">Todo efecto</option></select>
-            <select id="strainSort" class="select"><option value="thc">Mayor THC</option><option value="fast">Ciclo más corto</option><option value="yield">Mayor rendimiento</option><option value="az">Nombre A–Z</option></select>
+            <select id="strainSort" class="select"><option value="cat">Categoría (Sativa · Indica · CBD)</option><option value="thc">Mayor THC</option><option value="fast">Ciclo más corto</option><option value="yield">Mayor rendimiento</option><option value="az">Nombre A–Z</option></select>
           </div>
 
           <div class="strain-count-row"><span id="strainCount">14 cepas</span><span class="legend-inline"><i class="dot easy"></i>Fácil <i class="dot mid"></i>Media <i class="dot hard"></i>Alta</span></div>
+          <div class="strain-cat-tabs" id="strainCatTabs"></div>
           <div class="strain-grid" id="strainGrid"></div>
+
+          <section class="strain-sources" id="strainSources" aria-label="Fuentes de datos del catálogo"></section>
         </section>
 
         <!-- ============================================================ DIARIO -->
@@ -330,16 +337,63 @@
         <section class="view" id="view-sim">
           <div class="view-head sim-head">
             <div>
-              <div class="eyebrow"><span class="live-dot"></span>SIMULADOR <i>/</i> <span>BATCH COMPLETO · 15 M² · 9 AUTOS</span></div>
-              <h1>El batch completo,<br><em>como una corrida.</em></h1>
-              <p class="lead">No es un diario: es un timelapse de 75 días con eventos. Corré el batch entero, compará estrategias y entendé qué movió el resultado.</p>
+              <div class="eyebrow"><span class="live-dot"></span>SIMULADOR <i>/</i> <span>ELEGÍ CEPA · CONFIGURÁ · SIMULÁ</span></div>
+              <h1>Un batch,<br><em>de punta a punta.</em></h1>
+              <p class="lead">Sin “avanzar un día”: elegís la cepa, configurás la simulación y corrés todo el proceso completo de inicio a fin —con actividades previstas, 5 notas posibles y un timechart comparable.</p>
             </div>
             <div class="head-actions">
               <button class="btn btn-ghost icon-only" id="resetSimBtn" aria-label="Reiniciar temporada" title="Reiniciar temporada">↺</button>
-              <button class="btn btn-ghost" id="quickSimBtn">Simulación veloz <span>⚡</span></button>
-              <button class="btn btn-lime" id="advanceBtn">Avanzar un día <span>→</span></button>
+              <button class="btn btn-ghost" data-nav="strains">Elegir cepa <span>❧</span></button>
             </div>
           </div>
+
+          <section class="sim-config" id="simConfig" aria-label="Configuración de la simulación">
+            <div class="sim-config-head">
+              <div>
+                <span class="section-kicker">PASO 1 · CEPAS · PASO 2 · CONFIGURACIÓN</span>
+                <h2>Configurá y <em>simulá todo.</em></h2>
+              </div>
+              <div class="sim-config-actions">
+                <button class="btn btn-ghost" id="quickSimBtn">Benchmark 6 estrategias <span>⚡</span></button>
+                <button class="btn btn-lime sim-run-btn" id="simulateBtn">SIMULAR <span>▶</span></button>
+              </div>
+            </div>
+            <div class="sim-config-grid">
+              <label class="sim-field sim-field-wide"><span>Cepa para simular</span><select id="simStrain" class="select"></select><small id="simStrainMeta">14 autos · elegí una para cargar su ciclo y rendimiento base</small></label>
+              <label class="sim-field"><span>Plantas</span><input id="simPlants" type="number" min="1" max="9" value="9" /></label>
+              <label class="sim-field"><span>Días de ciclo</span><input id="simDays" type="number" min="55" max="90" value="75" /></label>
+              <label class="sim-field"><span>Luz / día</span><input id="simLight" type="number" min="12" max="24" value="18" /></label>
+              <label class="sim-field"><span>Temperatura media</span><input id="simTemp" type="number" min="18" max="32" value="24" /></label>
+            </div>
+            <div class="sim-strategy-row" id="simStrategyRow" role="radiogroup" aria-label="Estrategia"></div>
+            <div class="sim-grades" id="simGrades" aria-label="Escala de resultados"></div>
+            <p class="sim-config-note">El resultado se evalúa en 5 notas: <b>Horrible · Regular · Buena · Muy buena · Excelente</b>. Cambiás cepa, plantas, ciclo, luz, temperatura y estrategia; el motor recorre los días completos con clima, riego, nutrición y cosecha.</p>
+          </section>
+
+          <section class="sim-results" id="simResults" hidden>
+            <div class="sim-results-head">
+              <div>
+                <span class="section-kicker">RESULTADO · PROCESO COMPLETO</span>
+                <h2 id="simResultTitle">El batch, día por día.</h2>
+              </div>
+              <div class="sim-result-stats" id="simResultStats"></div>
+            </div>
+            <div class="sim-chart-shell">
+              <aside class="sim-chart-filters">
+                <span class="section-kicker">SERIES DEL TIMECHART</span>
+                <p>Tildá cuáles se ven. Igual que la foto: el gráfico cambia al instante.</p>
+                <div id="simSeriesList"></div>
+              </aside>
+              <div class="sim-chart-main">
+                <div class="sim-chart-title-row">
+                  <h3 id="simChartTitle">Rendimiento del batch</h3>
+                  <span id="simChartCaption">Días desde el inicio · % y g proyectados</span>
+                </div>
+                <div class="sim-chart-wrap" id="simChartWrap"></div>
+                <ol class="sim-process" id="simProcess"></ol>
+              </div>
+            </div>
+          </section>
 
           <div class="sim-statusbar">
             <div class="sim-day"><span>DÍA DE CULTIVO</span><b><span id="dayNumber">01</span><small>/ 75</small></b></div>
@@ -401,7 +455,7 @@
                   <button class="action-card" data-action="vent"><span class="action-icon vent-icon">≋</span><span><b>Ventilar</b><small>Renovar el ambiente</small></span><span class="action-cost">− 1 ENERGÍA</span></button>
                   <button class="action-card" data-action="harvest"><span class="action-icon harvest-icon">✂</span><span><b>Cosechar</b><small>Desde el día 67</small></span><span class="action-cost">LISTAS: <i id="readyCount">0</i></span></button>
                 </div>
-                <div class="advance-row"><div class="tip"><span>✦</span><span><b>Consejo del día</b><small id="tipText">Revisá el sustrato antes de regar. Un exceso de agua también estresa.</small></span></div><button id="advanceBtn2" class="advance-button"><span>Avanzar un día</span><b>→</b></button></div>
+                <div class="advance-row"><div class="tip"><span>✦</span><span><b>Tu cultivo actual</b><small id="tipText">Revisá el sustrato antes de regar. Para una corrida completa usá SIMULAR arriba.</small></span></div><button id="simGoBtn" class="advance-button"><span>Configurar y simular</span><b>→</b></button></div>
               </section>
             </div>
 

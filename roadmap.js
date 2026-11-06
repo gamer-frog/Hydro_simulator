@@ -4,9 +4,9 @@
 const H = (t, status, horizon, effort, note, metric) => ({ t, status, horizon, effort, note, metric });
 
 window.ROADMAP = {
-  version: 'v3.0 · noviembre 2026',
+  version: 'v4.0 · noviembre 2026',
   northStar: 'Que cualquiera pueda entender un batch completo de cannabis —de semilla a frasco— simulándolo, cruzándolo con su biblioteca y viendo el porqué de cada evento.',
-  statement: 'Verde no es un diario de cultivo. Es un laboratorio de comprensión: un timelapse interactivo del batch, un índice de sabiduría que conecta PDFs, y un banco de pruebas de estrategias comparables, igual que un benchmark de agentes. El roadmap es la memoria del proyecto: lo que ya está, lo que falta, lo que aprendimos de otras apps y lo que decidimos no copiar.',
+  statement: 'Verde no es un diario de cultivo. Es un laboratorio de comprensión: elegir cepa, configurar y SIMULAR todo el ciclo con timechart, un índice de sabiduría que conecta PDFs, y un banco de pruebas de estrategias comparables. El roadmap es la memoria del proyecto: lo que ya está, lo que falta, lo que aprendimos de otras apps y lo que decidimos no copiar.',
   horizons: [
     { id: 'h0', label: 'Ahora', window: 'Q4 2026', note: 'Consolidar el índice, la biblioteca digerida, el batch benchmark y el roadmap como sistema operativo del producto.' },
     { id: 'h1', label: 'Próximo', window: 'Q1–Q2 2027', note: 'Pipeline real de PDFs, búsqueda semántica, escenarios comparables, PWA y accesibilidad.' },
@@ -21,7 +21,7 @@ window.ROADMAP = {
     { label: 'Conceptos con vínculo cruzado', value: '31%', target: '90%', pct: 31 },
     { label: 'Preguntas del oráculo con cita', value: '100%', target: '100%', pct: 100 },
     { label: 'Estrategias comparables en benchmark', value: '6', target: '6+', pct: 100 },
-    { label: 'Hitos del roadmap completados', value: '38/200', target: '100%', pct: 19, dynamic: 'roadmap' },
+    { label: 'Hitos del roadmap completados', value: '48/206', target: '100%', pct: 23, dynamic: 'roadmap' },
     { label: 'Tiempo a primer insight útil', value: '≈2 min', target: '<60 s', pct: 55 },
     { label: 'Cobertura de tests del simulador', value: '0%', target: '80%', pct: 0 },
     { label: 'Accesibilidad AA', value: 'base', target: 'AA completo', pct: 35 },
@@ -39,7 +39,10 @@ window.ROADMAP = {
     'El roadmap es un contrato vivo: se publica, se revisa y se exporta con cada release.',
     'Aprender de otras apps sin copiar su modelo de negocio, su estética ni sus sesgos.',
     'Toda integración debe poder desconectarse y exportar los datos sin fricción.',
-    'Si una función no ayuda a entender el batch, la biblioteca o el costo real, no entra.'
+    'Si una función no ayuda a entender el batch, la biblioteca o el costo real, no entra.',
+    'Legibilidad ante todo: la letra chica se sube hasta que cualquiera la lee sin esfuerzo en móvil y desktop.',
+    'La barra lateral se pliega y recuerda su estado: espacio solo cuando aporta orientación.',
+    'El catálogo declara su fuente en cada ficha y en una panel público: sin data a ciegas.'
   ],
   nonGoals: [
     'Vender semillas, flores, insumos o servicios de cultivo.',
@@ -261,7 +264,11 @@ window.ROADMAP = {
         H('Modo docente: pausar y preguntar “¿qué harías ahora?”', 'later', 'h3', 'L', 'Evaluar decisiones del usuario contra el resultado y explicar el desvío.', '10 checkpoints'),
         H('Gemelo digital con datos reales del cultivo', 'later', 'h3', 'XL', 'Cruzar sensores y fotos con la simulación para calibrar supuestos.', '1 batch real'),
         H('Simulación de costos por país y moneda', 'later', 'h2', 'M', 'Tarifas, impuestos y precios locales sin prometer resultados.', '5 países'),
-        H('API pública de escenarios y seeds', 'later', 'h3', 'L', 'Permitir reproducir y auditar corridas desde otros tools.', '1 schema')
+        H('API pública de escenarios y seeds', 'later', 'h3', 'L', 'Permitir reproducir y auditar corridas desde otros tools.', '1 schema'),
+        H('Simulador sin avanzar un día: elegí cepa, configurá, SIMULAR', 'done', 'h0', 'M', 'El único flujo es cepa + plantas/días/luz/temperatura + estrategia y corrida completa.', '1 botón SIMULAR'),
+        H('Timechart multi-serie con filtros y leyenda', 'done', 'h0', 'L', 'Estilo Chart Wizard: crecimiento, salud, humedad, nutrición y rendimiento; series activables y leyenda a la derecha.', '5 series'),
+        H('Proceso completo con actividades previstas', 'done', 'h0', 'M', '12 hitos con día, fase, detalle y estado prevista/omitida según estrategia.', '12 hitos'),
+        H('5 notas de resultado: Horrible a Excelente', 'done', 'h0', 'M', 'Score 0–100 mapeado a Horrible / Regular / Buena / Muy buena / Excelente con rendimiento y $/g.', '5 notas')
       ]
     },
     {
@@ -336,6 +343,9 @@ window.ROADMAP = {
         H('Página de Roadmap viva y detallada', 'done', 'h0', 'M', 'Horizontes, métricas, riesgos, ingeniería inversa y backlog.', '14 frentes'),
         H('Layout compacto multipropósito', 'done', 'h0', 'M', 'Más columnas, menos aire desperdiciado.', '6 columnas'),
         H('Sistema de glow verde y luces coherente', 'done', 'h0', 'S', 'Glow como señal de foco, no decoración.', 'Tokens'),
+        H('Barra lateral plegable con estado persistente', 'done', 'h0', 'S', 'Se pliega a iconos y recuerda el estado entre visitas.', '1 toggle'),
+        H('Letra chica subida en toda la app', 'done', 'h0', 'M', 'Kickers, etiquetas laterales y microcopy en 9px+; body 15px.', '100% vistas'),
+        H('Scrollbar ancha y focus glow global', 'done', 'h0', 'S', '16px desktop, hover con glow y bordes que se iluminan al pasar.', '1 sistema'),
         H('Búsqueda global (cepas, cursos, fuentes, roadmap)', 'done', 'h0', 'M', 'Command palette ⌘K con sectores, cepas, cursos, PDFs, roadmap y etiquetas; navegación con teclado.', '⌘K'),
         H('Onboarding de 60 segundos: “corré tu primer batch”', 'now', 'h1', 'M', 'Tres pasos, sin registro.', '<3 clics'),
         H('Estados vacíos y errores explicativos', 'now', 'h1', 'S', 'Cada vacío dice qué hacer y por qué.', '100% cubiertos'),
@@ -425,7 +435,10 @@ window.ROADMAP = {
         H('Rendimiento simulado por cepa', 'later', 'h2', 'M', 'Correr el batch con la curva de cada variedad.', '14 runs'),
         H('Planificador de cruces y estabilización', 'later', 'h3', 'L', 'Herramienta educativa, no promesa de breeding.', '1 planner'),
         H('Presets de batch por genética', 'later', 'h2', 'S', 'Ajustar agua, nutrición y días según la cepa.', '14 presets'),
-        H('Archivo histórico de variedades', 'later', 'h3', 'M', 'Cepas desaparecidas, fuentes y descendencia.', '50 fichas')
+        H('Archivo histórico de variedades', 'later', 'h3', 'M', 'Cepas desaparecidas, fuentes y descendencia.', '50 fichas'),
+        H('Catálogo en 5 columnas con imágenes compactas', 'done', 'h0', 'M', 'Grilla densa 5 columnas desktop; tarjeta reducida sin perder lectura.', '5 columnas'),
+        H('Categorías Sativa · Indica · CBD · Híbrida', 'done', 'h0', 'M', 'Orden y tabs por categoría con conteos; select y pills sincronizados.', '4 categorías'),
+        H('Fuentes anotadas por ficha y panel público', 'done', 'h0', 'M', 'StrainAPI V1, Informer beta y Strainpedia demo documentadas; ninguna key guardada.', '3 fuentes + 1 ref')
       ]
     },
     {
