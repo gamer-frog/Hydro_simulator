@@ -4,7 +4,7 @@
 const H = (t, status, horizon, effort, note, metric) => ({ t, status, horizon, effort, note, metric });
 
 window.ROADMAP = {
-  version: 'v4.3 · noviembre 2026',
+  version: 'v4.4 · noviembre 2026',
   northStar: 'Una app personal de estudio del cannabis medicinal en Argentina: entender un batch completo —de semilla a frasco— simulándolo, cruzándolo con tu biblioteca y viendo el porqué de cada evento.',
   statement: 'Verde no es un diario de cultivo. Es un laboratorio de comprensión: elegir cepa, configurar y SIMULAR todo el ciclo con timechart, un índice de sabiduría que conecta PDFs, y un banco de pruebas de estrategias comparables. El roadmap es la memoria del proyecto: lo que ya está, lo que falta, lo que aprendimos de otras apps y lo que decidimos no copiar.',
   horizons: [
@@ -323,7 +323,9 @@ window.ROADMAP = {
         H('OCR de respaldo para PDFs escaneados', 'now', 'h1', 'L', 'Con confianza por página y corrección manual.', '>95% texto'),
         H('Metadata automática: curso, módulo, año, idioma, conceptos', 'next', 'h1', 'M', 'Sugerir y dejar confirmar; nunca sobrescribir el original.', '10 campos'),
         H('Buscador semántico por fragmento, no solo por título', 'next', 'h1', 'L', 'Embeddings locales + resaltado del pasaje exacto.', '<300 ms'),
-        H('Anotaciones y resaltados por usuario', 'next', 'h2', 'M', 'Notas locales vinculadas al fragmento y al curso.', 'Ilimitadas'),
+        H('Anotaciones y resaltados por usuario', 'done', 'h0', 'M', 'Notas locales por recurso, vinculadas a ruta y fecha, exportables.', 'Ilimitadas'),
+        H('Rutas de lectura por objetivo', 'done', 'h0', 'M', 'Genera una ruta desde un tag y la exporta en Markdown.', '6 rutas'),
+        H('Comparador de fuentes en oráculo', 'done', 'h0', 'M', 'Pasaje, hash, ruta y límites de la fuente en cada respuesta.', '2–4 fuentes'),
         H('Rutas de lectura por objetivo', 'next', 'h1', 'M', 'Armar un recorrido según “aprender riego”, “cosechar” o “presupuestar”.', '6 rutas'),
         H('Grafo de conceptos y lecturas cruzadas', 'later', 'h2', 'L', 'Ver qué cursos hablan del mismo tema y dónde se contradicen.', '500+ vínculos'),
         H('Detección de contradicciones entre fuentes', 'later', 'h2', 'L', 'Comparar afirmaciones con contexto y año.', '20 pares'),

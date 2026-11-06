@@ -416,6 +416,7 @@
                 <div class="wisdom-head">
                   <div><span class="section-kicker">ÍNDICE DE SABIDURÍA</span><h2>El libro completo, <em>en orden.</em></h2><p>Curso → módulo → recurso. Cada entrada conserva su ruta original, su Markdown y su porcentaje de digestión.</p></div>
                   <div class="wisdom-head-side"><span id="wisdomCount">0 entradas</span><span class="idx-mini-pill lime" id="wisdomPct">0%</span></div>
+            <button class="text-link wisdom-path-btn" id="buildPathBtn" type="button">+ Ruta de lectura <span>→</span></button>
                 </div>
                 <div class="wisdom-index" id="wisdomIndex"></div>
               </section>
@@ -423,6 +424,7 @@
                 <section class="card wisdom-panel">
                   <div class="wisdom-panel-head"><div><span class="section-kicker">CONCEPTOS QUE CONECTAN</span><h3>Tag graph</h3></div><span class="idx-mini-pill" id="wisdomTagCount">0</span></div>
                   <div class="wisdom-links" id="wisdomLinks"></div>
+            <div class="reading-paths" id="readingPaths"></div>
                 </section>
                 <section class="card wisdom-panel">
                   <div class="wisdom-panel-head"><div><span class="section-kicker">INSIGHTS AUTOMÁTICOS</span><h3>Lo que emerge</h3></div><span class="idx-mini-pill lime">NUEVO</span></div>
@@ -700,6 +702,7 @@
   <div class="modal-backdrop" id="resultModal"><div class="modal result-modal"><button class="modal-close" data-close="resultModal" aria-label="Cerrar">×</button><span class="section-kicker">RESULTADO DE TEMPORADA</span><h2 id="resultTitle">Cosecha completada.</h2><div class="result-grid"><div><span>COSECHA TOTAL</span><b id="resultYield">—</b></div><div><span>COSTO ESTIMADO</span><b id="resultCost">—</b></div><div><span>COSTO POR GRAMO</span><b id="resultPerGram">—</b></div><div><span>PLANTAS SANAS</span><b id="resultHealthy">—</b></div></div><p class="result-copy" id="resultCopy"></p><div class="result-lessons" id="resultLessons"></div><div class="result-actions"><button class="btn btn-ghost" data-close="resultModal">Seguir revisando</button><button class="btn btn-lime" id="restartFromResult">Nueva temporada <span>↺</span></button></div></div></div>
 
   <div class="modal-backdrop" id="addModal"><div class="modal add-modal"><button class="modal-close" data-close="addModal" aria-label="Cerrar">×</button><span class="section-kicker">APORTAR A LA BIBLIOTECA · PARSER REAL</span><h2>Sumá un PDF y convertilo a Markdown.</h2><p>El parser extrae texto con pdf.js y genera Markdown estructurado (título, páginas, encabezados). El PDF original queda en `pdf/`, el Markdown en `md/`.</p><form id="addForm"><label class="dropzone" id="dropzone"><input type="file" id="fileInput" accept="application/pdf" /><span class="drop-ico">⇧</span><b id="dropTitle">Arrastrá un PDF o hacé clic</b><small id="dropSub">Máx. 40 MB · se procesa localmente, sin subir a terceros</small></label><div class="control-row"><label class="field"><span>Diplomatura</span><select id="addDiploma"><option>Cultivo Interior</option><option>Agroecología Aplicada</option><option>Cannabis Medicinal</option><option>Extracción y Transformados</option><option>Gestión y Presupuesto</option></select></label><label class="field"><span>Módulo / clase</span><input id="addModule" placeholder="Ej. Módulo 4 · Riego" /></label></div><label class="field"><span>Carpeta de origen</span><input id="addPath" placeholder="Ej. 02_Diplomaturas/CultivoInterior/M4/riego.pdf" /></label><div class="quick-note"><span>ⓘ</span><span id="parseStatus">Listo: se extrae texto página por página y se crea el Markdown con metadata y hash.</span></div><button class="btn btn-lime full" type="submit">Añadir y convertir a Markdown <span>+</span></button></form></div></div>
+  <div class="modal-backdrop" id="annotateModal"><div class="modal annotate-modal"><button class="modal-close" data-close="annotateModal" aria-label="Cerrar">×</button><span class="section-kicker">ANOTACIONES LOCALES</span><h2>Notas por recurso.</h2><p>Tus anotaciones quedan en el navegador, vinculadas al recurso. Exportables a Markdown.</p><div id="annotateList"></div><form id="annotateForm"><label class="field"><span>Nota</span><textarea id="annotateText" rows="3" placeholder="Lo que observás, dudas, contradicciones..."></textarea></label><button class="btn btn-lime full" type="submit">Guardar anotación <span>✓</span></button></form></div></div>
 
   <div class="modal-backdrop" id="strainModal"><div class="strain-sheet" id="strainSheet"></div></div>
 

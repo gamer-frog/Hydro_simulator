@@ -108,7 +108,8 @@
     selectedResource: null, queries: 0, chat: [], chatSources: [], dupOnly: false,
     journalWeek: null, journalTasks: {}, selectedStrain: null, grows: [],
     libMode: 'digest', batch: null, roadmapStream: 'all', roadmapPending: false, roadmapHorizon: 'all', roadmapQuery: '',
-    sideCollapsed: false, sim: null, simSeries: { growth: true, health: true, moisture: true, nutrition: true, yield: true }
+    sideCollapsed: false, sim: null, simSeries: { growth: true, health: true, moisture: true, nutrition: true, yield: true },
+    annotations: {}, readingPaths: []
   });
 
   let game, app;
@@ -120,6 +121,8 @@
     app.userResources = Array.isArray(app.userResources) ? app.userResources : [];
     app.journalTasks = app.journalTasks || {};
     app.grows = Array.isArray(app.grows) ? app.grows : [];
+    app.annotations = app.annotations || {};
+    app.readingPaths = Array.isArray(app.readingPaths) ? app.readingPaths : [];
   } catch { game = initialGame(); app = defaultApp(); }
 
   const persist = () => {
@@ -1787,9 +1790,77 @@
       $$('#emergentGuide [data-course]').forEach(el => el.addEventListener('click', () => openCourseFiles(el.dataset.course)));
     }
 
+    const pathsEl = $('#readingPaths');
+    if (pathsEl) {
+      const paths = app.readingPaths || [];
+      pathsEl.innerHTML = paths.length ? `<span class="section-kicker">RUTAS DE LECTURA GUARDADAS</span>` + paths.map(p => `<div class="reading-path-row"><b>${esc(p.tag)}</b><small>${p.ids.length} recursos · ${esc(p.at)}</small><button data-path="${p.id}">Exportar <span>↓</span></button></div>`).join('') : '';
+      $$('#readingPaths [data-path]').forEach(b => b.addEventListener('click', () => {
+        const path = (app.readingPaths || []).find(x => String(x.id) === b.dataset.path);
+        if (path) exportReadingPath(path);
+      }));
+    }
+    $('#buildPathBtn')?.addEventListener('click', () => {
+      const tag = prompt('Tag para la ruta de lectura (ej. riego, cosecha, legal):');
+      if (!tag) return;
+      const path = buildReadingPath(tag.trim());
+      if (path) { showToast(`Ruta creada: ${path.ids.length} recursos.`); renderLibraryDigest(); }
+      else showToast('No hay recursos con ese tag.');
+    });
+
     $$('#libCourseGrid [data-course]').forEach(el => el.addEventListener('click', () => openCourseFiles(el.dataset.course)));
     $$('#wisdomIndex [data-resource]').forEach(el => el.addEventListener('click', () => openLibraryResource(Number(el.dataset.resource))));
     $$('#wisdomLinks [data-tag], #wisdomInsights [data-tag]').forEach(el => el.addEventListener('click', () => searchLibraryTag(el.dataset.tag)));
+  }
+
+  function openAnnotate(id) {
+    const r = allResources().find(x => x.id === id);
+    if (!r) return;
+    const list = app.annotations[id] || [];
+    const box = $('#annotateList');
+    if (box) box.innerHTML = list.length ? list.map((n, i) => `<div class="annotate-item"><span>${esc(n.text)}</span><small>${n.at}</small><button data-del="${i}" aria-label="Borrar">×</button></div>`).join('') : '<p class="annotate-empty">Sin anotaciones todavía.</p>';
+    $('#annotateModal')?.classList.add('open');
+    $$('#annotateList [data-del]').forEach(b => b.addEventListener('click', () => {
+      app.annotations[id].splice(Number(b.dataset.del), 1);
+      persist(); openAnnotate(id);
+    }));
+    const form = $('#annotateForm');
+    if (form) {
+      form.onsubmit = (e) => {
+        e.preventDefault();
+        const txt = $('#annotateText')?.value.trim();
+        if (!txt) return;
+        if (!app.annotations[id]) app.annotations[id] = [];
+        app.annotations[id].unshift({ text: txt, at: new Date().toLocaleString('es-AR') });
+        persist();
+        if ($('#annotateText')) $('#annotateText').value = '';
+        openAnnotate(id);
+        showToast('Anotación guardada.');
+      };
+    }
+  }
+
+  function readingPathTitle(ids) {
+    return ids.map(id => (allResources().find(r => r.id === id) || {}).title || id).join(' → ');
+  }
+
+  function buildReadingPath(tag) {
+    const tagNorm = norm(tag);
+    const ids = allResources().filter(r => (r.tags || []).map(norm).includes(tagNorm)).map(r => r.id).slice(0, 8);
+    if (!ids.length) return null;
+    const path = { id: Date.now(), tag, ids, at: new Date().toLocaleString('es-AR') };
+    app.readingPaths.unshift(path);
+    app.readingPaths = app.readingPaths.slice(0, 12);
+    persist();
+    return path;
+  }
+
+  function exportReadingPath(path) {
+    const txt = `# Ruta de lectura · ${path.tag}\n\nGenerada: ${path.at}\n\n${path.ids.map((id, i) => {
+      const r = allResources().find(x => x.id === id);
+      return `${i + 1}. **${r?.title || id}** — ${r?.diploma || ''} · ${r?.module || ''} · ${r?.pages || 0} pp\n   ${r?.summary || ''}\n   Markdown: ${r ? mdPath(r) : ''}`;
+    }).join('\n')}\n`;
+    downloadText(`ruta-${path.tag}.md`, txt);
+    showToast('Ruta exportada en Markdown.');
   }
 
   function openCourseFiles(code) {
@@ -1972,10 +2043,12 @@
         <button class="btn btn-lime" data-ask="¿Qué dice ${esc(r.title)}?">Preguntar <span>◈</span></button>
         <button class="btn btn-ghost" id="dlPdfBtn">Bajar PDF <span>↓</span></button>
         <button class="btn btn-ghost" id="dlMdBtn">Bajar Markdown <span>↓</span></button>
+        <button class="btn btn-ghost" id="annotateBtn">Anotar <span>✎</span></button>
         <button class="btn btn-ghost" id="copyPathBtn">Copiar ruta</button>
       </div>
       <p style="font-size:7px;line-height:1.6;color:#6d7561;margin:11px 0 0">Origen verificado. El recurso original no se borra ni se sobrescribe al vincular duplicados.</p>`;
     box.querySelector('[data-ask]')?.addEventListener('click', (e) => navigate('oracle', { question: e.currentTarget.dataset.ask }));
+    box.querySelector('#annotateBtn')?.addEventListener('click', () => openAnnotate(r.id));
     box.querySelector('#dlMdBtn')?.addEventListener('click', () => {
       const md = r.mdText || `# ${r.title}\n\n> ${r.summary}\n\n- Curso: ${r.diploma}\n- Módulo: ${r.module}\n- Ruta PDF: ${r.path}\n- Hash: ${mdHash(r)}\n`;
       downloadText(mdPath(r).split('/').pop(), md);
