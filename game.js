@@ -17,45 +17,76 @@
   const HEADINGS = { N: 1, E: 2, S: 3, W: 4 };
   const DELTAS = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] };
   const names = Object.fromEntries(ACTORS.map(actor => [actor.id, actor.name]));
+  const CLASS_PROFILES = {
+    warrior: { label: 'GUERRERO', body: 1, head: 1, hp: 130, mana: 70, skills: [
+      { name: 'Golpe poderoso', icon: '⚔', type: 'damage', cost: 14, damage: [25, 34], range: 1 },
+      { name: 'Vendaje', icon: '✚', type: 'heal', cost: 18, heal: 32 },
+      { name: 'Carga', icon: '➤', type: 'damage', cost: 24, damage: [35, 44], range: 2 }
+    ] },
+    mage: { label: 'MAGO', body: 2, head: 2, hp: 90, mana: 130, skills: [
+      { name: 'Bola de fuego', icon: '✹', type: 'damage', cost: 22, damage: [27, 38], range: 7 },
+      { name: 'Curar', icon: '✚', type: 'heal', cost: 24, heal: 36 },
+      { name: 'Rayo', icon: 'ϟ', type: 'damage', cost: 32, damage: [39, 51], range: 8 }
+    ] },
+    ranger: { label: 'CAZADOR', body: 3, head: 3, hp: 105, mana: 95, skills: [
+      { name: 'Flecha certera', icon: '➶', type: 'damage', cost: 16, damage: [22, 32], range: 6 },
+      { name: 'Hierbas', icon: '✚', type: 'heal', cost: 20, heal: 30 },
+      { name: 'Flecha venenosa', icon: '☠', type: 'damage', cost: 27, damage: [32, 43], range: 7 }
+    ] }
+  };
+  const STEP_DURATION = .115;
   const images = new Map();
   let mapData, grhs, characters;
   let W = 800, H = 480, dpr = 1, tilePx = 32;
   let elapsed = 0, remaining = 180, gameOver = false, paused = false;
-  let selected = 'luna', kills = 0;
+  let selected = 'luna', kills = 0, currentClass = 'warrior';
+  const floatingTexts = [], spellEffects = [];
   let audioOn = true, audioReady = false, audioCtx;
   const keys = new Set();
   let joystickKey = null;
   const fighters = ACTORS.map((actor, index) => ({
-    ...actor, homeX: actor.x, homeY: actor.y, hp: 100, maxHp: 100, alive: true, kills: 0,
+    ...actor, homeX: actor.x, homeY: actor.y,
+    hp: index === 0 ? CLASS_PROFILES.warrior.hp : 100,
+    maxHp: index === 0 ? CLASS_PROFILES.warrior.hp : 100,
+    mana: index === 0 ? CLASS_PROFILES.warrior.mana : 0,
+    maxMana: index === 0 ? CLASS_PROFILES.warrior.mana : 0,
+    alive: true, kills: 0,
     heading: index === 1 ? 'W' : 'S', step: null, stepTime: 0, aiTimer: rand(.2, 1),
-    attackCd: rand(.2, .8), flash: 0, respawn: 0, bodyFrameTime: Math.random() * 2
+    attackCd: rand(.2, .8), flash: 0, respawn: 0, bodyFrameTime: Math.random() * 2,
+    skillCooldowns: [0, 0, 0]
   }));
   const player = fighters[0];
   const byId = Object.fromEntries(fighters.map(actor => [actor.id, actor]));
   let lastToast = 0;
 
   function loadImage(id) {
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       const image = new Image();
       image.onload = () => resolve([id, image]);
-      image.onerror = () => reject(new Error(`Could not load AO graphics/${id}.png`));
+      image.onerror = () => {
+        console.warn(`No se pudo cargar assets/ao/graphics/${id}.png; se dibujará el mapa sin esa lámina.`);
+        resolve([id, null]);
+      };
       image.src = `${MAP_URL}graphics/${id}.png`;
     });
   }
   async function loadAssets() {
     try {
       [mapData, grhs, characters] = await Promise.all(['map.json', 'grhs.json', 'characters.json'].map(name => fetch(MAP_URL + name).then(response => {
-        if (!response.ok) throw new Error(`Could not load ${name}`);
+        if (!response.ok) throw new Error(`Could not load ${name}: ${response.status}`);
         return response.json();
       })));
       const ids = [...new Set(Object.values(grhs).flatMap(def => def.image ? [def.image] : []))];
-      for (const [id, image] of await Promise.all(ids.map(loadImage))) images.set(id, image);
+      const loaded = await Promise.all(ids.map(loadImage));
+      for (const [id, image] of loaded) if (image) images.set(id, image);
+      const missing = ids.length - images.size;
+      if (missing) toast(`${missing} láminas de mapa no cargaron; el resto del mundo sigue disponible.`);
       const positions = [[48, 43], [52, 43], [50, 48], [44, 46]];
       fighters.forEach((actor, i) => { [actor.x, actor.y] = findOpen(positions[i][0], positions[i][1]); actor.homeX = actor.x; actor.homeY = actor.y; });
       refreshHud();
     } catch (error) {
       console.error(error);
-      toast('No se pudieron cargar los recursos de Argentum Online.');
+      toast('No se pudieron cargar los datos del mundo. Revisá que el sitio esté servido por HTTP.');
     }
   }
   function resize() {
@@ -112,7 +143,7 @@
   }
   function position(actor) {
     if (!actor.step) return [actor.x, actor.y];
-    const t = clamp(actor.stepTime / .17, 0, 1), [x0, y0] = actor.step.from, [x1, y1] = actor.step.to;
+    const t = clamp(actor.stepTime / STEP_DURATION, 0, 1), [x0, y0] = actor.step.from, [x1, y1] = actor.step.to;
     return [x0 + (x1 - x0) * t, y0 + (y1 - y0) * t];
   }
   function nearestEnemy(actor) {
@@ -149,10 +180,63 @@
     if (d > 1) { toast('Acercate al objetivo para atacar.'); return false; }
     actor.heading = actorTile(target)[0] < actorTile(actor)[0] ? 'W' : actorTile(target)[0] > actorTile(actor)[0] ? 'E' : actorTile(target)[1] < actorTile(actor)[1] ? 'N' : 'S';
     actor.attackCd = actor === player ? .62 : rand(.7, 1.05);
-    actor.flash = .1; target.hp = Math.max(0, target.hp - rand(11, 18)); target.flash = .22;
+    actor.flash = .1;
+    const damage = Math.ceil(rand(11, 18)); target.hp = Math.max(0, target.hp - damage); target.flash = .22;
+    addFloatingText(target, `-${damage}`, 'damage');
     tone(155 + Math.random() * 50, .07);
     if (target.hp <= 0) kill(target, actor);
     refreshHud(); return true;
+  }
+  function addFloatingText(actor, text, kind) {
+    const [x, y] = position(actor);
+    floatingTexts.push({ x, y, text, kind, age: 0 });
+  }
+  function castSkill(index) {
+    if (gameOver || paused || !player.alive) return;
+    const skill = CLASS_PROFILES[currentClass].skills[index], target = byId[selected];
+    if (!skill || !target || !target.alive || target === player) { toast('Elegí un rival como objetivo.'); return; }
+    if (player.skillCooldowns[index] > 0) { toast('Esa habilidad todavía se está recuperando.'); return; }
+    if (player.mana < skill.cost) { toast('No tenés maná suficiente.'); return; }
+    if (skill.type === 'damage' && distance(player, target) > skill.range) { toast(`Acercate; alcance máximo: ${skill.range} casilleros.`); return; }
+    player.mana -= skill.cost;
+    player.skillCooldowns[index] = skill.type === 'heal' ? 5 : 2.8 + index * .7;
+    const [px, py] = position(player), [tx, ty] = position(target);
+    if (skill.type === 'heal') {
+      const restored = Math.min(skill.heal, player.maxHp - player.hp);
+      if (!restored) { player.mana += skill.cost; player.skillCooldowns[index] = 0; toast('Ya tenés toda la vida.'); return; }
+      player.hp += restored; player.flash = .2; addFloatingText(player, `+${restored}`, 'heal');
+      spellEffects.push({ x: px, y: py, tx: px, ty: py, age: 0, duration: .65, kind: 'heal' });
+      toast(`${skill.name}: recuperaste ${restored} de vida.`); tone(520, .15);
+    } else {
+      const damage = Math.ceil(rand(skill.damage[0], skill.damage[1]));
+      target.hp = Math.max(0, target.hp - damage); target.flash = .28;
+      addFloatingText(target, `-${damage}`, 'damage');
+      spellEffects.push({ x: px, y: py, tx, ty, age: 0, duration: .42, kind: currentClass });
+      toast(`${skill.name} · ${damage} de daño a ${target.name}.`); tone(currentClass === 'mage' ? 620 : 340, .13);
+      if (target.hp <= 0) kill(target, player);
+    }
+    refreshHud();
+  }
+  function applyClass(className) {
+    currentClass = className in CLASS_PROFILES ? className : 'warrior';
+    const profile = CLASS_PROFILES[currentClass];
+    player.body = profile.body; player.head = profile.head;
+    player.maxHp = profile.hp; player.hp = profile.hp;
+    player.maxMana = profile.mana; player.mana = profile.mana;
+    player.skillCooldowns = [0, 0, 0];
+    $('heroClass').textContent = profile.label;
+    $('playerClassLabel').textContent = profile.label;
+    renderSkills(); refreshHud();
+    toast(`Clase ${profile.label.toLowerCase()} seleccionada.`);
+  }
+  function renderSkills() {
+    CLASS_PROFILES[currentClass].skills.forEach((skill, index) => {
+      const button = document.querySelector(`[data-skill="${index}"]`);
+      button.querySelector('.spell-icon').textContent = skill.icon;
+      button.querySelector('.spell-name').textContent = skill.name;
+      button.querySelector('.spell-cost').textContent = `${skill.cost} maná`;
+      button.title = `${skill.name} · ${skill.cost} maná · ${skill.type === 'heal' ? 'Restaura vida' : `Alcance ${skill.range}`}`;
+    });
   }
   function kill(victim, attacker) {
     victim.alive = false; victim.respawn = 2.4; victim.step = null;
@@ -171,7 +255,7 @@
   }
   function respawn(actor) {
     const [x, y] = findOpen(actor.homeX, actor.homeY);
-    Object.assign(actor, { x, y, hp: 100, alive: true, step: null, respawn: 0, flash: .6, attackCd: .7 });
+    Object.assign(actor, { x, y, hp: actor === player ? player.maxHp : 100, mana: actor === player ? player.maxMana : 0, alive: true, step: null, respawn: 0, flash: .6, attackCd: .7 });
   }
   function selectTarget(actor) {
     if (!actor || actor === player || !actor.alive) return;
@@ -224,12 +308,17 @@
     for (const actor of fighters) {
       if (actor.attackCd > 0) actor.attackCd -= dt;
       if (actor.flash > 0) actor.flash -= dt;
+      if (actor === player) actor.skillCooldowns = actor.skillCooldowns.map(value => Math.max(0, value - dt));
       if (actor.step) {
         actor.stepTime += dt;
-        if (actor.stepTime >= .17) { [actor.x, actor.y] = actor.step.to; actor.step = null; actor.stepTime = 0; }
+        if (actor.stepTime >= STEP_DURATION) { [actor.x, actor.y] = actor.step.to; actor.step = null; actor.stepTime = 0; }
       }
       if (!actor.alive) { actor.respawn -= dt; if (actor.respawn <= 0) respawn(actor); }
     }
+    for (const text of floatingTexts) text.age += dt;
+    for (const effect of spellEffects) effect.age += dt;
+    while (floatingTexts.length && floatingTexts[0].age > 1.05) floatingTexts.shift();
+    while (spellEffects.length && spellEffects[0].age > spellEffects[0].duration) spellEffects.shift();
     updatePlayer(); updateBots(dt);
     if (remaining <= 0) endMatch(false);
     refreshHud();
@@ -306,6 +395,32 @@
       if (id) { const [sx, sy] = screenTile(x, y, cameraX, cameraY); drawGrh(id, sx, sy, now); }
     }
   }
+  function drawCombatEffects(cameraX, cameraY, now) {
+    for (const effect of spellEffects) {
+      const progress = effect.age / effect.duration;
+      const [x0, y0] = screenTile(effect.x, effect.y, cameraX, cameraY);
+      const [x1, y1] = screenTile(effect.tx, effect.ty, cameraX, cameraY);
+      const x = x0 + tilePx / 2 + (x1 - x0) * progress;
+      const y = y0 + tilePx / 2 + (y1 - y0) * progress;
+      ctx.save(); ctx.globalAlpha = 1 - progress;
+      ctx.fillStyle = effect.kind === 'heal' ? '#9ee68b' : effect.kind === 'mage' ? '#ff9a54' : effect.kind === 'ranger' ? '#c9e177' : '#f4df9b';
+      ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = tilePx * .55;
+      ctx.beginPath(); ctx.arc(x, y, tilePx * (.1 + progress * .23), 0, Math.PI * 2); ctx.fill();
+      if (effect.kind !== 'heal') {
+        ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = Math.max(2, tilePx * .06);
+        ctx.beginPath(); ctx.moveTo(x0 + tilePx / 2, y0 + tilePx / 2); ctx.lineTo(x, y); ctx.stroke();
+      }
+      ctx.restore();
+    }
+    for (const item of floatingTexts) {
+      const [sx, sy] = screenTile(item.x, item.y, cameraX, cameraY), progress = item.age / 1.05;
+      ctx.save(); ctx.globalAlpha = Math.min(1, (1 - progress) * 2.5);
+      ctx.textAlign = 'center'; ctx.font = `800 ${Math.max(14, tilePx * .48)}px DM Sans, sans-serif`;
+      ctx.fillStyle = item.kind === 'heal' ? '#9fe58e' : '#ff8274'; ctx.shadowColor = '#11150f'; ctx.shadowBlur = 5;
+      ctx.fillText(item.text, sx + tilePx / 2, sy - tilePx * .18 - progress * tilePx * .8);
+      ctx.restore();
+    }
+  }
   function draw() {
     ctx.clearRect(0, 0, W, H);
     if (!mapData) {
@@ -315,11 +430,20 @@
     const [cx, cy] = position(player), now = performance.now();
     const range = visibleRange(cx, cy);
     ctx.imageSmoothingEnabled = false;
-    drawGround(range, now, cx, cy); drawWorldLayer(range, now, cx, cy);
+    drawGround(range, now, cx, cy); drawWorldLayer(range, now, cx, cy); drawCombatEffects(cx, cy, now);
   }
   function refreshHud() {
     if (!player) return;
-    $('healthBar').style.width = `${player.hp}%`;
+    $('healthBar').style.width = `${player.hp / player.maxHp * 100}%`;
+    $('healthValue').textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
+    $('manaBar').style.width = `${player.mana / player.maxMana * 100}%`;
+    $('manaValue').textContent = `${Math.floor(player.mana)} / ${player.maxMana}`;
+    document.querySelectorAll('.spell-slot').forEach((button, index) => {
+      const skill = CLASS_PROFILES[currentClass].skills[index], cooldown = player.skillCooldowns[index];
+      button.disabled = !player.alive || player.mana < skill.cost || cooldown > 0;
+      button.classList.toggle('cooling', cooldown > 0);
+      button.querySelector('.spell-cost').textContent = cooldown > 0 ? `${cooldown.toFixed(1)}s` : `${skill.cost} maná`;
+    });
     $('playerKills').innerHTML = `${kills} <i>/ 5</i>`; $('rosterPlayerKills').textContent = kills;
     $('score-luna').textContent = byId.luna.kills; $('score-bruno').textContent = byId.bruno.kills; $('score-mateo').textContent = byId.mateo.kills;
     $('progressText').textContent = `${kills} / 5`; $('progressBar').style.width = `${Math.min(100, kills / 5 * 100)}%`;
@@ -339,7 +463,8 @@
     $('resultSub').textContent = won ? 'El Robledal recuerda tu nombre.' : 'La arena volverá a abrir sus puertas.';
   }
   function resetGame() {
-    for (const actor of fighters) Object.assign(actor, { x: actor.homeX, y: actor.homeY, hp: 100, alive: true, kills: 0, step: null, stepTime: 0, respawn: 0, flash: 0, attackCd: rand(.2, .8), aiTimer: rand(.2, 1) });
+    for (const actor of fighters) Object.assign(actor, { x: actor.homeX, y: actor.homeY, hp: actor === player ? player.maxHp : 100, mana: actor === player ? player.maxMana : 0, alive: true, kills: 0, step: null, stepTime: 0, respawn: 0, flash: 0, attackCd: rand(.2, .8), aiTimer: rand(.2, 1), skillCooldowns: [0, 0, 0] });
+    floatingTexts.length = 0; spellEffects.length = 0;
     selected = 'luna'; kills = 0; remaining = 180; elapsed = 0; gameOver = false; paused = false; keys.clear();
     $('resultPanel').classList.add('hidden'); $('battleLog').innerHTML = '<div class="empty-log">Las hazañas de la arena aparecerán aquí.</div>';
     $('killFeed').innerHTML = '<div class="feed-line"><span class="feed-gold">✦</span> <b>La arena te espera</b><span>—</span> buena suerte, viajero.</div>';
@@ -363,6 +488,7 @@
     if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key)) event.preventDefault();
     if (key === 'escape') { togglePause(); return; }
     if (key === 'enter' || key === 'f') { event.preventDefault(); attack(); return; }
+    if (['1', '2', '3'].includes(key)) { castSkill(Number(key) - 1); return; }
     if (key === 'tab') { event.preventDefault(); const next = fighters.filter(f => f !== player && f.alive); if (next.length) selectTarget(next[(next.findIndex(f => f.id === selected) + 1) % next.length]); return; }
     keys.add(key);
   });
@@ -374,6 +500,8 @@
   });
   canvas.addEventListener('contextmenu', event => event.preventDefault());
   $('attackBtn').addEventListener('click', () => attack());
+  $('classSelect').addEventListener('change', event => applyClass(event.target.value));
+  document.querySelectorAll('.spell-slot').forEach(button => button.addEventListener('click', () => castSkill(Number(button.dataset.skill))));
   document.querySelectorAll('.roster-row[data-fighter]').forEach(row => {
     if (row.dataset.fighter !== 'player') row.addEventListener('click', () => selectTarget(byId[row.dataset.fighter]));
   });
@@ -393,5 +521,5 @@
   $('menuBtn').addEventListener('click', togglePause);
   let previous = performance.now();
   function loop(now) { const dt = Math.min(.05, (now - previous) / 1000); previous = now; update(dt); draw(); requestAnimationFrame(loop); }
-  refreshHud(); loadAssets(); requestAnimationFrame(loop);
+  renderSkills(); refreshHud(); loadAssets(); requestAnimationFrame(loop);
 })();
