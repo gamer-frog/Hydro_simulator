@@ -11,12 +11,12 @@
     try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch {}
   }
   async function pdfToMarkdown(file, title, onProgress) {
-    if (!window.pdfjsLib || !file) return { md: '', pages: 0, chars: 0, headings: [], failed: true, reason: 'pdf.js no cargado' };
+    if (!window.pdfjsLib || !file) return { md: '', pages: 0, chars: 0, headings: [], topics: [], failed: true, reason: 'pdf.js no cargado', meta: {} };
     try {
       const buf = await file.arrayBuffer();
       const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
-      const pages = Math.min(pdf.numPages, 30);
       const totalPages = pdf.numPages;
+      const pages = Math.min(totalPages, 30);
       const out = [`# ${title}`, '', `> Convertido desde PDF: ${file.name} · ${totalPages} páginas (${pages} procesadas) · sin subir a terceros.`, ''];
       const headings = [];
       let chars = 0;
@@ -55,7 +55,7 @@
       if (chars < 80) return { md: '', pages: 0, chars, headings, topics: [], failed: true, reason: 'sin texto extraíble (escaneado?): probar OCR', meta };
       return { md, pages: totalPages, chars, headings, topics, failed: false, meta };
     } catch (e) {
-      return { md: '', pages: 0, chars: 0, headings: [], failed: true, reason: String(e && e.message || e).slice(0, 120) };
+      return { md: '', pages: 0, chars: 0, headings: [], topics: [], failed: true, reason: String(e && e.message || e).slice(0, 120), meta: {} };
     }
   }
 
@@ -1749,12 +1749,12 @@
       <div class="wm-meta-code"><span>EJEMPLO DE RUTA</span><code>${esc(mdPath(sample))}</code><small>hash ${mdHash(sample)} · ${sample.pages} pp · ${esc(sample.code)}</small></div>
       <div class="wm-note"><span>ⓘ</span>El PDF original nunca se mueve ni se sobrescribe. Markdown y metadata son una capa derivada y reversible.</div>`;
 
-    // Guía de datos que emergen: solo desde Markdown procesado
     const emergent = $('#emergentGuide');
     if (emergent) {
       const mdNow = allResources().filter(r => r.state === 'markdown');
       const pending = allResources().filter(r => r.state !== 'markdown');
       const multi = tagIndex().filter(t => t.courses.size > 1).slice(0, 6);
+      const courses = window.DIPLOMAS.map(d => ({ ...d, ...courseStats(d.code) }));
       const gaps = courses.map(c => ({ ...c, gap: c.list.length - c.md })).filter(c => c.list.length);
       emergent.innerHTML = `
         <div class="emergent-head">
@@ -1864,7 +1864,7 @@
       const textOk = !q || hay.includes(q) || scorer(r) > 2;
       return textOk && (diploma === 'all' || r.diploma === diploma) && (state === 'all' || r.state === state) && (!app.dupOnly || r.dup);
     });
-    if (q && scorer(list[0] || {})) list.sort((a, b) => scorer(b) - scorer(a));
+    if (q && list.length) list.sort((a, b) => scorer(b) - scorer(a));
     if (sort === 'recent') list.sort((a, b) => b.id - a.id);
     if (sort === 'diploma') list.sort((a, b) => a.diploma.localeCompare(b.diploma, 'es') || a.title.localeCompare(b.title, 'es'));
     if (sort === 'title') list.sort((a, b) => a.title.localeCompare(b.title, 'es'));
@@ -2045,7 +2045,7 @@
       });
       const status = $('#parseStatus');
       if (status) status.textContent = 'Convirtiendo con pdf.js…';
-      let parsed = { md: '', pages: file ? 1 : 0, chars: 0, headings: [], failed: true, reason: 'sin archivo', meta: {} };
+      let parsed = { md: '', pages: file ? 1 : 0, chars: 0, headings: [], topics: [], failed: true, reason: 'sin archivo', meta: {} };
       let pdfData = '';
       if (file) {
         try {
@@ -2491,10 +2491,6 @@
         : `${rp.total} hitos · ${R.streams.length} frentes · ${R.reverseEngineering?.length || 0} apps analizadas`;
     }
 
-    const devEl = $('#roadmapDevOrder');
-    if (devEl && R.devOrder) devEl.innerHTML = R.devOrder.map(d => `<div class="road-dev-row"><span>${String(d.n).padStart(2, '0')}</span><div><b>${esc(d.title)}</b><small>${esc(d.desc)}</small></div></div>`).join('');
-    const niEl = $('#roadmapNotInterested');
-    if (niEl && R.notInterested) niEl.innerHTML = R.notInterested.map(x => `<div class="road-ni-row"><span>×</span><div><b>${esc(x.title)}</b><small>${esc(x.note)}</small></div></div>`).join('');
     $('#roadmapPrinciples').innerHTML = R.principles.map((p, i) => `<div><span>0${i + 1}</span><p>${esc(p)}</p></div>`).join('');
     $('#roadmapNonGoals').innerHTML = R.nonGoals.map(p => `<div><span>×</span><p>${esc(p)}</p></div>`).join('');
     $('#roadmapRisks').innerHTML = R.risks.map(r => `<div class="road-risk"><div><b>${esc(r.title)}</b><em class="risk-${norm(r.level)}">${esc(r.level)}</em></div><p>${esc(r.note)}</p></div>`).join('');
@@ -2546,11 +2542,7 @@
         });
         txt += '\n';
       });
-      txt += `## Orden de desarrollo (app de estudio)\n\n`;
-      (R.devOrder || []).forEach(d => { txt += `${d.n}. **${d.title}** — ${d.desc}\n`; });
-      txt += `\n## Fuera de alcance — cosas que harían la app completa pero que no me interesan\n\n`;
-      (R.notInterested || []).forEach(x => { txt += `- **${x.title}** — ${x.note}\n`; });
-      txt += `\n## No objetivos\n` + R.nonGoals.map(x => `- ${x}`).join('\n') + '\n\n## Riesgos\n' + R.risks.map(r => `- ${r.title} (${r.level}): ${r.note}`).join('\n') + '\n\n## Principios\n' + R.principles.map(x => `- ${x}`).join('\n') + '\n';
+      txt += `## No objetivos\n` + R.nonGoals.map(x => `- ${x}`).join('\n') + '\n\n## Riesgos\n' + R.risks.map(r => `- ${r.title} (${r.level}): ${r.note}`).join('\n') + '\n\n## Principios\n' + R.principles.map(x => `- ${x}`).join('\n') + '\n';
       downloadText('verde-roadmap.md', txt);
       showToast('Roadmap completo exportado en Markdown.');
     });
