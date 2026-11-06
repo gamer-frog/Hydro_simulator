@@ -10,9 +10,9 @@
   const MAP_URL = 'assets/ao/';
   const ACTORS = [
     { id: 'player', name: 'Viajero del Sur', body: 1, head: 1, x: 48, y: 43 },
-    { id: 'luna', name: 'Luna de Plata', body: 2, head: 2, x: 52, y: 43 },
-    { id: 'bruno', name: 'Bruno Fierro', body: 3, head: 3, x: 50, y: 48 },
-    { id: 'mateo', name: 'Mateo del Monte', body: 1, head: 4, x: 44, y: 46 }
+    { id: 'luna', name: 'Luna de Plata', className: 'mage', body: 2, head: 2, x: 52, y: 43 },
+    { id: 'bruno', name: 'Bruno Fierro', className: 'ranger', body: 3, head: 3, x: 50, y: 48 },
+    { id: 'mateo', name: 'Mateo del Monte', className: 'warrior', body: 1, head: 4, x: 44, y: 46 }
   ];
   const HEADINGS = { N: 1, E: 2, S: 3, W: 4 };
   const DELTAS = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] };
@@ -23,16 +23,19 @@
     arrowleft: [-1, 0], a: [-1, 0]
   };
   const names = Object.fromEntries(ACTORS.map(actor => [actor.id, actor.name]));
+  // Prototype-only action values: these are tuning placeholders, not current AO or Imperium balance data.
   const CLASS_PROFILES = {
     warrior: { label: 'GUERRERO', body: 1, head: 1, hp: 130, mana: 70, skills: [
       { name: 'Golpe poderoso', icon: '⚔', type: 'damage', cost: 14, damage: [25, 34], range: 1 },
       { name: 'Vendaje', icon: '✚', type: 'heal', cost: 18, heal: 32 },
       { name: 'Carga', icon: '➤', type: 'damage', cost: 24, damage: [35, 44], range: 2 }
     ] },
-    mage: { label: 'MAGO', body: 2, head: 2, hp: 90, mana: 130, skills: [
-      { name: 'Bola de fuego', icon: '✹', type: 'damage', cost: 22, damage: [27, 38], range: 7 },
-      { name: 'Curar', icon: '✚', type: 'heal', cost: 24, heal: 36 },
-      { name: 'Rayo', icon: 'ϟ', type: 'damage', cost: 32, damage: [39, 51], range: 8 }
+    mage: { label: 'MAGO', body: 2, head: 2, hp: 90, mana: 160, skills: [
+      { name: 'Inmo', icon: '❄', type: 'immobilize', cost: 30, duration: 2.4, range: 6 },
+      { name: 'Remo', icon: '✧', type: 'remove', cost: 25 },
+      { name: 'Ráfaga ígnea', icon: '✹', type: 'damage', cost: 40, damage: [32, 45], range: 7 },
+      { name: 'Sanar', icon: '✚', type: 'heal', cost: 20, heal: 30 },
+      { name: 'Curación', icon: '✚', type: 'heal', cost: 35, heal: 55 }
     ] },
     ranger: { label: 'CAZADOR', body: 3, head: 3, hp: 105, mana: 95, skills: [
       { name: 'Flecha certera', icon: '➶', type: 'damage', cost: 16, damage: [22, 32], range: 6 },
@@ -42,27 +45,31 @@
   };
   const STEP_DURATION = .115;
   const NPC_AIM_DURATION = .58;
+  // Consumable values are prototype tuning placeholders, not published AO/Imperium data.
+  const POTION_EFFECTS = { health: 45, mana: 35 };
+  const potionInventory = { health: 3, mana: 3 };
   const NPC_MELEE_ACCURACY = .78;
   const images = new Map();
   let mapData, grhs, characters;
   let W = 800, H = 480, dpr = 1, tilePx = 32;
   let elapsed = 0, remaining = 180, gameOver = false, paused = false;
   let selected = 'luna', selectedSkill = null, kills = 0, currentClass = 'warrior';
+  let placingNpc = false, placementTile = null, pointerCanvas = null;
   const floatingTexts = [], spellEffects = [];
   let audioOn = true, audioReady = false, audioCtx;
   const keys = new Set();
   let joystickKey = null;
-  const fighters = ACTORS.map((actor, index) => ({
-    ...actor, homeX: actor.x, homeY: actor.y,
-    hp: index === 0 ? CLASS_PROFILES.warrior.hp : 100,
-    maxHp: index === 0 ? CLASS_PROFILES.warrior.hp : 100,
-    mana: index === 0 ? CLASS_PROFILES.warrior.mana : 0,
-    maxMana: index === 0 ? CLASS_PROFILES.warrior.mana : 0,
-    alive: true, kills: 0,
-    heading: index === 1 ? 'W' : 'S', step: null, stepTime: 0, aiTimer: rand(.2, 1),
-    attackCd: rand(.2, .8), flash: 0, respawn: 0, bodyFrameTime: Math.random() * 2, aim: null,
-    skillCooldowns: [0, 0, 0]
-  }));
+  const fighters = ACTORS.map((actor, index) => {
+    const className = actor.className || 'warrior', profile = CLASS_PROFILES[className];
+    return {
+      ...actor, className, homeX: actor.x, homeY: actor.y,
+      hp: profile.hp, maxHp: profile.hp, mana: profile.mana, maxMana: profile.mana,
+      alive: true, kills: 0,
+      heading: index === 1 ? 'W' : 'S', step: null, stepTime: 0, aiTimer: rand(.2, 1),
+      attackCd: rand(.2, .8), flash: 0, respawn: 0, bodyFrameTime: Math.random() * 2, aim: null,
+      immobilized: 0, skillCooldowns: Array(profile.skills.length).fill(0)
+    };
+  });
   const player = fighters[0];
   const byId = Object.fromEntries(fighters.map(actor => [actor.id, actor]));
   let lastToast = 0;
@@ -147,13 +154,23 @@
     }
     return [x, y];
   }
-  function isOpen(x, y) { return x >= 0 && y >= 0 && x < mapData.width && y < mapData.height && !mapData.tiles[y][x].b; }
+  function isOpen(x, y) { return Boolean(mapData && x >= 0 && y >= 0 && x < mapData.width && y < mapData.height && !mapData.tiles[y][x].b); }
   function pos(actor) { return actor.step ? actor.step.from : [actor.x, actor.y]; }
   function actorTile(actor) { return actor.step ? actor.step.to : [actor.x, actor.y]; }
   function distance(a, b) { const [ax, ay] = actorTile(a), [bx, by] = actorTile(b); return Math.abs(ax - bx) + Math.abs(ay - by); }
   function occupied(x, y, except) { return fighters.some(actor => actor !== except && actor.alive && actorTile(actor)[0] === x && actorTile(actor)[1] === y); }
+  function placementBlocked(x, y, except) {
+    return fighters.some(actor => {
+      if (actor === except || !actor.alive) return false;
+      if (actor.step) return actor.step.from[0] === x && actor.step.from[1] === y || actor.step.to[0] === x && actor.step.to[1] === y;
+      return actor.x === x && actor.y === y;
+    });
+  }
+  function canPlaceNpcAt(x, y, actor = byId[$('npcPicker').value]) {
+    return Boolean(actor && actor !== player && actor.alive && !actor.step && isOpen(x, y) && !placementBlocked(x, y, actor));
+  }
   function startStep(actor, dx, dy) {
-    if (!actor.alive || actor.step || (!dx && !dy)) return false;
+    if (!actor.alive || actor.immobilized > 0 || actor.step || (!dx && !dy)) return false;
     if (dx && dy) { if (Math.abs(dx) >= Math.abs(dy)) dy = 0; else dx = 0; }
     dx = Math.sign(dx); dy = Math.sign(dy);
     const [x, y] = actorTile(actor), nx = x + dx, ny = y + dy;
@@ -215,11 +232,11 @@
   function addFloatingTextAt(x, y, text, kind) {
     floatingTexts.push({ x, y, text, kind, age: 0 });
   }
-  function beginNpcAim(actor, target) {
+  function beginNpcAim(actor, target, skill = null) {
     const [x, y] = actorTile(target);
     actor.heading = x < actorTile(actor)[0] ? 'W' : x > actorTile(actor)[0] ? 'E' : y < actorTile(actor)[1] ? 'N' : 'S';
-    actor.aim = { targetId: target.id, x, y, remaining: NPC_AIM_DURATION };
-    actor.attackCd = rand(.85, 1.15);
+    actor.aim = { targetId: target.id, x, y, remaining: skill ? rand(.65, .95) : NPC_AIM_DURATION, skill };
+    actor.attackCd = skill ? rand(1.2, 1.7) : rand(.85, 1.15);
   }
   function resolveNpcAim(actor) {
     const aim = actor.aim;
@@ -232,15 +249,24 @@
       addFloatingTextAt(aim.x, aim.y, 'ESQUIVADO', 'miss');
       return;
     }
-    if (Math.random() > NPC_MELEE_ACCURACY) {
+    if (Math.random() > (aim.skill ? .72 : NPC_MELEE_ACCURACY)) {
       addFloatingTextAt(aim.x, aim.y, 'FALLÓ', 'miss');
       return;
     }
     actor.flash = .1;
-    const damage = Math.ceil(rand(11, 18)); target.hp = Math.max(0, target.hp - damage); target.flash = .22;
-    addFloatingText(target, `-${damage}`, 'damage');
-    tone(155 + Math.random() * 50, .07);
-    if (target.hp <= 0) kill(target, actor);
+    const skill = aim.skill;
+    if (skill?.type === 'immobilize') {
+      target.immobilized = skill.duration;
+      addFloatingText(target, 'INMOVILIZADO', 'miss');
+      spellEffects.push({ x: actor.x, y: actor.y, tx: x, ty: y, age: 0, duration: .42, kind: actor.className });
+    } else {
+      const damage = skill ? Math.ceil(rand(skill.damage[0], skill.damage[1])) : Math.ceil(rand(11, 18));
+      target.hp = Math.max(0, target.hp - damage); target.flash = .22;
+      addFloatingText(target, `-${damage}`, 'damage');
+      spellEffects.push({ x: actor.x, y: actor.y, tx: x, ty: y, age: 0, duration: .42, kind: actor.className });
+      if (target.hp <= 0) kill(target, actor);
+    }
+    tone(skill ? 470 : 155 + Math.random() * 50, .07);
     refreshHud();
   }
   function updateNpcAims(dt) {
@@ -250,13 +276,13 @@
       if (actor.aim.remaining <= 0) resolveNpcAim(actor);
     }
   }
+  function isSelfTarget(skill) { return skill?.type === 'heal' || skill?.type === 'remove'; }
   function selectSkill(index) {
     if (gameOver || paused || !player.alive) return;
     const skill = CLASS_PROFILES[currentClass].skills[index];
     if (!skill) return;
     selectedSkill = selectedSkill === index ? null : index;
     refreshSkillSelection();
-    toast(selectedSkill === null ? 'Selección de hechizo cancelada.' : `${skill.name} seleccionado · ${skill.type === 'heal' ? 'hacé clic en tu personaje para curarte.' : 'elegí un rival en el campo.'}`);
   }
   function refreshSkillSelection() {
     document.querySelectorAll('.spell-slot').forEach((button, slot) => {
@@ -264,26 +290,39 @@
       button.setAttribute('aria-pressed', String(slot === selectedSkill));
     });
     const skill = selectedSkill === null ? null : CLASS_PROFILES[currentClass].skills[selectedSkill];
-    $('spellHint').textContent = skill ? `${skill.name} listo · ${skill.type === 'heal' ? 'hacé clic en tu personaje' : 'hacé clic en un rival'}` : 'Elegí un hechizo y hacé clic en un rival';
+    const hint = skill ? (isSelfTarget(skill) ? 'hacé clic en tu personaje' : 'hacé clic en un rival') : 'Elegí un hechizo y hacé clic en un rival';
+    $('spellHint').textContent = skill ? `${skill.name} listo · ${hint}` : hint;
+    document.body.classList.toggle('aiming-spell', Boolean(skill));
   }
   function castSkill(index, targetOverride = null) {
     if (gameOver || paused || !player.alive) return;
     const skill = CLASS_PROFILES[currentClass].skills[index], target = targetOverride || byId[selected];
-    if (!skill || !target || !target.alive || (skill.type === 'heal' ? target !== player : target === player)) {
-      toast(skill?.type === 'heal' ? 'Hacé clic en tu personaje para curarte.' : 'Elegí un rival como objetivo.'); return;
+    const selfTarget = isSelfTarget(skill);
+    if (!skill || !target || !target.alive || (selfTarget ? target !== player : target === player)) {
+      toast(selfTarget ? 'Hacé clic en tu personaje.' : 'Elegí un rival como objetivo.'); return;
     }
     if (player.skillCooldowns[index] > 0) { toast('Esa habilidad todavía se está recuperando.'); return; }
     if (player.mana < skill.cost) { toast('No tenés maná suficiente.'); return; }
-    if (skill.type === 'damage' && distance(player, target) > skill.range) { toast(`Acercate; alcance máximo: ${skill.range} casilleros.`); return; }
+    if ((skill.type === 'damage' || skill.type === 'immobilize') && distance(player, target) > skill.range) { toast(`Acercate; alcance máximo: ${skill.range} casilleros.`); return; }
+    if (skill.type === 'heal' && player.hp >= player.maxHp) { toast('Ya tenés toda la vida.'); return; }
+    if (skill.type === 'remove' && player.immobilized <= 0) { toast('No estás inmovilizado.'); return; }
     player.mana -= skill.cost;
-    player.skillCooldowns[index] = skill.type === 'heal' ? 5 : 2.8 + index * .7;
+    player.skillCooldowns[index] = selfTarget ? 5 : 2.8 + index * .7;
     const [px, py] = position(player), [tx, ty] = position(target);
     if (skill.type === 'heal') {
       const restored = Math.min(skill.heal, player.maxHp - player.hp);
-      if (!restored) { player.mana += skill.cost; player.skillCooldowns[index] = 0; toast('Ya tenés toda la vida.'); return; }
       player.hp += restored; player.flash = .2; addFloatingText(player, `+${restored}`, 'heal');
       spellEffects.push({ x: px, y: py, tx: px, ty: py, age: 0, duration: .65, kind: 'heal' });
       toast(`${skill.name}: recuperaste ${restored} de vida.`); tone(520, .15);
+    } else if (skill.type === 'remove') {
+      player.immobilized = 0;
+      addFloatingText(player, 'LIBRE', 'heal');
+      toast('Remo: ya podés volver a moverte.'); tone(520, .15);
+    } else if (skill.type === 'immobilize') {
+      target.immobilized = skill.duration; target.aim = null;
+      addFloatingText(target, 'INMOVILIZADO', 'miss');
+      spellEffects.push({ x: px, y: py, tx, ty, age: 0, duration: .42, kind: 'mage' });
+      toast(`${skill.name}: ${target.name} queda inmovilizado.`); tone(620, .13);
     } else {
       const damage = Math.ceil(rand(skill.damage[0], skill.damage[1]));
       target.hp = Math.max(0, target.hp - damage); target.flash = .28;
@@ -295,26 +334,46 @@
     selectedSkill = null; refreshSkillSelection();
     refreshHud();
   }
+  function usePotion(type) {
+    if (gameOver || paused || !player.alive) return;
+    const count = potionInventory[type], resource = type === 'health' ? 'hp' : 'mana';
+    const max = type === 'health' ? player.maxHp : player.maxMana;
+    if (count <= 0) { toast(`No te quedan pociones ${type === 'health' ? 'rojas' : 'azules'}.`); return; }
+    if (player[resource] >= max) { toast(`Ya tenés ${type === 'health' ? 'toda la vida' : 'todo el maná'}.`); return; }
+    const restored = Math.min(POTION_EFFECTS[type], max - player[resource]);
+    player[resource] += restored; potionInventory[type]--;
+    addFloatingText(player, `+${restored}`, type === 'health' ? 'heal' : 'mana');
+    player.flash = .18; tone(type === 'health' ? 510 : 390, .12);
+    toast(`Poción ${type === 'health' ? 'roja' : 'azul'}: recuperaste ${restored} ${type === 'health' ? 'de vida' : 'de maná'}.`);
+    refreshHud();
+  }
   function applyClass(className) {
     currentClass = className in CLASS_PROFILES ? className : 'warrior';
     const profile = CLASS_PROFILES[currentClass];
-    player.body = profile.body; player.head = profile.head;
+    player.body = profile.body; player.head = profile.head; player.className = currentClass;
     player.maxHp = profile.hp; player.hp = profile.hp;
     player.maxMana = profile.mana; player.mana = profile.mana;
-    player.skillCooldowns = [0, 0, 0]; selectedSkill = null;
+    player.skillCooldowns = Array(profile.skills.length).fill(0); selectedSkill = null;
     $('heroClass').textContent = profile.label;
     $('playerClassLabel').textContent = profile.label;
     renderSkills(); refreshSkillSelection(); refreshHud();
     toast(`Clase ${profile.label.toLowerCase()} seleccionada.`);
   }
   function renderSkills() {
-    CLASS_PROFILES[currentClass].skills.forEach((skill, index) => {
-      const button = document.querySelector(`[data-skill="${index}"]`);
+    const slots = $('spellSlots');
+    const skills = CLASS_PROFILES[currentClass].skills;
+    slots.replaceChildren(...skills.map((skill, index) => {
+      const button = document.createElement('button');
+      button.className = 'spell-slot'; button.type = 'button'; button.dataset.skill = index;
+      button.setAttribute('aria-pressed', 'false'); button.setAttribute('aria-label', `${index + 1}: ${skill.name}`);
+      button.innerHTML = `<kbd>${index + 1}</kbd><b class="spell-icon"></b><span class="spell-name"></span><small class="spell-cost"></small>`;
       button.querySelector('.spell-icon').textContent = skill.icon;
       button.querySelector('.spell-name').textContent = skill.name;
       button.querySelector('.spell-cost').textContent = `${skill.cost} maná`;
-      button.title = `${skill.name} · ${skill.cost} maná · ${skill.type === 'heal' ? 'Restaura vida' : `Alcance ${skill.range}`}`;
-    });
+      button.title = `${skill.name} · ${skill.cost} maná · ${skill.range ? `Alcance ${skill.range}` : 'acción propia'}`;
+      button.addEventListener('click', () => selectSkill(index));
+      return button;
+    }));
   }
   function kill(victim, attacker) {
     victim.alive = false; victim.respawn = 2.4; victim.step = null; victim.aim = null;
@@ -339,8 +398,6 @@
   function selectTarget(actor) {
     if (!actor || actor === player || !actor.alive) return;
     selected = actor.id; refreshHud();
-    const skill = selectedSkill === null ? null : CLASS_PROFILES[currentClass].skills[selectedSkill];
-    toast(skill?.type === 'heal' ? `${actor.name} seleccionado · hacé clic en tu personaje para curarte.` : selectedSkill === null ? `${actor.name} seleccionado · acercate y atacá con F.` : `${actor.name} seleccionado · ${skill.name} listo para lanzar desde el campo.`);
   }
   function toggleScoreboard(force) {
     const panel = $('sidePanel'), button = $('scoreboardToggle');
@@ -356,8 +413,50 @@
       selectTarget(target);
       return;
     }
+    const skill = CLASS_PROFILES[currentClass].skills[selectedSkill];
+    if (isSelfTarget(skill)) {
+      if (target === player) castSkill(selectedSkill, player);
+      else toast(`${skill.name} se usa sobre tu personaje; hacé clic en vos.`);
+      return;
+    }
+    if (target === player) { toast('Elegí un rival como objetivo.'); return; }
     selected = target.id;
     castSkill(selectedSkill, target);
+  }
+  function canvasPoint(event) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: (event.clientX - rect.left) * W / rect.width, y: (event.clientY - rect.top) * H / rect.height };
+  }
+  function setPlacementMode(enabled) {
+    placingNpc = Boolean(enabled);
+    placementTile = null;
+    $('npcPlaceToggle').setAttribute('aria-pressed', String(placingNpc));
+    $('npcPlaceToggle').classList.toggle('active', placingNpc);
+    $('npcPicker').classList.toggle('hidden', !placingNpc);
+    canvas.classList.toggle('placing-npc', placingNpc);
+    if (placingNpc) toast(`Ubicación activa · elegí una casilla libre para ${byId[$('npcPicker').value].name}.`);
+  }
+  function updatePointer(event) {
+    pointerCanvas = canvasPoint(event);
+    if (placingNpc) {
+      const [cx, cy] = position(player);
+      const x = Math.round((pointerCanvas.x - W / 2) / tilePx + cx);
+      const y = Math.round((pointerCanvas.y - H / 2) / tilePx + cy);
+      placementTile = { x, y, valid: canPlaceNpcAt(x, y) };
+    }
+  }
+  function placeNpc() {
+    const actor = byId[$('npcPicker').value];
+    if (!placementTile || !canPlaceNpcAt(placementTile.x, placementTile.y, actor)) {
+      toast('Casilla ocupada, bloqueada o NPC en movimiento. Elegí otra.');
+      return;
+    }
+    const { x, y } = placementTile;
+    Object.assign(actor, { x, y, homeX: x, homeY: y, step: null, stepTime: 0, aim: null, immobilized: 0 });
+    selected = actor.id;
+    setPlacementMode(false);
+    refreshHud();
+    toast(`${actor.name} ubicado en ${x + 1}, ${y + 1}.`);
   }
   function clearJoystick() {
     if (joystickKey) keys.delete(joystickKey);
@@ -385,15 +484,36 @@
     for (const actor of fighters.slice(1)) {
       if (!actor.alive || actor.step) continue;
       actor.aiTimer -= dt;
+      const profile = CLASS_PROFILES[actor.className];
+      if (actor.aim) continue;
+      const heal = profile.skills.find((skill, i) => skill.type === 'heal' && actor.hp < actor.maxHp * .58 && actor.mana >= skill.cost && actor.skillCooldowns[i] <= 0);
+      if (heal && actor.attackCd <= 0) {
+        const index = profile.skills.indexOf(heal), restored = Math.min(heal.heal, actor.maxHp - actor.hp);
+        actor.mana -= heal.cost; actor.hp += restored; actor.skillCooldowns[index] = 6;
+        addFloatingText(actor, `+${restored}`, 'heal'); actor.flash = .2; actor.attackCd = rand(1.5, 2.2);
+        continue;
+      }
       const target = nearestEnemy(actor);
       if (!target) continue;
-      if (actor.aim) continue;
-      if (distance(actor, target) <= 1) {
+      const d = distance(actor, target);
+      const ranged = profile.skills.map((skill, index) => ({ skill, index }))
+        .filter(({ skill, index }) => (skill.type === 'damage' || skill.type === 'immobilize') && skill.range > 1 && d <= skill.range && actor.mana >= skill.cost && actor.skillCooldowns[index] <= 0);
+      if (ranged.length && actor.attackCd <= 0 && Math.random() < .58) {
+        const { skill, index } = ranged[Math.floor(Math.random() * ranged.length)];
+        actor.mana -= skill.cost; actor.skillCooldowns[index] = rand(4, 7);
+        beginNpcAim(actor, target, skill); continue;
+      }
+      if (d <= 1) {
         if (actor.attackCd <= 0) beginNpcAim(actor, target);
       } else if (actor.aiTimer <= 0) {
-        const step = nextPathStep(actor, target);
+        let step = nextPathStep(actor, target);
+        if (step && Math.random() < .16) {
+          const sideways = [[step[1], -step[0]], [-step[1], step[0]]].sort(() => Math.random() - .5);
+          const detour = sideways.find(([dx, dy]) => isOpen(actor.x + dx, actor.y + dy) && !occupied(actor.x + dx, actor.y + dy, actor));
+          if (detour) step = detour;
+        }
         if (step) startStep(actor, step[0], step[1]);
-        actor.aiTimer = .18;
+        actor.aiTimer = rand(.16, .34);
       }
     }
   }
@@ -403,7 +523,8 @@
     for (const actor of fighters) {
       if (actor.attackCd > 0) actor.attackCd -= dt;
       if (actor.flash > 0) actor.flash -= dt;
-      if (actor === player) actor.skillCooldowns = actor.skillCooldowns.map(value => Math.max(0, value - dt));
+      actor.skillCooldowns = actor.skillCooldowns.map(value => Math.max(0, value - dt));
+      actor.immobilized = Math.max(0, actor.immobilized - dt);
       if (actor.step) {
         actor.stepTime += dt;
         if (actor.stepTime >= STEP_DURATION) { [actor.x, actor.y] = actor.step.to; actor.step = null; actor.stepTime = 0; }
@@ -509,6 +630,22 @@
       ctx.fillStyle = '#fff0d4'; ctx.fillText(`${actor.name.split(' ')[0]} · APUNTANDO`, x, sy - 4);
       ctx.restore();
     }
+    if (placingNpc && placementTile) {
+      const [sx, sy] = screenTile(placementTile.x, placementTile.y, cameraX, cameraY);
+      ctx.save(); ctx.fillStyle = placementTile.valid ? 'rgba(144,205,111,.22)' : 'rgba(220,91,76,.22)';
+      ctx.strokeStyle = placementTile.valid ? '#a9df83' : '#f08070'; ctx.lineWidth = 2;
+      ctx.fillRect(sx + 2, sy + 2, tilePx - 4, tilePx - 4); ctx.strokeRect(sx + 2, sy + 2, tilePx - 4, tilePx - 4);
+      ctx.restore();
+    } else if (pointerCanvas && !paused && !gameOver) {
+      const hovered = actorAtPointer(pointerCanvas.x, pointerCanvas.y);
+      if (hovered && hovered !== player) {
+        const [sx, sy] = screenTile(...position(hovered), cameraX, cameraY);
+        ctx.save(); ctx.strokeStyle = selectedSkill === null ? 'rgba(235,211,153,.75)' : 'rgba(255,230,167,.95)';
+        ctx.lineWidth = Math.max(1.5, tilePx * .055); ctx.setLineDash([tilePx * .12, tilePx * .1]);
+        ctx.beginPath(); ctx.ellipse(sx + tilePx / 2, sy + tilePx * .88, tilePx * .43, tilePx * .17, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      }
+    }
     for (const effect of spellEffects) {
       const progress = effect.age / effect.duration;
       const [x0, y0] = screenTile(effect.x, effect.y, cameraX, cameraY);
@@ -551,6 +688,10 @@
     $('healthValue').textContent = `${Math.ceil(player.hp)} / ${player.maxHp}`;
     $('manaBar').style.width = `${player.mana / player.maxMana * 100}%`;
     $('manaValue').textContent = `${Math.floor(player.mana)} / ${player.maxMana}`;
+    $('healthPotionCount').textContent = potionInventory.health;
+    $('manaPotionCount').textContent = potionInventory.mana;
+    $('healthPotion').disabled = !player.alive || potionInventory.health <= 0 || player.hp >= player.maxHp;
+    $('manaPotion').disabled = !player.alive || potionInventory.mana <= 0 || player.mana >= player.maxMana;
     document.querySelectorAll('.spell-slot').forEach((button, index) => {
       const skill = CLASS_PROFILES[currentClass].skills[index], cooldown = player.skillCooldowns[index];
       button.disabled = !player.alive;
@@ -574,10 +715,11 @@
     if (gameOver) return; gameOver = true;
     $('resultPanel').classList.remove('hidden'); $('resultTitle').textContent = won ? 'VICTORIA' : 'FIN DE LA RONDA';
     $('resultTitle').style.color = won ? '#e2c47e' : '#c6c7b9';
-    $('resultSub').textContent = won ? 'El Robledal recuerda tu nombre.' : 'La arena volverá a abrir sus puertas.';
+    $('resultSub').textContent = won ? 'La arena reconoce tu victoria.' : 'La arena volverá a abrir sus puertas.';
   }
   function resetGame() {
-    for (const actor of fighters) Object.assign(actor, { x: actor.homeX, y: actor.homeY, hp: actor === player ? player.maxHp : 100, mana: actor === player ? player.maxMana : 0, alive: true, kills: 0, step: null, stepTime: 0, respawn: 0, flash: 0, attackCd: rand(.2, .8), aiTimer: rand(.2, 1), aim: null, skillCooldowns: [0, 0, 0] });
+    for (const actor of fighters) Object.assign(actor, { x: actor.homeX, y: actor.homeY, hp: actor === player ? player.maxHp : actor.maxHp, mana: actor === player ? player.maxMana : actor.maxMana, alive: true, kills: 0, step: null, stepTime: 0, respawn: 0, flash: 0, attackCd: rand(.2, .8), aiTimer: rand(.2, 1), aim: null, immobilized: 0, skillCooldowns: Array(CLASS_PROFILES[actor.className].skills.length).fill(0) });
+    potionInventory.health = 3; potionInventory.mana = 3;
     floatingTexts.length = 0; spellEffects.length = 0;
     selected = 'luna'; selectedSkill = null; kills = 0; remaining = 180; elapsed = 0; gameOver = false; paused = false; keys.clear();
     refreshSkillSelection();
@@ -602,24 +744,46 @@
     audioReady = true; const key = event.key.toLowerCase();
     if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key)) event.preventDefault();
     if (key === 'escape') {
-      if (!$('helpModal').classList.contains('hidden')) $('helpModal').classList.add('hidden');
+      if (placingNpc) setPlacementMode(false);
+      else if (!$('helpModal').classList.contains('hidden')) $('helpModal').classList.add('hidden');
       else if (!$('sidePanel').classList.contains('hidden')) toggleScoreboard(false);
       else togglePause();
       return;
     }
     if (key === 'enter' || key === 'f') { event.preventDefault(); attack(); return; }
-    if (['1', '2', '3'].includes(key)) { selectSkill(Number(key) - 1); return; }
+    const skillIndex = Number(key) - 1;
+    if (Number.isInteger(skillIndex) && skillIndex >= 0 && skillIndex < CLASS_PROFILES[currentClass].skills.length) { selectSkill(skillIndex); return; }
+    if (key === 'q') { usePotion('health'); return; }
+    if (key === 'e') { usePotion('mana'); return; }
     if (key === 'tab') { event.preventDefault(); const next = fighters.filter(f => f !== player && f.alive); if (next.length) selectTarget(next[(next.findIndex(f => f.id === selected) + 1) % next.length]); return; }
     keys.add(key);
   });
   window.addEventListener('keyup', event => keys.delete(event.key.toLowerCase()));
   window.addEventListener('blur', () => { keys.clear(); clearJoystick(); });
+  canvas.addEventListener('pointermove', updatePointer);
+  canvas.addEventListener('pointerleave', () => { pointerCanvas = null; placementTile = null; });
   canvas.addEventListener('pointerdown', event => {
-    const rect = canvas.getBoundingClientRect(), target = actorAtPointer(event.clientX - rect.left, event.clientY - rect.top);
+    pointerCanvas = canvasPoint(event);
+    if (placingNpc) { updatePointer(event); placeNpc(); return; }
+    const target = actorAtPointer(pointerCanvas.x, pointerCanvas.y);
     if (target) handleCanvasTarget(target);
   });
   canvas.addEventListener('contextmenu', event => event.preventDefault());
+  $('npcPlaceToggle').addEventListener('click', () => {
+    if (gameOver || paused) { toast('Reanudá o reiniciá la partida para ubicar NPCs.'); return; }
+    setPlacementMode(!placingNpc);
+  });
+  $('npcPicker').addEventListener('change', () => {
+    if (pointerCanvas) {
+      const [cx, cy] = position(player);
+      const x = Math.round((pointerCanvas.x - W / 2) / tilePx + cx);
+      const y = Math.round((pointerCanvas.y - H / 2) / tilePx + cy);
+      placementTile = { x, y, valid: canPlaceNpcAt(x, y) };
+    }
+  });
   $('attackBtn').addEventListener('click', () => attack());
+  $('healthPotion').addEventListener('click', () => usePotion('health'));
+  $('manaPotion').addEventListener('click', () => usePotion('mana'));
   $('classSelect').addEventListener('change', event => applyClass(event.target.value));
   document.querySelectorAll('.spell-slot').forEach(button => button.addEventListener('click', () => selectSkill(Number(button.dataset.skill))));
   $('scoreboardToggle').addEventListener('click', () => toggleScoreboard());

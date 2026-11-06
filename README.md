@@ -19,16 +19,17 @@
 
 ## Combate de prueba
 
-Prototipo web de combate inspirado en Argentum Online: renderiza el mapa y personajes con el subconjunto de recursos extraído en `assets/ao/`, permite desplazarse por tiles y enfrentar bots con ataques cuerpo a cuerpo.
+Prototipo web de combate inspirado en Argentum Online. Renderiza el mapa y los personajes con el subconjunto de recursos disponible en `assets/ao/`; permite desplazarse por casilleros y luchar contra bots con ataques cuerpo a cuerpo y habilidades de clase. El balance y los valores de pociones son provisionales, no datos verificados de Argentum Online ni de Imperium AO.
 
 ### Controles
 
-- **Flechas o WASD:** moverse por el mapa.
-- **Clic sobre un personaje o en la lista / Tab:** seleccionar objetivo.
-- **Clic en un hechizo o teclas 1–3:** seleccionar/cancelar; luego clic sobre un rival para atacar con una habilidad o sobre tu personaje para curarte. Elegir un rival desde la lista solo lo selecciona.
-- **F o Enter:** atacar al objetivo cuando esté en un tile adyacente.
-- **Botón Combatientes:** mostrar/ocultar el marcador; **Esc** cierra el panel (o la guía si está abierta).
+- **Flechas o WASD:** moverse por el mapa, un casillero por paso.
+- **Clic sobre un rival / Tab:** seleccionar objetivo. El clic sobre un rival con una habilidad ofensiva seleccionada apunta y la lanza; elegirlo desde la lista solo cambia el objetivo.
+- **Clic en un hechizo o teclas 1–5:** seleccionar o cancelar una habilidad. Para Sanar, Curación y Remo, seleccioná la habilidad y hacé clic sobre tu propio personaje; las habilidades ofensivas apuntan a un rival.
+- **F o Enter / botón ATACAR:** ataque cuerpo a cuerpo al objetivo cuando esté adyacente; es una acción separada de seleccionar objetivo o habilidad.
+- **Q / E:** consumir una poción roja de vida / azul de maná. Los contadores se actualizan al usarla; Nueva partida restaura tres de cada tipo.
+- **Botón Combatientes:** abrir o cerrar la tabla de combatientes (inicia cerrada); **Esc** cierra el panel o la guía.
 - **☰:** pausar o reanudar.
-- En pantallas táctiles, usá el pad en pantalla para moverte y el botón **ATACAR** para golpear.
+- En pantallas táctiles, usá el pad en pantalla para moverte y los botones para atacar, lanzar habilidades y usar pociones.
 
 Para probarlo, serví esta carpeta desde un servidor HTTP local (por ejemplo, `python3 -m http.server`) y abrí la dirección local en el navegador. Los recursos se cargan como JSON e imágenes, así que no abras `index.html` directamente como archivo.

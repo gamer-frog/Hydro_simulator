@@ -145,12 +145,33 @@
 .spell-slot.active-spell .spell-name{color:#f0d892}
 .spell-slot[aria-pressed="true"]:after{content:'LISTO';position:absolute;right:3px;top:3px;color:#edcf82;font:6px var(--mono);letter-spacing:.4px}
 .spell-hint{min-width:145px;padding-left:9px}
+.npc-place-toggle,.npc-picker{height:27px;border:1px solid #62563a;background:#292b20;color:#dec98e;font:8px var(--mono);letter-spacing:.45px}
+.npc-place-toggle{padding:0 8px;white-space:nowrap}
+.npc-place-toggle:hover,.npc-place-toggle:focus-visible,.npc-place-toggle.active{border-color:#bca265;background:#383525;outline:none}
+.npc-place-toggle:first-letter{font-size:14px;color:var(--gold)}
+.npc-picker{max-width:125px;padding:0 5px}
+#game.placing-npc{cursor:crosshair;touch-action:manipulation}
 @media(max-width:1050px){.arena-layout.scoreboard-open{grid-template-columns:minmax(0,1fr) 220px}}
 @media(max-width:760px){
  .arena-layout.scoreboard-open{display:block}
  .arena-layout.scoreboard-open .side-panel{display:flex;margin-top:12px;max-height:70vh;overflow:auto}
  .scoreboard-toggle{height:26px;padding:0 6px;font-size:6px;letter-spacing:.3px}
  .match-actions{gap:4px}
+ .match-meta{display:none}
  .spell-hint{min-width:0;padding-left:3px}
 }
 @media(max-width:430px){.scoreboard-toggle span{display:none}.scoreboard-toggle{width:29px;padding:0;font-size:0}.scoreboard-toggle:first-letter{font-size:16px}}
+
+/* Consumable potion belt */
+.potion-belt{display:flex;align-items:center;gap:5px;flex:none;padding-left:8px;border-left:1px solid #343c31}
+.potion-heading{color:#8f9885;font:7px var(--mono);letter-spacing:.7px;white-space:nowrap}
+.potion-slot{position:relative;display:flex;align-items:center;gap:5px;min-width:61px;height:40px;padding:0 20px 0 7px;border:1px solid #3b4436;border-radius:2px;background:#222a22;color:#e4e0ce;font-size:8px;transition:background .15s,border-color .15s,opacity .15s}
+.potion-slot:hover:not(:disabled),.potion-slot:focus-visible{border-color:#bca265;background:#303326;outline:none}
+.potion-slot:disabled{cursor:not-allowed;opacity:.42;filter:saturate(.6)}
+.potion-slot>b{font-size:12px;line-height:1}
+.potion-slot small{position:absolute;top:3px;right:4px;min-width:13px;padding:1px 3px;border:1px solid #6b715e;background:#171d17;color:#e7e5d7;text-align:center;font:7px var(--mono)}
+.potion-health>b{color:#df786b}.potion-mana>b{color:#79b9dc}
+@media(max-width:1050px){.potion-belt{gap:3px;padding-left:5px}.potion-heading{display:none}.potion-slot{min-width:54px;padding-left:5px}}
+@media(max-width:760px){.potion-belt{gap:4px;padding-left:5px}.potion-slot{height:36px;min-width:51px;font-size:7px}}
+@media(max-width:430px){.potion-belt{flex:1 0 100%;justify-content:center;padding:4px 0 0;border-top:1px solid #343c31;border-left:0}.potion-heading{display:inline}.potion-slot{min-width:75px;height:34px;justify-content:center;padding-left:8px}}
+@media(max-width:360px){.potion-belt{gap:3px}.potion-slot{min-width:68px;padding-right:17px}}
