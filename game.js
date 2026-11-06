@@ -10,16 +10,18 @@
   if (window.pdfjsLib) {
     try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch {}
   }
-  async function pdfToMarkdown(file, title) {
+  async function pdfToMarkdown(file, title, onProgress) {
     if (!window.pdfjsLib || !file) return { md: '', pages: 0, chars: 0, headings: [], failed: true, reason: 'pdf.js no cargado' };
     try {
       const buf = await file.arrayBuffer();
       const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
-      const pages = pdf.numPages;
-      const out = [`# ${title}`, '', `> Convertido desde PDF: ${file.name} · ${pages} páginas · sin subir a terceros.`, ''];
+      const pages = Math.min(pdf.numPages, 30);
+      const totalPages = pdf.numPages;
+      const out = [`# ${title}`, '', `> Convertido desde PDF: ${file.name} · ${totalPages} páginas (${pages} procesadas) · sin subir a terceros.`, ''];
       const headings = [];
       let chars = 0;
       for (let p = 1; p <= pages; p++) {
+        if (onProgress) onProgress(p, pages);
         const page = await pdf.getPage(p);
         const tc = await page.getTextContent();
         let txt = '';
@@ -47,7 +49,11 @@
         out.push('');
       }
       const md = out.join('\n').slice(0, 60000);
-      return { md, pages, chars, headings, failed: false };
+      const topics = [...new Set((md.toLowerCase().match(/medicin|cbd|thc|riego|ph|ec|vpd|luz|led|plaga|cosec|secad|curad|reprocann|autocultivo|terpen|npk|suelo|compost/g) || []).map(w => w.replace('cosec', 'cosecha').replace('secad', 'secado').replace('curad', 'curado')))].slice(0, 8);
+      const yearMatch = md.match(/(19|20)\d{2}/);
+      const meta = { pages: totalPages, processed: pages, chars, headings, topics, year: yearMatch ? Number(yearMatch[0]) : null, lang: 'es-AR' };
+      if (chars < 80) return { md: '', pages: 0, chars, headings, topics: [], failed: true, reason: 'sin texto extraíble (escaneado?): probar OCR', meta };
+      return { md, pages: totalPages, chars, headings, topics, failed: false, meta };
     } catch (e) {
       return { md: '', pages: 0, chars: 0, headings: [], failed: true, reason: String(e && e.message || e).slice(0, 120) };
     }
@@ -2039,7 +2045,7 @@
       });
       const status = $('#parseStatus');
       if (status) status.textContent = 'Convirtiendo con pdf.js…';
-      let parsed = { md: '', pages: file ? 1 : 0, chars: 0, headings: [], failed: true, reason: 'sin archivo' };
+      let parsed = { md: '', pages: file ? 1 : 0, chars: 0, headings: [], failed: true, reason: 'sin archivo', meta: {} };
       let pdfData = '';
       if (file) {
         try {
@@ -2051,16 +2057,17 @@
             pdfData = btoa(bin);
           }
         } catch {}
-        parsed = await pdfToMarkdown(file, title.charAt(0).toUpperCase() + title.slice(1));
+        parsed = await pdfToMarkdown(file, title.charAt(0).toUpperCase() + title.slice(1), (p, tot) => { if (status) status.textContent = `Convirtiendo con pdf.js… página ${p}/${tot}`; });
       }
       const ok = file && !parsed.failed;
+      const meta = parsed.meta || {};
       const resource = {
         id: Math.max(...allResources().map(r => r.id), 0) + 1,
         title: title.charAt(0).toUpperCase() + title.slice(1),
-        diploma, code: 'AP', module, year: 2026,
+        diploma, code: 'AP', module, year: meta.year || 2026,
         pages: ok ? parsed.pages : 1,
         state: ok ? 'markdown' : 'pendiente',
-        tags: ['aporte', diploma.toLowerCase(), ...(parsed.headings || []).slice(0, 3).map(h => norm(h).slice(0, 20))],
+        tags: ['aporte', diploma.toLowerCase(), ...(parsed.topics || []), ...(parsed.headings || []).slice(0, 3).map(h => norm(h).slice(0, 20))],
         path: rawPath,
         dup: existing ? (existing.dup || 'manual') : null, updated: '6 nov 2026',
         summary: ok ? (parsed.md.replace(/^#.*$/m, '').trim().slice(0, 220) || 'Markdown generado desde el PDF.') : 'PDF agregado sin archivo legible o sin texto extraíble. Pendiente de procesamiento.',
