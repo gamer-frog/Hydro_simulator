@@ -256,7 +256,7 @@
     if (!skill) return;
     selectedSkill = selectedSkill === index ? null : index;
     refreshSkillSelection();
-    toast(selectedSkill === null ? 'Selección de hechizo cancelada.' : `${skill.name} seleccionado · elegí un rival en el campo.`);
+    toast(selectedSkill === null ? 'Selección de hechizo cancelada.' : `${skill.name} seleccionado · ${skill.type === 'heal' ? 'hacé clic en tu personaje para curarte.' : 'elegí un rival en el campo.'}`);
   }
   function refreshSkillSelection() {
     document.querySelectorAll('.spell-slot').forEach((button, slot) => {
@@ -264,12 +264,14 @@
       button.setAttribute('aria-pressed', String(slot === selectedSkill));
     });
     const skill = selectedSkill === null ? null : CLASS_PROFILES[currentClass].skills[selectedSkill];
-    $('spellHint').textContent = skill ? `${skill.name} listo · hacé clic en un rival` : 'Elegí un hechizo y hacé clic en un rival';
+    $('spellHint').textContent = skill ? `${skill.name} listo · ${skill.type === 'heal' ? 'hacé clic en tu personaje' : 'hacé clic en un rival'}` : 'Elegí un hechizo y hacé clic en un rival';
   }
   function castSkill(index, targetOverride = null) {
     if (gameOver || paused || !player.alive) return;
     const skill = CLASS_PROFILES[currentClass].skills[index], target = targetOverride || byId[selected];
-    if (!skill || !target || !target.alive || target === player) { toast('Elegí un rival como objetivo.'); return; }
+    if (!skill || !target || !target.alive || (skill.type === 'heal' ? target !== player : target === player)) {
+      toast(skill?.type === 'heal' ? 'Hacé clic en tu personaje para curarte.' : 'Elegí un rival como objetivo.'); return;
+    }
     if (player.skillCooldowns[index] > 0) { toast('Esa habilidad todavía se está recuperando.'); return; }
     if (player.mana < skill.cost) { toast('No tenés maná suficiente.'); return; }
     if (skill.type === 'damage' && distance(player, target) > skill.range) { toast(`Acercate; alcance máximo: ${skill.range} casilleros.`); return; }
@@ -337,7 +339,8 @@
   function selectTarget(actor) {
     if (!actor || actor === player || !actor.alive) return;
     selected = actor.id; refreshHud();
-    toast(selectedSkill === null ? `${actor.name} seleccionado · acercate y atacá con F.` : `${actor.name} seleccionado · ${CLASS_PROFILES[currentClass].skills[selectedSkill].name} listo para lanzar desde el campo.`);
+    const skill = selectedSkill === null ? null : CLASS_PROFILES[currentClass].skills[selectedSkill];
+    toast(skill?.type === 'heal' ? `${actor.name} seleccionado · hacé clic en tu personaje para curarte.` : selectedSkill === null ? `${actor.name} seleccionado · acercate y atacá con F.` : `${actor.name} seleccionado · ${skill.name} listo para lanzar desde el campo.`);
   }
   function toggleScoreboard(force) {
     const panel = $('sidePanel'), button = $('scoreboardToggle');
@@ -586,7 +589,7 @@
   function actorAtPointer(x, y) {
     const [cx, cy] = position(player), range = visibleRange(cx, cy); let best = null, bestScore = Infinity;
     for (const actor of fighters) {
-      if (actor === player || !actor.alive) continue;
+      if (!actor.alive) continue;
       const [ax, ay] = position(actor), [sx, sy] = screenTile(ax, ay, cx, cy);
       if (x >= sx - 5 && x <= sx + tilePx + 5 && y >= sy - tilePx * 1.2 && y <= sy + tilePx) {
         const score = Math.hypot(x - (sx + tilePx / 2), y - (sy + tilePx / 2)); if (score < bestScore) { best = actor; bestScore = score; }
