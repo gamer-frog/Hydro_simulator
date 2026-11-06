@@ -102,12 +102,12 @@
 
 <!-- ══════════ BUILD BAR ══════════ -->
 <div id="build-bar" class="hidden">
-  <div class="build-hint">BUILD MODE — click a free spot in the greenhouse · <b>Esc</b> to cancel</div>
+  <div class="build-hint">BUILD MODE — click a free spot in the greenhouse · <b>Esc</b> to cancel <button class="mini-btn" id="build-cancel" style="margin-left:8px">✕ Cancel</button></div>
   <div class="build-cards" id="build-cards"></div>
 </div>
 
 <!-- ══════════ NEXT GOAL TRACKER ══════════ -->
-<button id="goals-mini" title="Open goals"><span>🎯</span><span id="goals-mini-text">First Sprout — plant your first crop ($75)</span></button>
+<button id="goals-mini" class="hidden-until-start" title="Open goals"><span>🎯</span><span id="goals-mini-text">First Sprout — plant your first crop ($75)</span></button>
 
 <!-- toasts + floating popups -->
 <div id="toasts"></div>
@@ -189,9 +189,13 @@
     <div class="title-badge">3D SANDBOX · DESKTOP</div>
     <h1 class="title-logo">HYDRO<span>HARVEST</span></h1>
     <p class="title-tag">Grow greens in water. Beat the market.<br/>Build your hydroponic empire — one nutrient film at a time.</p>
+    <div class="build-select">
+      <div class="build-select-head">CHOOSE YOUR STARTING BUILD</div>
+      <div class="title-builds" id="title-builds"></div>
+    </div>
     <div class="title-actions">
-      <button class="btn primary huge" id="btn-new-game">🌱 New Game</button>
-      <button class="btn huge hidden" id="btn-continue">▶ Continue</button>
+      <button class="btn primary huge" id="btn-start-build" disabled>Select a build…</button>
+      <button class="btn ghost huge hidden" id="btn-continue">▶ Continue saved farm</button>
     </div>
     <div class="title-tips"><span>🥬 Leafy NFT</span><span>🍅 Fruiting buckets</span><span>🍓 Tower strawberries</span><span>📈 Live market</span></div>
   </div>

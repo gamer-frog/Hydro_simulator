@@ -164,6 +164,8 @@ small{font-size:.72rem;letter-spacing:.06em;color:var(--text-dim)}
 .build-card{background:var(--panel);border:1px solid var(--panel-line);border-radius:var(--radius);padding:12px 16px;width:150px;cursor:pointer;color:var(--text);transition:all .15s;display:flex;flex-direction:column;gap:4px;align-items:center}
 .build-card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 14px 30px rgba(0,0,0,.5)}
 .build-card.insufficient{opacity:.45}
+.build-card.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 14px 30px rgba(0,0,0,.5);transform:translateY(-4px)}
+.hidden-until-start{display:none !important}
 .build-card .b-icon{font-size:1.7rem}
 .build-card strong{font-size:.78rem}
 .build-card small{font-size:.6rem;letter-spacing:.02em;text-align:center;line-height:1.35}
@@ -281,15 +283,37 @@ small{font-size:.72rem;letter-spacing:.06em;color:var(--text-dim)}
 .title-tips{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;color:var(--text-dim);font-size:.75rem;letter-spacing:.05em}
 .title-foot{position:absolute;bottom:16px;font-size:.65rem;letter-spacing:.08em;color:rgba(234,255,242,.35)}
 
+/* ─────────── TITLE BUILD SELECT ─────────── */
+.build-select{max-width:900px;margin:0 auto 26px}
+.build-select-head{font-size:.62rem;letter-spacing:.32em;color:var(--text-dim);margin-bottom:10px;font-weight:700}
+.title-builds{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:left}
+.title-build{background:rgba(13,24,19,.78);border:1px solid var(--panel-line);border-radius:14px;padding:13px 13px 11px;cursor:pointer;color:var(--text);transition:all .18s;display:flex;flex-direction:column;gap:4px;position:relative;overflow:hidden}
+.title-build:hover{border-color:rgba(62,224,138,.55);transform:translateY(-3px)}
+.title-build.selected{border-color:var(--accent);background:rgba(22,54,38,.9);box-shadow:0 0 0 1px var(--accent),0 10px 30px rgba(0,0,0,.5)}
+.title-build.selected::after{content:'✓';position:absolute;top:8px;right:10px;color:var(--accent);font-weight:900}
+.title-build .tb-icon{font-size:1.7rem;line-height:1}
+.title-build .tb-name{font-size:.92rem;font-weight:800;letter-spacing:.02em}
+.title-build .tb-tag{font-size:.55rem;letter-spacing:.14em;color:var(--accent);font-weight:800}
+.title-build .tb-blurb{font-size:.64rem;line-height:1.45;color:var(--text-dim);flex:1;min-height:3.6em}
+.title-build .tb-meta{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--panel-line);padding-top:6px;margin-top:2px;font-size:.62rem;color:#cfe9db}
+.title-build .tb-meta b{color:var(--accent)}
+.title-build .tb-diff{font-size:.55rem;letter-spacing:.08em;color:var(--text-dim)}
+.cash-block.negative strong{color:var(--red);text-shadow:0 0 18px rgba(255,107,94,.5)}
+@media (max-width:1000px){.title-builds{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:620px){.title-builds{grid-template-columns:1fr}.title-tips{display:none}}
+
 /* finance ticker flash */
 @keyframes cashPulse{0%{transform:scale(1)}35%{transform:scale(1.25)}100%{transform:scale(1)}}
 .cash-block.pulse strong{animation:cashPulse .4s ease}
 
 /* responsive squeeze */
-@media (max-width:1180px){
-  .networth-block,.rep-block{display:none}
+@media (max-width:1420px){
+  .networth-block{display:none}
   .hud-btn span{display:none}
-  .hud-btn{padding:8px 9px}
+  .hud-btn{padding:8px 10px}
+}
+@media (max-width:1100px){
+  .rep-block{display:none}
   .logo-text small{display:none}
 }
 @media (max-width:760px){

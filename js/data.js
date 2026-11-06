@@ -60,6 +60,50 @@ const GOALS = [
   { id:'nw_50k',        name:'Hydro Baron',        desc:'Reach $50,000 net worth',              reward:2000, check:s => netWorth(s) >= 50000 },
 ];
 
+/* Preset farms — "starting builds" to pick at the title screen.
+   Each is a distinct strategy/loadout, not just a reskin. */
+const BUILDS = [
+  {
+    id:'leafy', name:'Leafy Machine', icon:'🥬', tag:'LEAFY · STEADY', difficulty:'EASY',
+    blurb:'Four NFT channels, two already sprouting. Fast, forgiving crops and a reliable cashflow. The classic first farm.',
+    cash:2500, highlight:'2 beds planted',
+    beds:[
+      { type:'nft', crop:'lettuce', growth:0.45, x:-4.6, z:-2.4 },
+      { type:'nft', crop:'spinach', growth:0.25, x:-0.8, z:-2.4 },
+      { type:'nft', crop:null,      growth:0,    x:-4.6, z: 1.0 },
+      { type:'nft', crop:null,      growth:0,    x:-0.8, z: 1.0 },
+    ],
+  },
+  {
+    id:'tomato', name:'Tomato Baron', icon:'🍅', tag:'FRUITING · HIGH VALUE', difficulty:'BALANCED',
+    blurb:'Dutch buckets tuned for heavy fruiting vines. Bigger yields, thirstier plants — stay on top of EC and water.',
+    cash:2300, highlight:'2 vine beds + leafy',
+    beds:[
+      { type:'bucket', crop:'tomato',  growth:0.55, x:-4.6, z:-2.4 },
+      { type:'bucket', crop:'pepper',  growth:0.22, x:-0.8, z:-2.4 },
+      { type:'bucket', crop:null,      growth:0,    x:-4.6, z: 1.0 },
+      { type:'nft',    crop:'lettuce', growth:0.35, x:-0.8, z: 1.0 },
+    ],
+  },
+  {
+    id:'tower', name:'Tower Stacker', icon:'🍓', tag:'VERTICAL · PREMIUM', difficulty:'EXPERT',
+    blurb:'Aeroponic towers stacked with strawberries and basil. Premium prices, long grow cycles and tight margins.',
+    cash:2400, highlight:'2 towers + herbs',
+    beds:[
+      { type:'tower', crop:'strawberry', growth:0.38, x:-4.6, z:-2.4 },
+      { type:'tower', crop:'strawberry', growth:0.16, x:-0.8, z:-2.4 },
+      { type:'tower', crop:null,         growth:0,    x:-4.6, z: 1.0 },
+      { type:'nft',   crop:'basil',      growth:0.30, x:-0.8, z: 1.0 },
+    ],
+  },
+  {
+    id:'sandbox', name:'Empty Shell', icon:'🏗️', tag:'SANDBOX · FREE BUILD', difficulty:'SANDBOX',
+    blurb:'A bare, paid-for greenhouse and extra capital. No beds, no rules — design the farm you actually want.',
+    cash:3500, highlight:'empty greenhouse',
+    beds:[],
+  },
+];
+
 const WEATHERS = {
   sunny:   { icon:'☀️', label:'Sunny',      temp:27, sun:1.00, rain:false },
   cloudy:  { icon:'⛅', label:'Cloudy',     temp:24, sun:0.72, rain:false },
@@ -73,8 +117,9 @@ function marketPrice(cropId, state) {
   return state.market[cropId]?.price ?? cropById(cropId).basePrice;
 }
 function sellPrice(cropId, state) {
-  const bonus = 1 + [0, 0.08, 0.15, 0.25][state.upgrades.marketing || 0];
-  return marketPrice(cropId, state) * bonus;
+  const mkt = 1 + [0, 0.08, 0.15, 0.25][state.upgrades.marketing || 0];
+  const rep = 1 + Math.max(0, state.reputation - 3) * 0.025;
+  return marketPrice(cropId, state) * mkt * rep;
 }
 function inventoryValue(state) {
   return CROPS.reduce((sum, c) => sum + (state.inventory[c.id] || 0) * marketPrice(c.id, state), 0);

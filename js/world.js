@@ -16,7 +16,7 @@ const World = (() => {
   const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
   // camera rig
-  const cam = { target: new THREE.Vector3(0, 0, 0.4), theta: -0.55, elev: 0.78, dist: 15.5 };
+  const cam = { target: new THREE.Vector3(0, 0, 0.6), theta: -0.5, elev: 0.58, dist: 14.2 };
   const CAM = { minDist: 6.5, maxDist: 34, minElev: 0.42, maxElev: 1.18 };
 
   // input
@@ -30,12 +30,15 @@ const World = (() => {
   function init(canvas, callbacks) {
     canvasEl = canvas;
     callbacks = callbacks || {};
+    THREE.ColorManagement.legacyMode = false;
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
 
     scene = new THREE.Scene();
     scene.background = skyDay.clone();
@@ -78,7 +81,7 @@ const World = (() => {
   function concreteTexture() {
     const c = document.createElement('canvas'); c.width = c.height = 256;
     const g = c.getContext('2d');
-    g.fillStyle = '#b9b4a8'; g.fillRect(0, 0, 256, 256);
+    g.fillStyle = '#8f8a7d'; g.fillRect(0, 0, 256, 256);
     for (let i = 0; i < 900; i++) {
       g.fillStyle = `rgba(${100 + Math.random() * 60},${100 + Math.random() * 60},${95 + Math.random() * 55},${0.16 + Math.random() * 0.2})`;
       g.fillRect(Math.random() * 256, Math.random() * 256, 1 + Math.random() * 3, 1 + Math.random() * 3);
@@ -89,6 +92,7 @@ const World = (() => {
       g.beginPath(); g.moveTo(0, i * 64); g.lineTo(256, i * 64); g.stroke();
     }
     const t = new THREE.CanvasTexture(c);
+    t.encoding = THREE.sRGBEncoding;
     t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(6, 4);
     return t;
   }
@@ -99,6 +103,7 @@ const World = (() => {
     g.fillStyle = '#fff'; g.font = 'bold 34px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText(text, 64, 34);
     const t = new THREE.CanvasTexture(c);
+    t.encoding = THREE.sRGBEncoding;
     const m = new THREE.SpriteMaterial({ map: t, transparent: true });
     const s = new THREE.Sprite(m); s.scale.set(0.7, 0.35, 1);
     return s;
@@ -118,7 +123,7 @@ const World = (() => {
     scene.add(floor);
 
     // subtle grow-bed area rug (walkway markings)
-    const rug = new THREE.Mesh(new THREE.PlaneGeometry(GREENHOUSE.w - 2, GREENHOUSE.d - 2), new THREE.MeshLambertMaterial({ color: 0xa8a496, transparent: true, opacity: 0.35 }));
+    const rug = new THREE.Mesh(new THREE.PlaneGeometry(GREENHOUSE.w - 2, GREENHOUSE.d - 2), new THREE.MeshLambertMaterial({ color: 0x8d887a, transparent: true, opacity: 0.4 }));
     rug.rotation.x = -Math.PI / 2; rug.position.y = 0.005; rug.receiveShadow = true;
     scene.add(rug);
   }
@@ -126,7 +131,7 @@ const World = (() => {
   function buildGreenhouse() {
     const { w, d, wallH, ridgeH } = GREENHOUSE;
     const glass = new THREE.MeshLambertMaterial({ color: 0xd8f2ff, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false });
-    const frameMat = new THREE.MeshStandardMaterial({ color: 0xe9e6da, roughness: 0.5, metalness: 0.55 });
+    const frameMat = new THREE.MeshStandardMaterial({ color: 0xd3cfc2, roughness: 0.62, metalness: 0.3 });
     const W = w / 2, D = d / 2;
 
     // walls (4 planes)
@@ -150,7 +155,7 @@ const World = (() => {
     const roofS = new THREE.Mesh(roofGeo, glass);
     roofS.position.set(0, (wallH + ridgeH) / 2, D / 2); roofS.rotation.x = roofAngle - Math.PI / 2; scene.add(roofS);
     const roofN = new THREE.Mesh(roofGeo, glass);
-    roofN.position.set(0, (wallH + ridgeH) / 2, -D / 2); roofN.rotation.x = -roofAngle + Math.PI / 2 + Math.PI; roofN.rotation.x = roofAngle + Math.PI / 2; scene.add(roofN);
+    roofN.position.set(0, (wallH + ridgeH) / 2, -D / 2); roofN.rotation.x = Math.PI / 2 - roofAngle; scene.add(roofN);
 
     // ── frame beams ──
     const beam = (bw, bh, bd, x, y, z, rz) => {
@@ -170,8 +175,8 @@ const World = (() => {
     const slopeBeamLen = slopeLen + 0.3;
     [-W, -W / 2, 0, W / 2, W].forEach(x => {
       const b1 = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, slopeBeamLen), frameMat);
-      b1.position.set(x, (wallH + ridgeH) / 2, D / 2); b1.rotation.x = -roofAngle; b1.castShadow = true; scene.add(b1);
-      const b2 = b1.clone(); b2.position.set(x, (wallH + ridgeH) / 2, -D / 2); b2.rotation.x = roofAngle; scene.add(b2);
+      b1.position.set(x, (wallH + ridgeH) / 2, D / 2); b1.rotation.x = roofAngle; b1.castShadow = true; scene.add(b1);
+      const b2 = b1.clone(); b2.position.set(x, (wallH + ridgeH) / 2, -D / 2); b2.rotation.x = -roofAngle; scene.add(b2);
     });
     // gable end struts
     [W, -W].forEach(x => { beam(0.18, ridgeH - wallH + 0.2, 0.18, x, (ridgeH + wallH) / 2, 0); });
@@ -179,7 +184,6 @@ const World = (() => {
     // door (south, center)
     const door = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2.5, 0.14), new THREE.MeshStandardMaterial({ color: 0x2c3a33, roughness: 0.6, metalness: 0.3 }));
     door.position.set(0, 1.25, D + 0.02); scene.add(door);
-    const sign = labelSprite('HYDROHARVEST', '#123324'); sign.scale.set(3.1, 0.75, 1); sign.position.set(0, 2.95, D + 0.25); scene.add(sign);
   }
 
   /* ─────────── PROPS ─────────── */
@@ -193,10 +197,10 @@ const World = (() => {
     cap1.rotation.z = Math.PI / 2; cap1.position.x = 1.55; tank.add(cap1);
     const cap2 = cap1.clone(); cap2.position.x = -1.55; tank.add(cap2);
     [[-1.1], [1.1]].forEach(([x]) => {
-      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.95, 1.4), metal); leg.position.set(x, -0.95, 0); tank.add(leg);
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.95, 1.4), metal); leg.position.set(x, -0.78, 0); tank.add(leg);
     });
     const tankLabel = labelSprite('H₂O  TANK', '#1b4f72'); tankLabel.position.set(0, 0.1, 1.0); tank.add(tankLabel);
-    tank.position.set(-9.4, 1.9, -6.6);
+    tank.position.set(-9.4, 1.25, -6.6);
     propsGroup.add(tank);
 
     // nutrient barrels A & B (back-right)
@@ -512,7 +516,7 @@ const World = (() => {
 
     canvasEl.addEventListener('pointerdown', e => {
       pointerDown = { x: e.clientX, y: e.clientY, button: e.button, moved: false, theta: cam.theta, elev: cam.elev };
-      canvasEl.setPointerCapture(e.pointerId);
+      try { canvasEl.setPointerCapture(e.pointerId); } catch (err) { /* synthetic events */ }
     });
 
     canvasEl.addEventListener('pointermove', e => {
@@ -639,10 +643,11 @@ const World = (() => {
     const duskness = clamp(1 - Math.abs(elev) * 3.2, 0, 1) * (elev > -0.08 ? 1 : 0);
 
     sun.position.set(Math.cos(dayFrac * Math.PI) * 55, Math.max(elev, 0.02) * 48 + 2, 24);
-    sun.intensity = 0.06 + dayness * 1.25;
+    sun.intensity = 0.05 + dayness * 0.95;
     sun.color.setHex(duskness > 0.45 ? 0xffc98a : 0xffffff);
-    hemi.intensity = 0.16 + dayness * 0.75;
-    amb.intensity = 0.1 + dayness * 0.22;
+    hemi.intensity = 0.22 + dayness * 0.55;
+    amb.intensity = 0.12 + dayness * 0.14;
+    if (ledOn) amb.intensity += 0.05;
 
     const sky = skyNight.clone().lerp(skyDay, dayness).lerp(skyDusk, duskness * 0.45);
     scene.background.copy(sky);
