@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#0a0c08" />
   <title>Verde — Cultivo con criterio</title>
-  <meta name="description" content="Simulador, diario de cultivo, catálogo de cepas, biblioteca y oráculo para autocultivo de cannabis en Argentina." />
+  <meta name="description" content="Herramienta personal de estudio del cannabis medicinal en Argentina: simulador ilustrativo, biblioteca local, catálogo de referencia y herramientas de consulta." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230d110b'/%3E%3Cpath d='M8 23c1-8 6-12 16-14-1 8-6 12-16 14Z' fill='%23d8f26b'/%3E%3Cpath d='M9 24c4-6 8-9 13-11' stroke='%23516b32' stroke-width='1.4' fill='none'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400;1,9..144,500&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=43" />
-  <link rel="stylesheet" href="views.css?v=43" />
-  <link rel="stylesheet" href="panels.css?v=43" />
-  <link rel="stylesheet" href="verde-v3.css?v=43" />
+  <link rel="stylesheet" href="styles.css?v=45" />
+  <link rel="stylesheet" href="views.css?v=45" />
+  <link rel="stylesheet" href="panels.css?v=45" />
+  <link rel="stylesheet" href="verde-v3.css?v=45" />
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -83,7 +83,7 @@
           <div class="book-head">
             <div class="eyebrow"><span class="live-dot"></span>VERDE <i>/</i> <span>ÍNDICE GENERAL</span></div>
             <h1>El índice<br><em>de la app.</em></h1>
-            <p class="lead">Verde tiene 7 partes. Es tu app de estudio del cannabis medicinal en Argentina: cada una se abre sola y se entiende sola.</p>
+            <p class="lead">Verde reúne siete áreas de estudio y trabajo sobre cannabis medicinal en Argentina. Algunas vistas heredadas siguen disponibles, pero el foco está en simular, estudiar y comparar.</p>
           </div>
 
           <div class="book-batch-line">
@@ -105,7 +105,7 @@
             </button>
             <button class="book-row" data-nav="library">
               <span class="book-num">02</span>
-              <span class="book-copy"><b>Biblioteca</b><small>Tus cursos y PDFs convertidos en un índice de sabiduría navegable.</small></span>
+              <span class="book-copy"><b>Biblioteca</b><small>Ordená tus cursos y PDFs; consultá el texto extraído y los insights disponibles.</small></span>
               <span class="book-arrow" aria-hidden="true">→</span>
             </button>
             <button class="book-row" data-nav="strains">
@@ -120,7 +120,7 @@
             </button>
             <button class="book-row" data-nav="budget">
               <span class="book-num">05</span>
-              <span class="book-copy"><b>Costos</b><small>El costo real por gramo según tus supuestos editables.</small></span>
+              <span class="book-copy"><b>Costos</b><small>El costo estimado por gramo según tus supuestos editables.</small></span>
               <span class="book-arrow" aria-hidden="true">→</span>
             </button>
             <button class="book-row" data-nav="process">
@@ -273,6 +273,7 @@
               </div>
               <div class="sim-result-stats" id="simResultStats"></div>
             </div>
+            <div class="sim-scenario-compare" id="simScenarioCompare" aria-live="polite"></div>
             <div class="sim-chart-shell">
               <aside class="sim-chart-filters">
                 <span class="section-kicker">SERIES DEL TIMECHART</span>
@@ -701,7 +702,7 @@
 
   <div class="modal-backdrop" id="resultModal"><div class="modal result-modal"><button class="modal-close" data-close="resultModal" aria-label="Cerrar">×</button><span class="section-kicker">RESULTADO DE TEMPORADA</span><h2 id="resultTitle">Cosecha completada.</h2><div class="result-grid"><div><span>COSECHA TOTAL</span><b id="resultYield">—</b></div><div><span>COSTO ESTIMADO</span><b id="resultCost">—</b></div><div><span>COSTO POR GRAMO</span><b id="resultPerGram">—</b></div><div><span>PLANTAS SANAS</span><b id="resultHealthy">—</b></div></div><p class="result-copy" id="resultCopy"></p><div class="result-lessons" id="resultLessons"></div><div class="result-actions"><button class="btn btn-ghost" data-close="resultModal">Seguir revisando</button><button class="btn btn-lime" id="restartFromResult">Nueva temporada <span>↺</span></button></div></div></div>
 
-  <div class="modal-backdrop" id="addModal"><div class="modal add-modal"><button class="modal-close" data-close="addModal" aria-label="Cerrar">×</button><span class="section-kicker">APORTAR A LA BIBLIOTECA · PARSER REAL</span><h2>Sumá un PDF y convertilo a Markdown.</h2><p>El parser extrae texto con pdf.js y genera Markdown estructurado (título, páginas, encabezados). El PDF original queda en `pdf/`, el Markdown en `md/`.</p><form id="addForm"><label class="dropzone" id="dropzone"><input type="file" id="fileInput" accept="application/pdf" /><span class="drop-ico">⇧</span><b id="dropTitle">Arrastrá un PDF o hacé clic</b><small id="dropSub">Máx. 40 MB · se procesa localmente, sin subir a terceros</small></label><div class="control-row"><label class="field"><span>Diplomatura</span><select id="addDiploma"><option>Cultivo Interior</option><option>Agroecología Aplicada</option><option>Cannabis Medicinal</option><option>Extracción y Transformados</option><option>Gestión y Presupuesto</option></select></label><label class="field"><span>Módulo / clase</span><input id="addModule" placeholder="Ej. Módulo 4 · Riego" /></label></div><label class="field"><span>Carpeta de origen</span><input id="addPath" placeholder="Ej. 02_Diplomaturas/CultivoInterior/M4/riego.pdf" /></label><div class="quick-note"><span>ⓘ</span><span id="parseStatus">Listo: se extrae texto página por página y se crea el Markdown con metadata y hash.</span></div><button class="btn btn-lime full" type="submit">Añadir y convertir a Markdown <span>+</span></button></form></div></div>
+  <div class="modal-backdrop" id="addModal"><div class="modal add-modal"><button class="modal-close" data-close="addModal" aria-label="Cerrar">×</button><span class="section-kicker">APORTAR A LA BIBLIOTECA · PARSER REAL</span><h2>Sumá un PDF y convertilo a Markdown.</h2><p>El parser extrae texto con pdf.js en tu navegador y genera Markdown estructurado. El original y el texto se guardan en este navegador; las rutas `pdf/` y `md/` son referencias exportables, no carpetas escritas automáticamente.</p><form id="addForm"><label class="dropzone" id="dropzone"><input type="file" id="fileInput" accept="application/pdf" /><span class="drop-ico">⇧</span><b id="dropTitle">Arrastrá un PDF o hacé clic</b><small id="dropSub">Máx. 40 MB · se procesa localmente, sin subir a terceros</small></label><div class="control-row"><label class="field"><span>Diplomatura</span><select id="addDiploma"><option>Cultivo Interior</option><option>Agroecología Aplicada</option><option>Cannabis Medicinal</option><option>Extracción y Transformados</option><option>Gestión y Presupuesto</option></select></label><label class="field"><span>Módulo / clase</span><input id="addModule" placeholder="Ej. Módulo 4 · Riego" /></label></div><label class="field"><span>Carpeta de origen</span><input id="addPath" placeholder="Ej. 02_Diplomaturas/CultivoInterior/M4/riego.pdf" /></label><div class="quick-note"><span>ⓘ</span><span id="parseStatus">Listo: se extrae texto página por página y se crea el Markdown con metadata y hash.</span></div><button class="btn btn-lime full" type="submit">Añadir y convertir a Markdown <span>+</span></button></form></div></div>
   <div class="modal-backdrop" id="annotateModal"><div class="modal annotate-modal"><button class="modal-close" data-close="annotateModal" aria-label="Cerrar">×</button><span class="section-kicker">ANOTACIONES LOCALES</span><h2>Notas por recurso.</h2><p>Tus anotaciones quedan en el navegador, vinculadas al recurso. Exportables a Markdown.</p><div id="annotateList"></div><form id="annotateForm"><label class="field"><span>Nota</span><textarea id="annotateText" rows="3" placeholder="Lo que observás, dudas, contradicciones..."></textarea></label><button class="btn btn-lime full" type="submit">Guardar anotación <span>✓</span></button></form></div></div>
 
   <div class="modal-backdrop" id="strainModal"><div class="strain-sheet" id="strainSheet"></div></div>
@@ -726,10 +727,10 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="library.js?v=43"></script>
-  <script src="strains.js?v=43"></script>
-  <script src="roadmap.js?v=43"></script>
-  <script src="game.js?v=43"></script>
+  <script src="library.js?v=45"></script>
+  <script src="strains.js?v=45"></script>
+  <script src="roadmap.js?v=45"></script>
+  <script src="game.js?v=45"></script>
   <script>if('serviceWorker' in navigator){ navigator.serviceWorker.register('./sw.js').catch(()=>{}); }</script>
 </body>
 </html>

@@ -19,58 +19,47 @@
 
 ---
 
-# Verde — Cultivo con criterio
+# Verde — estudio personal del cannabis medicinal
 
-Aplicación web en español para acompañar un autocultivo de cannabis de principio a fin. Combina un simulador de temporada, un diario semanal, un catálogo de autoflorecientes, una biblioteca académica trazable, un oráculo local con fuentes y un presupuesto editable.
+Aplicación web personal, local-first y en español, orientada al estudio del cannabis medicinal en Argentina. Su centro es un simulador de ciclo completo con escenarios ilustrativos, una biblioteca de estudio navegable, un catálogo con fuentes declaradas y herramientas de consulta y costeo. No es una red social, un marketplace ni una plataforma de seguimiento diario.
 
 > **Marco de trabajo:** autocultivo registrado en Argentina, con un supuesto de 9 plantas autoflorecientes en 15 m² (3 × 5 m). Verde es una herramienta educativa: no vende cannabis, no habilita cultivos fuera del marco legal y no reemplaza asesoramiento profesional.
 
 ## Qué incluye
 
 ### Inicio
-- Índice real de la aplicación: 8 sectores que muestran su estado y llevan a cada parte.
-- Estado del batch, biblioteca por curso, extras, insights y accesos rápidos.
-- Búsqueda global con `⌘K` / `Ctrl+K` sobre sectores, cepas, cursos, PDFs, roadmap y etiquetas.
+- Índice sencillo tipo libro con accesos a las áreas de estudio y trabajo de Verde.
+- Búsqueda global con `⌘K` / `Ctrl+K` sobre sectores, cepas, cursos, recursos, roadmap y etiquetas.
 
 ### Cepas
-- Catálogo de 16 autoflorecientes (balanceado: Sativa / Indica / CBD medicinal / Híbrida) con THC/CBD, dificultad, ciclo, rendimiento, altura, efectos, terpenos, linaje y notas de cultivo.
-- Grilla de **5 columnas** desktop con imágenes compactas; en móvil 2 columnas y en tablet 3–4 sin overflow.
-- **Categorías Sativa · Indica · CBD · Híbrida** con tabs, select y orden por categoría.
-- **Fuentes anotadas** por ficha y panel público: StrainAPI V1 (sin key), TheCannabisInformer beta (sin key), Strainpedia demo pública (completa $50/mes) y Otreeba como referencia. No se guarda ninguna API key.
-- Búsqueda por nombre, efecto, aroma o terpeno; filtros por dificultad y efecto; orden por categoría, THC, ciclo, rendimiento o nombre.
-- Ficha completa en hoja lateral, con consulta directa al oráculo.
-
-### Diario
-- Temporada de 75 días dividida en 11 semanas.
-- Ambiente semanal con gráfico SVG de temperatura, humedad y VPD.
-- Checklist por semana, eventos, registro visual y proyección/resultado de cosecha.
-- Exportación del diario completo a Markdown.
+- Catálogo de 16 perfiles demostrativos de autoflorecientes con THC/CBD, ciclo, efectos, terpenos, linaje y notas de referencia.
+- Categorías Sativa · Índica · CBD medicinal · Híbrida; búsqueda y filtros locales.
+- Cada perfil indica su procedencia en los datos incluidos. **No se consulta ni integra ninguna API externa**; las referencias a proveedores no implican permiso para reutilizar sus datos.
+- Ficha lateral con acceso al oráculo local.
 
 ### Simulador
-- Sin “avanzar un día”: el flujo es **elegir cepa → configurar → SIMULAR** y ver el proceso completo de inicio a fin.
-- Configuración: cepa (14), plantas (1–9), días de ciclo (55–90), luz/día y temperatura media, más 6 estrategias (equilibrada, rápida, orgánica, mínima, low-cost e intensiva).
-- **Timechart multi-serie** estilo Chart Wizard: crecimiento, salud, humedad, nutrición y rendimiento % potencial, con filtros a la izquierda y leyenda a la derecha; cada serie se activa/desactiva al instante.
-- **Proceso completo** de 12 actividades previstas con día, fase, detalle y estado prevista/omitida.
-- **5 notas de resultado** mapeadas desde score 0–100: Horrible · Regular · Buena · Muy buena · Excelente, con rendimiento, costo total, $/g y días de estrés.
-- Benchmark de 6 estrategias con replay exportable en Markdown y JSON.
-- Vista de invernadero, clima, recursos y bitácora para el cultivo actual (ya no bloquean la simulación).
+- Flujo: **configurar → SIMULAR → revisar el proceso completo**. No requiere avanzar día por día.
+- Configuración de cepa, cantidad de plantas, duración, ambiente y estrategia.
+- Timechart del ciclo con crecimiento, salud, humedad, nutrición y rendimiento relativo; las series se pueden activar y desactivar.
+- Detalle de actividades del proceso, resultados de costo y rendimiento estimados, y selección entre **5 variaciones sintéticas reproducibles** para comparar el efecto de los supuestos.
+- Las variaciones son estimaciones ilustrativas del modelo, **no predicciones, probabilidades ni intervalos de confianza**. No representan datos empíricos ni validación agronómica.
+- El benchmark incluye estrategias comparables y exportación de replay a Markdown y JSON.
+
+> Algunas vistas heredadas (por ejemplo, diario/proceso del cultivo actual) permanecen en la interfaz o el código; no son el foco ni una prioridad de desarrollo.
 
 ### Biblioteca
-- Índice de 28 recursos demo organizados en 6 diplomaturas.
-- Vista digerida por defecto: tarjetas de curso con nombre, PDFs, páginas, % cargado y extras.
-- Índice de sabiduría curso → módulo → recurso, con estado, ruta Markdown, hash y enlaces.
-- Cada recurso conserva diplomatura, módulo, año, páginas, estado de procesamiento y ruta física.
-- Búsqueda, filtros, orden, detección de duplicados y comparación de versiones sin borrar el original.
-- Alta de nuevos PDFs con metadatos de origen y detección de títulos repetidos.
-- Exportación del índice plano y del índice de sabiduría a Markdown.
+- Incluye **28 recursos de demostración** organizados en 6 diplomaturas; el dataset de muestra no contiene los documentos originales.
+- Índice curso → módulo → recurso, con metadatos, etiquetas, estado y rutas de referencia; búsqueda, filtros, duplicados, anotaciones y rutas de lectura.
+- Se pueden aportar PDFs desde el navegador. La extracción de texto a Markdown y el PDF original se guardan localmente en el navegador (PDF de hasta 40 MB); los controles permiten descargar los archivos guardados.
+- El alta no escribe en las carpetas `pdf/` o `md/` del repositorio. Sus rutas son referencias, no archivos creados por la app.
+- PDFs escaneados se detectan como probablemente sin texto extraíble. **OCR no está implementado.**
+- Exportación del índice y de rutas de lectura a Markdown.
 
 ### Roadmap
-- Página viva de desarrollo con **14 frentes**, **210 hitos**, 4 horizontes, métricas dinámicas, principios, no objetivos y riesgos. Versión **v4.3** (app de estudio: parser PDF→Markdown, presupuestos indoor/outdoor con Mercado Libre, PWA offline, accesibilidad base).
-- **Ingeniería inversa de 20 apps de cannabis** (catálogos, diarios, marketplaces, sensores, knowledge tools y benchmarks): qué tomar, qué no copiar y qué oportunidad queda libre.
-- **Radar de 18 oportunidades** priorizadas por impacto, esfuerzo y horizonte.
-- **Matriz de 12 brechas** con estado actual, ausencia concreta y apuesta de implementación.
-- Búsqueda sobre los 210 hitos, filtros por frente, horizonte y pendientes; exportación completa a Markdown.
-- Los hitos completados actualizan el progreso y las métricas del roadmap en vivo.
+- Roadmap editable dentro de la app con **14 frentes y 223 hitos** (63 hechos, 28 en curso, 66 próximos y 66 de visión), 4 horizontes, métricas de progreso, riesgos y no-prioridades. Versión **v4.4 · noviembre de 2026**.
+- Incluye análisis de 20 productos, 18 oportunidades y 12 brechas como material de referencia; son notas de producto, no integraciones.
+- Búsqueda, filtros y exportación completa a Markdown. El progreso de hitos se calcula desde los estados del roadmap.
+- Las cuentas reflejan el contenido actual del archivo; los hitos son una lista editable, no compromisos ni una estimación de fechas.
 
 ### Oráculo
 - Respuestas locales basadas en una base de conocimiento y en los recursos indexados.
@@ -99,27 +88,31 @@ python3 -m http.server 3002
 
 Abrí `http://localhost:3002/`.
 
-También puede servirse con cualquier servidor estático. El estado se guarda en `localStorage` con la clave `verde-app-v2`.
+También puede servirse con cualquier servidor estático. La configuración de la app se guarda en `localStorage` con la clave `verde-app-v2`; los PDFs y sus Markdown extraídos se guardan aparte en IndexedDB (`verde-pdf-store-v1`).
 
 ## Estructura
 
 ```text
-index.html      Estructura de las 8 vistas, modales, command palette y navegación
+index.html      Shell, nueve vistas, índice de inicio, modales y navegación
 styles.css      Sistema visual, shell, dashboard y componentes base
-views.css       Cepas, diario y simulador
-panels.css      Biblioteca, oráculo, costos, proceso y responsive
-verde-v3.css    Overlay compacto: índice, biblioteca digerida, batch, roadmap y ⌘K
-game.js         Estado, simulador, filtros, render, búsqueda global y eventos
-roadmap.js      Roadmap v4.3: 14 frentes, 221 hitos, 60 hechos, orden de desarrollo, fuera de alcance, 20 apps, 18 apuestas y 12 brechas
-library.js      Biblioteca demo, fases, checks legales y base del oráculo
-strains.js      Catálogo demo de 14 autoflorecientes con category + source anotada
-assets/         Fotografías locales optimizadas
+views.css       Inicio, cepas, diario y simulador
+panels.css      Biblioteca, oráculo, costos, proceso, roadmap y responsive
+verde-v3.css    Ajustes visuales de las vistas y componentes recientes
+game.js         Estado, simulador, ingesta PDF local, IndexedDB, render y eventos
+library.js      Recursos demo, fases, checks legales y base del oráculo
+roadmap.js      Roadmap v4.4: 14 frentes, 223 hitos, métricas, riesgos y no-prioridades
+strains.js      Catálogo demo de 16 perfiles autoflorecientes con categoría y fuente
+sw.js           Caché de assets estáticos para la app web
+manifest.webmanifest  Metadatos de instalación web
+assets/         Fotografías locales de demostración
+pdf/README.md   Convenciones previstas para documentos fuente
+md/README.md    Convenciones previstas para Markdown derivado
 ```
 
 ## Datos, fuentes e imágenes
 
-- La biblioteca y las diplomaturas son un **dataset demo** pensado para mostrar provenance, duplicados y citas. No contiene los PDFs originales.
-- El alta de PDFs guarda metadatos y nombre de archivo en esta versión. La conversión real a Markdown y la búsqueda semántica quedan como siguiente etapa.
+- El índice de biblioteca y las diplomaturas son un **dataset demo** pensado para mostrar procedencia, duplicados y citas. El repositorio no contiene PDFs originales ni Markdown de cursos; `pdf/` y `md/` documentan la estructura prevista. Los archivos que aporte el usuario se conservan localmente en IndexedDB, no se incorporan al repositorio.
+- El alta de PDFs extrae texto en el navegador y genera Markdown descargable; el original y el texto extraído se guardan en IndexedDB. La búsqueda semántica no está implementada.
 - El oráculo es una **heurística local**: no envía documentos a terceros y no es un modelo generativo. Sus respuestas citan recursos del índice.
 - Las fotografías son imágenes de Unsplash incorporadas como material de demostración. No se copiaron assets, marcas ni interfaces de Leafly, Weedmaps, GrowDiaries u otras apps comerciales; el diseño se inspira en patrones de producto (explorador de cepas, diario, ficha de recurso) sin reproducir su identidad visual.
 - Los perfiles de cepas son síntesis educativas de referencia. No reemplazan la ficha del banco de semillas.

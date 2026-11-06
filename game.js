@@ -10,6 +10,38 @@
   if (window.pdfjsLib) {
     try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch {}
   }
+  let pdfDbPromise;
+  function openPdfStore() {
+    if (!('indexedDB' in window)) return Promise.reject(new Error('IndexedDB no disponible'));
+    if (!pdfDbPromise) pdfDbPromise = new Promise((resolve, reject) => {
+      const request = indexedDB.open('verde-pdf-store-v1', 1);
+      request.onupgradeneeded = () => {
+        if (!request.result.objectStoreNames.contains('pdfs')) request.result.createObjectStore('pdfs');
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error('No se pudo abrir el almacenamiento local'));
+    });
+    return pdfDbPromise;
+  }
+  async function storePdfBlob(id, blob) {
+    const db = await openPdfStore();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('pdfs', 'readwrite');
+      tx.objectStore('pdfs').put(blob, String(id));
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => reject(tx.error || new Error('No se pudo guardar el PDF'));
+      tx.onabort = () => reject(tx.error || new Error('No se pudo guardar el PDF'));
+    });
+  }
+  async function readPdfBlob(id) {
+    const db = await openPdfStore();
+    return new Promise((resolve, reject) => {
+      const request = db.transaction('pdfs', 'readonly').objectStore('pdfs').get(String(id));
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error || new Error('No se pudo leer el PDF'));
+    });
+  }
+
   async function pdfToMarkdown(file, title, onProgress) {
     if (!window.pdfjsLib || !file) return { md: '', pages: 0, chars: 0, headings: [], topics: [], failed: true, reason: 'pdf.js no cargado', meta: {} };
     try {
@@ -762,6 +794,8 @@
   const gradeFor = (score) => [...SIM_GRADES].reverse().find(g => score >= g.min) || SIM_GRADES[0];
   let simStrategyId = 'balanced';
   let simResult = null;
+  let simScenarios = [];
+  const SIM_SCENARIO_LABELS = ['Resultado alto', 'Alto-medio', 'Central', 'Bajo-medio', 'Resultado bajo'];
 
   const simConfigFromUI = () => ({
     strainId: $('#simStrain')?.value || window.STRAINS[0]?.id,
@@ -805,7 +839,7 @@
     if (simResult) renderSimResult(simResult);
   }
 
-  function simulateFull(cfg) {
+  function simulateFull(cfg, seedOffset = 0) {
     const st = window.STRAINS.find(x => x.id === cfg.strainId) || window.STRAINS[0];
     const strat = BATCH_STRATEGIES.find(s => s.id === cfg.strategy) || BATCH_STRATEGIES[0];
     const days = cfg.days;
@@ -813,7 +847,7 @@
     const cycleFactor = Math.max(.7, Math.min(1.15, cfg.days / (st.flower + 5)));
     const lightFactor = Math.max(.78, Math.min(1.12, cfg.light / 18));
     const tempPenalty = Math.max(0, Math.abs(cfg.temp - 24) - 2) * 1.1;
-    const rand = seededRandom((cfg.strainId.charCodeAt(0) || 7) * 131 + days * 17 + cfg.plants * 911 + (cfg.strategy === 'balanced' ? 7 : cfg.strategy.length * 31));
+    const rand = seededRandom((cfg.strainId.charCodeAt(0) || 7) * 131 + days * 17 + cfg.plants * 911 + (cfg.strategy === 'balanced' ? 7 : cfg.strategy.length * 31) + seedOffset);
     const growth = [], healthS = [], moistureS = [], nutritionS = [], yieldS = [];
     let health = 92, moisture = 58, nutrition = 55, stressDays = 0;
     for (let d = 1; d <= days; d++) {
@@ -828,8 +862,10 @@
       if (moisture < 22 || moisture > 84) stress += 5;
       if (nutrition < 18) stress += 4;
       if (tempPenalty > 2) stress += Math.min(4, tempPenalty / 2);
+      // Variación sintética entre corridas para enseñar sensibilidad; no es una tasa empírica.
+      if (rand() < 0.08) stress += 3 + rand() * 5;
       if (strat.stress && d % (strat.stressEvery || 3) === 0) stress += strat.stress;
-      health = Math.max(15, Math.min(99, health + (stress ? -stress : 1.1)));
+      health = Math.max(15, Math.min(99, health + (stress ? -stress : 0.55)));
       if (stress) stressDays++;
       if (d % 7 === 0 && health < 55) stressDays++;
       healthS.push(Math.round(health));
@@ -911,6 +947,25 @@
       <span class="sim-stat"><b>$${fmt(spent)}</b><small>costo total</small></span>
       <span class="sim-stat"><b>${stressDays}</b><small>días de estrés</small></span>`;
 
+    const compare = $('#simScenarioCompare');
+    if (compare && simScenarios.length) {
+      compare.innerHTML = `
+        <div class="sim-scenarios-head"><div><span class="section-kicker">CINCO CORRIDAS · MISMA CONFIGURACIÓN</span><h3>Compará resultados posibles</h3></div><p>Variaciones diarias sintéticas del modelo, ordenadas por puntaje. Son estimaciones ilustrativas, no predicciones, probabilidades ni intervalos de confianza.</p></div>
+        <div class="sim-scenario-grid" role="group" aria-label="Elegir escenario estimado">
+          ${simScenarios.map((scenario, i) => `
+            <button type="button" class="sim-scenario-card ${scenario === result ? 'active' : ''}" data-scenario="${i}" aria-pressed="${scenario === result}">
+              <span class="sim-scenario-rank">${esc(scenario.label)}</span>
+              <b>${fmt(scenario.yieldG)} <small>g</small></b>
+              <span class="sim-scenario-meta">${esc(scenario.grade.label)} · ${scenario.score} pts</span>
+              <span class="sim-scenario-meta">$${fmt(scenario.perGram)}/g · ${scenario.stressDays} días estrés</span>
+            </button>`).join('')}
+        </div>`;
+      $$('#simScenarioCompare [data-scenario]').forEach(button => button.addEventListener('click', () => {
+        const selected = simScenarios[Number(button.dataset.scenario)];
+        if (selected) renderSimResult(selected);
+      }));
+    }
+
     const list = $('#simSeriesList');
     if (list) {
       list.innerHTML = SIM_SERIES.map(s => `
@@ -988,9 +1043,12 @@
     const cfg = simConfigFromUI();
     app.sim = cfg;
     persist();
-    const result = simulateFull(cfg);
-    renderSimResult(result);
-    showToast(`Simulación lista: ${cfg.strainId ? result.strain.name : ''} · ${result.strategy.label} → ${result.grade.label} (${result.score} pts) · ${fmt(result.yieldG)} g.`);
+    const seedOffsets = [11, 29, 47, 73, 101];
+    simScenarios = seedOffsets.map(offset => simulateFull(cfg, offset))
+      .sort((a, b) => b.score - a.score || b.yieldG - a.yieldG)
+      .map((scenario, i) => ({ ...scenario, label: SIM_SCENARIO_LABELS[i] }));
+    renderSimResult(simScenarios[2]);
+    showToast(`Simulación lista: 5 escenarios estimados para ${simScenarios[2].strain.name} · ${simScenarios[2].strategy.label}.`);
     const box = $('#simResults');
     if (box) box.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -1800,11 +1858,32 @@
       }));
     }
     $('#buildPathBtn')?.addEventListener('click', () => {
-      const tag = prompt('Tag para la ruta de lectura (ej. riego, cosecha, legal):');
-      if (!tag) return;
-      const path = buildReadingPath(tag.trim());
-      if (path) { showToast(`Ruta creada: ${path.ids.length} recursos.`); renderLibraryDigest(); }
-      else showToast('No hay recursos con ese tag.');
+      const button = $('#buildPathBtn');
+      let form = $('#readingPathForm');
+      if (form) {
+        form.remove();
+        button?.setAttribute('aria-expanded', 'false');
+        return;
+      }
+      form = document.createElement('form');
+      form.id = 'readingPathForm';
+      form.className = 'reading-path-form';
+      form.innerHTML = '<label for="readingPathTag">Tema o etiqueta</label><div><input id="readingPathTag" name="tag" type="text" maxlength="40" placeholder="Ej. riego, cosecha, legal" required><button class="btn btn-lime" type="submit">Crear ruta</button><button class="text-link" type="button" data-cancel-path>Cancelar</button></div><small>Reúne hasta 8 recursos con esa etiqueta exacta.</small>';
+      button?.insertAdjacentElement('afterend', form);
+      button?.setAttribute('aria-expanded', 'true');
+      form.querySelector('input')?.focus();
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const tag = String(new FormData(form).get('tag') || '').trim();
+        const path = buildReadingPath(tag);
+        if (path) { showToast(`Ruta creada: ${path.ids.length} recursos.`); renderLibraryDigest(); }
+        else showToast('No hay recursos con ese tag. Revisá la etiqueta en el índice.');
+      });
+      form.querySelector('[data-cancel-path]')?.addEventListener('click', () => {
+        form.remove();
+        button?.setAttribute('aria-expanded', 'false');
+        button?.focus();
+      });
     });
 
     $$('#libCourseGrid [data-course]').forEach(el => el.addEventListener('click', () => openCourseFiles(el.dataset.course)));
@@ -2028,7 +2107,7 @@
         <div class="rd-fact"><span>CÓDIGO</span><b>${esc(r.code || '—')}</b></div>
         <div class="rd-fact"><span>ESTADO</span><b>${libStateLabel(r.state)}</b></div>
       </div>
-      <div class="rd-path"><b>UBICACIÓN FÍSICA · PDF ORIGINAL</b>${esc(r.path)}</div>
+      <div class="rd-path"><b>REFERENCIA · PDF ORIGINAL</b>${esc(r.path)}</div>
       <div class="rd-path rd-md"><b>MARKDOWN DERIVADO · ${resourceProgress(r)}%</b>${esc(mdPath(r))}</div>
       <div class="rd-meta-strip">
         <span>CURSO <b>${esc(r.diploma)}</b></span>
@@ -2037,7 +2116,7 @@
         <span>LINKS <b>${r.dup ? 'DUPLICADO' : '—'}</b></span>
       </div>
       <div class="rd-tags">${(r.tags || []).map(t => `<span>${esc(t)}</span>`).join('')}</div>
-      ${dups.length ? `<div class="rd-dup"><b>También aparece en ${dups.length} ubicación${dups.length > 1 ? 'es' : ''}</b><p>${dups.map(d => `${esc(d.diploma)} · ${esc(d.path)}`).join('<br>')}</p></div>` : ''}
+      ${dups.length ? `<details class="rd-dup"><summary>Comparar registros vinculados · ${dups.length}</summary><p>Vínculo de catálogo; no implica que los archivos tengan contenido idéntico. Contrastá curso, módulo y texto disponible.</p><div class="rd-compare"><article><b>${esc(r.title)}</b><small>${esc(r.diploma)} · ${esc(r.module)} · ${r.pages} pp</small><code>${esc(r.path)}</code><p>${esc((r.mdText || r.summary || 'Sin texto extraído').slice(0, 420))}</p></article>${dups.map(d => `<article><b>${esc(d.title)}</b><small>${esc(d.diploma)} · ${esc(d.module)} · ${d.pages} pp</small><code>${esc(d.path)}</code><p>${esc((d.mdText || d.summary || 'Sin texto extraído').slice(0, 420))}</p></article>`).join('')}</div></details>` : ''}
       <button class="rd-close" id="closeResourceDetail" aria-label="Cerrar detalle">×</button>
       <div class="rd-actions">
         <button class="btn btn-lime" data-ask="¿Qué dice ${esc(r.title)}?">Preguntar <span>◈</span></button>
@@ -2054,18 +2133,22 @@
       downloadText(mdPath(r).split('/').pop(), md);
       showToast('Markdown descargado.');
     });
-    box.querySelector('#dlPdfBtn')?.addEventListener('click', () => {
-      if (r.pdfData) {
-        try {
-          const a = document.createElement('a');
-          a.href = `data:application/pdf;base64,${r.pdfData}`;
-          a.download = (r.path || 'recurso.pdf').split('/').pop();
-          a.click();
-          showToast('PDF descargado.');
-        } catch { showToast('No se pudo descargar el PDF.'); }
-      } else {
-        showToast('PDF demo sin binario: el original va en pdf/ con su ruta.');
-      }
+    box.querySelector('#dlPdfBtn')?.addEventListener('click', async () => {
+      try {
+        let blob = r.pdfData ? await (await fetch(`data:application/pdf;base64,${r.pdfData}`)).blob() : null;
+        if (!blob && r.pdfStored) blob = await readPdfBlob(r.id);
+        if (!blob) {
+          showToast('Este recurso no tiene un PDF descargable guardado en este navegador.');
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = (r.path || `${slug(r.title)}.pdf`).split('/').pop();
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast('PDF descargado.');
+      } catch { showToast('No se pudo recuperar el PDF guardado en este navegador.'); }
     });
     box.querySelector('#copyPathBtn')?.addEventListener('click', () => {
       navigator.clipboard?.writeText(r.path).then(() => showToast('Ruta copiada.')).catch(() => showToast('No se pudo copiar la ruta.'));
@@ -2102,36 +2185,46 @@
     $('#addResourceBtn')?.addEventListener('click', () => $('#addModal').classList.add('open'));
     $('#fileInput')?.addEventListener('change', (e) => {
       const f = e.target.files?.[0];
-      if (f) { $('#dropTitle').textContent = f.name; $('#dropSub').textContent = `${(f.size / 1024 / 1024).toFixed(1)} MB · listo para indexar`; }
+      if (f) {
+        $('#dropTitle').textContent = f.name;
+        $('#dropSub').textContent = f.size > 40 * 1024 * 1024
+          ? 'Supera el límite de 40 MB'
+          : `${(f.size / 1024 / 1024).toFixed(1)} MB · listo para indexar`;
+      }
     });
     $('#addForm')?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const file = $('#fileInput')?.files?.[0];
+      const status = $('#parseStatus');
+      if (!file) {
+        if (status) status.textContent = 'Elegí un archivo PDF antes de continuar.';
+        return;
+      }
+      if (!/\.pdf$/i.test(file.name) || (file.type && file.type !== 'application/pdf')) {
+        if (status) status.textContent = 'El archivo no parece ser un PDF. Elegí un archivo .pdf válido.';
+        return;
+      }
+      if (file.size > 40 * 1024 * 1024) {
+        if (status) status.textContent = 'El PDF supera el límite de 40 MB. Reducí su tamaño e intentá de nuevo.';
+        return;
+      }
+      const header = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+      if (new TextDecoder().decode(header) !== '%PDF-') {
+        if (status) status.textContent = 'No se reconoce la firma PDF del archivo. Revisá que no esté dañado.';
+        return;
+      }
       const diploma = $('#addDiploma')?.value || 'Cultivo Interior';
       const module = $('#addModule')?.value.trim() || 'Módulo sin especificar';
-      const rawPath = $('#addPath')?.value.trim() || `99_Aportes/${file?.name || 'nuevo_recurso.pdf'}`;
-      const title = (file?.name || 'Recurso sin título').replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ');
+      const rawPath = $('#addPath')?.value.trim() || `99_Aportes/${file.name}`;
+      const title = file.name.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' ');
       const cleanTitle = norm(title);
       const existing = allResources().find(r => {
         const other = norm(r.title);
         return other === cleanTitle || (cleanTitle.length > 4 && other.includes(cleanTitle)) || (other.length > 4 && cleanTitle.includes(other));
       });
-      const status = $('#parseStatus');
       if (status) status.textContent = 'Convirtiendo con pdf.js…';
-      let parsed = { md: '', pages: file ? 1 : 0, chars: 0, headings: [], topics: [], failed: true, reason: 'sin archivo', meta: {} };
-      let pdfData = '';
-      if (file) {
-        try {
-          const buf = await file.arrayBuffer();
-          if (buf.byteLength < 2 * 1024 * 1024) {
-            let bin = '';
-            const bytes = new Uint8Array(buf);
-            for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode(...bytes.subarray(i, i + 8192));
-            pdfData = btoa(bin);
-          }
-        } catch {}
-        parsed = await pdfToMarkdown(file, title.charAt(0).toUpperCase() + title.slice(1), (p, tot) => { if (status) status.textContent = `Convirtiendo con pdf.js… página ${p}/${tot}`; });
-      }
+      let parsed = { md: '', pages: 1, chars: 0, headings: [], topics: [], failed: true, reason: 'sin texto extraíble', meta: {} };
+      parsed = await pdfToMarkdown(file, title.charAt(0).toUpperCase() + title.slice(1), (p, tot) => { if (status) status.textContent = `Convirtiendo con pdf.js… página ${p}/${tot}`; });
       const ok = file && !parsed.failed;
       const meta = parsed.meta || {};
       const resource = {
@@ -2145,9 +2238,14 @@
         dup: existing ? (existing.dup || 'manual') : null, updated: '6 nov 2026',
         summary: ok ? (parsed.md.replace(/^#.*$/m, '').trim().slice(0, 220) || 'Markdown generado desde el PDF.') : 'PDF agregado sin archivo legible o sin texto extraíble. Pendiente de procesamiento.',
         mdText: ok ? parsed.md.slice(0, 20000) : '',
-        mdChars: parsed.chars || 0,
-        pdfData
+        mdChars: parsed.chars || 0
       };
+      let originalStored = false;
+      try {
+        await storePdfBlob(resource.id, file);
+        resource.pdfStored = true;
+        originalStored = true;
+      } catch {}
       app.userResources.push(resource);
       app.selectedResource = resource.id;
       persist();
@@ -2158,7 +2256,9 @@
       $('#dropSub').textContent = 'Máx. 40 MB · se procesa localmente, sin subir a terceros';
       libFiltersReady = false;
       renderLibrary();
-      showToast(ok ? `Convertido: ${parsed.pages} páginas · ${fmt(parsed.chars)} caracteres → Markdown.` : `Agregado pendiente (${parsed.reason || 'sin texto extraíble'}).`);
+      showToast(ok
+        ? `Convertido: ${parsed.pages} páginas · ${fmt(parsed.chars)} caracteres → Markdown${originalStored ? ' · PDF guardado localmente' : ' · PDF original no pudo guardarse'}.`
+        : `Agregado pendiente (${parsed.reason || 'sin texto extraíble'})${originalStored ? ' · PDF guardado localmente' : ''}.`);
     });
   }
 
