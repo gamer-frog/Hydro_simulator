@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#101510" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <title>Reinos — Arena de prueba</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700;800&family=MedievalSharp&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="rail">
+      <a class="brand-mark" href="#" aria-label="Reinos"><span class="brand-sun">✦</span></a>
+      <div class="rail-rule"></div>
+      <button class="rail-item active" title="Arena"><span>⚔</span><small>ARENA</small></button>
+      <button class="rail-item" title="Personaje"><span>♙</span><small>HÉROE</small></button>
+      <button class="rail-item" title="Clanes"><span>♜</span><small>CLANES</small></button>
+      <div class="rail-bottom"><span class="online-dot"></span><span class="rail-online">CAMPO<br>ABIERTO</span></div>
+    </aside>
+
+    <main class="main-view">
+      <header class="topbar">
+        <div class="breadcrumb"><span class="crumb-muted">REINOS</span><span class="crumb-slash">/</span><span>CAMPO DE PRUEBA</span></div>
+        <div class="topbar-right"><div class="realm-status"><span class="pulse-dot"></span><span>REINO LOCAL</span><span class="status-divider"></span><span class="status-muted">PRACTICA</span></div><button class="profile-button"><span class="profile-icon">✦</span><span class="profile-name">Viajero</span><span class="profile-chevron">⌄</span></button></div>
+      </header>
+
+      <section class="arena-heading">
+        <div class="heading-copy"><div class="eyebrow"><span class="eyebrow-line"></span> COMBATE · TEMPORADA CERO</div><h1>Arena <em>del Robledal</em></h1><p>Un duelo de honor bajo las viejas ramas. Forjá tu leyenda.</p></div>
+        <div class="heading-actions"><button class="text-action" id="soundToggle" aria-label="Alternar sonido"><span id="soundIcon">♫</span> <span id="soundLabel">SONIDO ON</span></button><button class="help-button" id="helpBtn">? <span>CONTROLES</span></button></div>
+      </section>
+
+      <section class="arena-layout">
+        <div class="battle-column">
+          <div class="match-strip">
+            <div class="match-mode"><span class="mode-icon">⚔</span><div><b>ESCARAMUZA</b><small>4 JUGADORES · TODOS CONTRA TODOS</small></div></div>
+            <div class="match-meta"><span class="map-pin">⌖</span> ROBLEDAL DE UMBRÍA <span class="meta-sep">·</span> <span class="match-state"><i></i> EN CURSO</span></div>
+            <button class="restart-button" id="restartBtn" title="Reiniciar partida">↻ <span>NUEVA PARTIDA</span></button>
+          </div>
+
+          <div class="game-frame" id="gameFrame">
+            <canvas id="game" aria-label="Arena de combate. Usa las flechas para moverte y QWER para lanzar hechizos."></canvas>
+            <div class="frame-vignette"></div>
+            <div class="game-top-hud">
+              <div class="round-pill"><span class="round-mark">✦</span><span>RONDA ÚNICA</span></div>
+              <div class="round-timer"><span class="timer-glyph">◷</span><strong id="timer">03:00</strong></div>
+              <div class="score-goal">PRIMERA SANGRE <b>5 BAJAS</b></div>
+            </div>
+            <div class="kill-feed" id="killFeed"><div class="feed-line"><span class="feed-gold">✦</span> <b>La arena te espera</b><span>—</span> buena suerte, viajero.</div></div>
+            <div class="match-result hidden" id="resultPanel"><div class="result-kicker">FIN DE LA PARTIDA</div><div class="result-title" id="resultTitle">VICTORIA</div><div class="result-sub" id="resultSub">El Robledal recuerda tu nombre.</div><button id="playAgain">VOLVER A LUCHAR <span>↻</span></button></div>
+            <div class="mobile-joystick" id="joystick"><div class="joy-ring"><div class="joy-knob" id="joyKnob"></div></div></div>
+            <div class="mobile-cast-hint">MOVER</div>
+            <div class="canvas-tip" id="canvasTip"><span>FLECHAS</span> MOVER <span class="tip-dot">·</span> <span>CLICK</span> ATACAR</div>
+          </div>
+
+          <div class="combat-hud">
+            <div class="hero-card"><div class="hero-portrait"><span class="portrait-helm">♞</span><span class="level-badge">08</span></div><div class="hero-details"><div class="hero-titleline"><strong>GUERRERO</strong><span class="hero-class">HUMANO</span></div><div class="hero-name">Viajero del Sur</div><div class="health-track"><i id="healthBar"></i></div><div class="resource-track"><i id="manaBar"></i></div></div></div>
+            <div class="combat-divider"></div>
+            <div class="spell-loadout">
+              <button class="spell-slot active-spell" data-spell="0" aria-label="Q Corte de hierro"><span class="spell-key">Q</span><span class="spell-icon spell-slash">╱</span><span class="spell-name">CORTE</span><span class="cooldown"></span></button>
+              <button class="spell-slot" data-spell="1" aria-label="W Velo de escarcha"><span class="spell-key">W</span><span class="spell-icon spell-frost">❄</span><span class="spell-name">ESCARCHA</span><span class="cooldown"></span></button>
+              <button class="spell-slot" data-spell="2" aria-label="E Carga"><span class="spell-key">E</span><span class="spell-icon spell-charge">➤</span><span class="spell-name">CARGA</span><span class="cooldown"></span></button>
+              <button class="spell-slot ultimate" data-spell="3" aria-label="R Tormenta del sur"><span class="spell-key">R</span><span class="spell-icon spell-ult">✹</span><span class="spell-name">TORMENTA</span><span class="cooldown"></span></button>
+            </div>
+            <div class="combat-divider small-hide"></div>
+            <div class="utility-spells"><button class="utility-slot" id="potionBtn" aria-label="Poción"><span>⚗</span><small>1</small><i id="potionCount">2</i></button><button class="utility-slot" id="blockBtn" aria-label="Bloquear"><span>◈</span><small>SPACE</small></button></div>
+            <div class="hud-right"><div class="hud-kills"><small>BAJAS</small><strong id="playerKills">0 <i>/ 5</i></strong></div><div class="hud-divider"></div><button class="hud-menu" id="menuBtn" aria-label="Menú">☰</button></div>
+          </div>
+          <div class="under-hud"><span><i class="tiny-online"></i> <b>4</b> COMBATIENTES EN ARENA</span><span>BOTÍN DE ENTRENAMIENTO <b>·</b> SIN PENALIDAD</span></div>
+        </div>
+
+        <aside class="side-panel">
+          <div class="side-section roster-section"><div class="side-heading"><span>COMBATIENTES</span><span class="roster-count">04 / 04</span></div><div id="roster" class="roster">
+            <div class="roster-row self-row" data-fighter="player"><div class="roster-avatar avatar-you">♞<i></i></div><div class="roster-copy"><b>Viajero del Sur</b><small>TÚ · GUERRERO</small></div><div class="roster-score"><b id="rosterPlayerKills">0</b><small>BAJAS</small></div></div>
+            <div class="roster-row" data-fighter="luna"><div class="roster-avatar avatar-mage">✧<i></i></div><div class="roster-copy"><b>Luna de Plata</b><small>MAGA · NIVEL 8</small></div><div class="roster-score"><b id="score-luna">0</b><small>BAJAS</small></div></div>
+            <div class="roster-row" data-fighter="bruno"><div class="roster-avatar avatar-ranger">➶<i></i></div><div class="roster-copy"><b>Bruno Fierro</b><small>CAZADOR · NIVEL 8</small></div><div class="roster-score"><b id="score-bruno">0</b><small>BAJAS</small></div></div>
+            <div class="roster-row" data-fighter="mateo"><div class="roster-avatar avatar-knight">♜<i></i></div><div class="roster-copy"><b>Mateo del Monte</b><small>GUERRERO · NIVEL 8</small></div><div class="roster-score"><b id="score-mateo">0</b><small>BAJAS</small></div></div>
+          </div></div>
+          <div class="side-section objective"><div class="side-heading">OBJETIVO</div><div class="objective-card"><div class="objective-icon">✦</div><div><b>El último en pie</b><p>Alcanzá <strong>5 bajas</strong> para reclamar la victoria en la arena.</p></div></div><div class="progress-label"><span>TU PROGRESO</span><span id="progressText">0 / 5</span></div><div class="progress-track"><i id="progressBar"></i></div></div>
+          <div class="side-section battle-log"><div class="side-heading">REGISTRO DE BATALLA <span class="log-live"><i></i> EN VIVO</span></div><div id="battleLog" class="log-items"><div class="empty-log">Las hazañas de la arena aparecerán aquí.</div></div></div>
+          <div class="side-footer"><span class="footer-rune">ᛟ</span><span>INSPIRADO EN LOS REINOS<br><b>HECHO PARA EL SUR</b></span><span class="build-tag">ALFA 0.1</span></div>
+        </aside>
+      </section>
+      <footer class="page-footer"><span>© REINOS · UN PROYECTO DE LA COMUNIDAD</span><span>LAS LEYENDAS NACEN EN EL COMBATE <i>✦</i></span></footer>
+    </main>
+  </div>
+  <div class="toast" id="toast"></div>
+  <div class="modal hidden" id="helpModal"><div class="modal-card"><button class="modal-close" id="closeHelp">×</button><div class="eyebrow">GUÍA DEL VIAJERO</div><h2>Controles de arena</h2><div class="control-list"><p><kbd>↑ ↓ ← →</kbd><span>Moverse por la arena</span></p><p><kbd>CLICK</kbd><span>Atacar al rival más cercano</span></p><p><kbd>Q</kbd><span>Corte de hierro · daño cercano</span></p><p><kbd>W</kbd><span>Velo de escarcha · daño y ralentización</span></p><p><kbd>E</kbd><span>Carga · avance y golpe</span></p><p><kbd>R</kbd><span>Tormenta del sur · estallido en área</span></p><p><kbd>1</kbd><span>Poción · recupera vida y maná</span></p><p><kbd>ESPACIO</kbd><span>Bloquear · reduce el daño recibido</span></p></div><div class="modal-note">En móvil, usá el pad izquierdo para moverte y los botones de habilidad para combatir.</div></div></div>
+  <script src="game.js"></script>
+</body>
+</html>
