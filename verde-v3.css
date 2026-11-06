@@ -1075,3 +1075,9 @@ button.book-row{appearance:none;-webkit-appearance:none}
   .market-row{flex-wrap:wrap}
   .market-price{margin-left:auto}
 }
+
+/* ---- comparador de fuentes ---- */
+.oracle-compare{margin:9px 0;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:rgba(8,10,6,.45)}
+.oracle-compare>span{font:600 7px var(--mono);letter-spacing:.08em;color:var(--lime);text-transform:uppercase}
+.oracle-compare p{font-size:10px;line-height:1.55;color:#b7c2a6;margin:5px 0 0}
+.oracle-compare b{color:#e6ebd9}
