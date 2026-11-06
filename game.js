@@ -1842,10 +1842,23 @@
     const diploma = $('#libDiploma')?.value || 'all';
     const state = $('#libState')?.value || 'all';
     const sort = $('#libSort')?.value || 'recent';
+    const semantic = (qtext) => {
+      const words = norm(qtext).split(/[^a-z0-9]+/).filter(w => w.length > 3);
+      return (r) => {
+        if (!words.length) return 0;
+        const hay = norm([r.title, r.summary, r.diploma, r.module, r.path, (r.tags || []).join(' '), r.mdText || ''].join(' '));
+        let s = 0;
+        words.forEach(w => { if (hay.includes(w)) s += 2; if (norm(r.title).includes(w)) s += 3; if ((r.tags || []).map(norm).includes(w)) s += 2; });
+        return s;
+      };
+    };
+    const scorer = semantic(q);
     let list = allResources().filter(r => {
-      const hay = norm([r.title, r.summary, r.diploma, r.module, r.path, (r.tags || []).join(' ')].join(' '));
-      return (!q || hay.includes(q)) && (diploma === 'all' || r.diploma === diploma) && (state === 'all' || r.state === state) && (!app.dupOnly || r.dup);
+      const hay = norm([r.title, r.summary, r.diploma, r.module, r.path, (r.tags || []).join(' '), r.mdText || ''].join(' '));
+      const textOk = !q || hay.includes(q) || scorer(r) > 2;
+      return textOk && (diploma === 'all' || r.diploma === diploma) && (state === 'all' || r.state === state) && (!app.dupOnly || r.dup);
     });
+    if (q && scorer(list[0] || {})) list.sort((a, b) => scorer(b) - scorer(a));
     if (sort === 'recent') list.sort((a, b) => b.id - a.id);
     if (sort === 'diploma') list.sort((a, b) => a.diploma.localeCompare(b.diploma, 'es') || a.title.localeCompare(b.title, 'es'));
     if (sort === 'title') list.sort((a, b) => a.title.localeCompare(b.title, 'es'));
@@ -1951,10 +1964,30 @@
       <button class="rd-close" id="closeResourceDetail" aria-label="Cerrar detalle">×</button>
       <div class="rd-actions">
         <button class="btn btn-lime" data-ask="¿Qué dice ${esc(r.title)}?">Preguntar <span>◈</span></button>
+        <button class="btn btn-ghost" id="dlPdfBtn">Bajar PDF <span>↓</span></button>
+        <button class="btn btn-ghost" id="dlMdBtn">Bajar Markdown <span>↓</span></button>
         <button class="btn btn-ghost" id="copyPathBtn">Copiar ruta</button>
       </div>
       <p style="font-size:7px;line-height:1.6;color:#6d7561;margin:11px 0 0">Origen verificado. El recurso original no se borra ni se sobrescribe al vincular duplicados.</p>`;
     box.querySelector('[data-ask]')?.addEventListener('click', (e) => navigate('oracle', { question: e.currentTarget.dataset.ask }));
+    box.querySelector('#dlMdBtn')?.addEventListener('click', () => {
+      const md = r.mdText || `# ${r.title}\n\n> ${r.summary}\n\n- Curso: ${r.diploma}\n- Módulo: ${r.module}\n- Ruta PDF: ${r.path}\n- Hash: ${mdHash(r)}\n`;
+      downloadText(mdPath(r).split('/').pop(), md);
+      showToast('Markdown descargado.');
+    });
+    box.querySelector('#dlPdfBtn')?.addEventListener('click', () => {
+      if (r.pdfData) {
+        try {
+          const a = document.createElement('a');
+          a.href = `data:application/pdf;base64,${r.pdfData}`;
+          a.download = (r.path || 'recurso.pdf').split('/').pop();
+          a.click();
+          showToast('PDF descargado.');
+        } catch { showToast('No se pudo descargar el PDF.'); }
+      } else {
+        showToast('PDF demo sin binario: el original va en pdf/ con su ruta.');
+      }
+    });
     box.querySelector('#copyPathBtn')?.addEventListener('click', () => {
       navigator.clipboard?.writeText(r.path).then(() => showToast('Ruta copiada.')).catch(() => showToast('No se pudo copiar la ruta.'));
     });
@@ -2007,7 +2040,19 @@
       const status = $('#parseStatus');
       if (status) status.textContent = 'Convirtiendo con pdf.js…';
       let parsed = { md: '', pages: file ? 1 : 0, chars: 0, headings: [], failed: true, reason: 'sin archivo' };
-      if (file) parsed = await pdfToMarkdown(file, title.charAt(0).toUpperCase() + title.slice(1));
+      let pdfData = '';
+      if (file) {
+        try {
+          const buf = await file.arrayBuffer();
+          if (buf.byteLength < 2 * 1024 * 1024) {
+            let bin = '';
+            const bytes = new Uint8Array(buf);
+            for (let i = 0; i < bytes.length; i += 8192) bin += String.fromCharCode(...bytes.subarray(i, i + 8192));
+            pdfData = btoa(bin);
+          }
+        } catch {}
+        parsed = await pdfToMarkdown(file, title.charAt(0).toUpperCase() + title.slice(1));
+      }
       const ok = file && !parsed.failed;
       const resource = {
         id: Math.max(...allResources().map(r => r.id), 0) + 1,
@@ -2020,7 +2065,8 @@
         dup: existing ? (existing.dup || 'manual') : null, updated: '6 nov 2026',
         summary: ok ? (parsed.md.replace(/^#.*$/m, '').trim().slice(0, 220) || 'Markdown generado desde el PDF.') : 'PDF agregado sin archivo legible o sin texto extraíble. Pendiente de procesamiento.',
         mdText: ok ? parsed.md.slice(0, 20000) : '',
-        mdChars: parsed.chars || 0
+        mdChars: parsed.chars || 0,
+        pdfData
       };
       app.userResources.push(resource);
       app.selectedResource = resource.id;
@@ -2118,9 +2164,10 @@
           const r = allResources().find(x => x.id === id);
           if (!r) return '';
           const excerpt = String(r.summary || '').slice(0, 220);
-          return `<blockquote class="oracle-fragment"><span>${esc(r.diploma)} · ${esc(r.module)} · ${r.pages} pp · hash ${mdHash(r)}</span><q>${esc(excerpt)}…</q><small>${esc(mdPath(r))}</small></blockquote>`;
+          return `<blockquote class="oracle-fragment"><span>${esc(r.diploma)} · ${esc(r.module)} · ${r.pages} pp · hash ${mdHash(r)}</span><q>${esc(excerpt)}…</q><small>${esc(mdPath(r))} · ${esc(r.path)}</small></blockquote>`;
         }).join('');
-        html = `<p>${entry.answer}</p>${frag}<p>${cited}</p>`;
+        const compare = (entry.sources || []).length > 1 ? `<div class="oracle-compare"><span>De dónde trae la info</span><p><b>Acuerdos:</b> ${esc(entry.tags?.join(' · ') || 'ver fuentes')}.</p><p><b>Límites:</b> contrastá con la ficha del banco y la normativa vigente; si algo no está en el Markdown, no se afirma.</p></div>` : '';
+        html = `<p>${entry.answer}</p>${frag}${compare}<p>${cited}</p>`;
         sources = entry.sources.map((id, i) => ({ id, score: 92 - i * 7 })).filter(s => allResources().some(r => r.id === s.id));
         if (norm(q).includes('legal')) html += '<div class="legal-callout">Información educativa. Verificá tu inscripción REPROCANN y la normativa provincial vigente antes de tomar decisiones.</div>';
       } else {
