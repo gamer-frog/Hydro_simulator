@@ -22,14 +22,15 @@ function renderHome() {
 function renderHeroAvatars() {
   const el = $('#heroAvatars');
   if (!el) return;
-  const faces = state.agents.slice(0, 4).map(a => miniFace(a)).join('');
-  const extra = state.agents.length > 4 ? `<span class="more-face">+${state.agents.length - 4}</span>` : '';
-  const working = state.agents.filter(a => a.status !== 'idle').length;
+  const agents = scopedAgents();
+  const faces = agents.slice(0, 4).map(a => miniFace(a)).join('');
+  const extra = agents.length > 4 ? `<span class="more-face">+${agents.length - 4}</span>` : '';
+  const working = agents.filter(a => a.status !== 'idle').length;
   el.innerHTML = `${faces}${extra}<span class="cluster-label"><strong>${working} en el estudio</strong><span>heartbeat cada 15 min</span></span>`;
 }
 
 function renderLiveCard() {
-  const events = eventsUpTo();
+  const events = scopedEventsUpTo();
   const agentIds = new Set(events.map(e => e.agentId));
   const pushes = events.filter(e => e.type === 'push' || e.type === 'commit').length;
   if ($('#liveAgentCount')) $('#liveAgentCount').textContent = agentIds.size || 0;
@@ -41,7 +42,7 @@ function renderLiveCard() {
 
 function pulseGraphSVG() {
   const bins = Array(15).fill(0);
-  state.activity.forEach(e => {
+  scopedActivity().forEach(e => {
     const idx = clamp(Math.floor((REPLAY_DURATION - e.agoSeconds) / 60), 0, 14);
     bins[idx] += 1;
   });
@@ -77,21 +78,25 @@ function pulseGraphSVG() {
 }
 
 function renderHomeStats() {
-  const open = state.missions.filter(isOpen).length;
-  const working = state.missions.filter(m => m.status === 'working').length;
-  const loops = state.loops.filter(l => l.status === 'active').length;
+  const missions = scopedMissions();
+  const projects = scopedProjects();
+  const agents = scopedAgents();
+  const loops = scopedLoops();
+  const open = missions.filter(isOpen).length;
+  const working = missions.filter(m => m.status === 'working').length;
+  const activeLoops = loops.filter(l => l.status === 'active').length;
   const el = $('#homeStats');
   if (!el) return;
   el.innerHTML = `
-    <article class="stat-card"><div class="stat-top"><span>Issues</span><span class="stat-icon sage">${icon('git-issue')}</span></div><strong>${String(open).padStart(2, '0')}<small>issues</small></strong><div class="stat-foot">en ${state.projects.length} repos</div></article>
-    <article class="stat-card"><div class="stat-top"><span>En curso</span><span class="stat-icon peach">${icon('run')}</span></div><strong>${String(working).padStart(2, '0')}<small>misiones</small></strong><div class="stat-foot">${state.agents.filter(a => a.status !== 'idle').length} agentes despiertos</div></article>
-    <article class="stat-card"><div class="stat-top"><span>Loops hoy</span><span class="stat-icon blue">${icon('loop')}</span></div><strong>${String(loops).padStart(2, '0')}<small>activos</small></strong><div class="stat-foot">siguiente · ${state.loops.find(l => l.status === 'active')?.nextRun || '—'}</div></article>`;
+    <article class="stat-card"><div class="stat-top"><span>Issues</span><span class="stat-icon sage">${icon('git-issue')}</span></div><strong>${String(open).padStart(2, '0')}<small>issues</small></strong><div class="stat-foot">en ${projects.length} repos</div></article>
+    <article class="stat-card"><div class="stat-top"><span>En curso</span><span class="stat-icon peach">${icon('run')}</span></div><strong>${String(working).padStart(2, '0')}<small>misiones</small></strong><div class="stat-foot">${agents.filter(a => a.status !== 'idle').length} agentes despiertos</div></article>
+    <article class="stat-card"><div class="stat-top"><span>Loops hoy</span><span class="stat-icon blue">${icon('loop')}</span></div><strong>${String(activeLoops.length).padStart(2, '0')}<small>activos</small></strong><div class="stat-foot">siguiente · ${activeLoops[0]?.nextRun || '—'}</div></article>`;
 }
 
 function renderNowList() {
   const el = $('#nowList');
   if (!el) return;
-  const events = eventsUpTo().sort((a, b) => a.agoSeconds - b.agoSeconds).slice(0, 4);
+  const events = scopedEventsUpTo().sort((a, b) => a.agoSeconds - b.agoSeconds).slice(0, 4);
   if (!events.length) {
     el.innerHTML = `<div class="now-empty">Todavía no hay señales en este punto del replay.</div>`;
     return;
@@ -111,7 +116,7 @@ function renderNowList() {
 function renderStudioPreview() {
   const el = $('#studioPreview');
   if (!el) return;
-  const rooms = state.projects.map(p => {
+  const rooms = scopedProjects().map(p => {
     const agents = state.agents.filter(a => a.projectId === p.id);
     const faces = agents.slice(0, 3).map(a => miniFace(a)).join('');
     const lead = currentEventFor(agents[0]?.id);
@@ -126,7 +131,7 @@ function renderStudioPreview() {
 function renderMiniPlan() {
   const el = $('#miniPlan');
   if (!el) return;
-  const items = state.missions
+  const items = scopedMissions()
     .filter(m => m.horizon !== 'done' && isOpen(m))
     .sort((a, b) => (a.startDay || 0) - (b.startDay || 0))
     .slice(0, 4);
@@ -145,7 +150,7 @@ function renderMiniPlan() {
 function renderMiniLoops() {
   const el = $('#miniLoops');
   if (!el) return;
-  el.innerHTML = state.loops.slice(0, 3).map(l => {
+  el.innerHTML = scopedLoops().slice(0, 3).map(l => {
     const a = agentById(l.agentId);
     return `<div class="mini-loop">
       <span class="loop-icon">${icon(l.status === 'active' ? 'loop' : 'pause')}</span>

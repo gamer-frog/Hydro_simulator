@@ -1,9 +1,10 @@
 /* Conductor — short, mid and long horizon plan. */
 
 function renderPlan() {
-  const now = state.missions.filter(m => m.horizon === 'now' && isOpen(m)).length;
-  const week = state.missions.filter(m => m.horizon === 'week' && isOpen(m)).length;
-  const month = state.missions.filter(m => m.horizon === 'month' && isOpen(m)).length;
+  const missions = scopedMissions();
+  const now = missions.filter(m => m.horizon === 'now' && isOpen(m)).length;
+  const week = missions.filter(m => m.horizon === 'week' && isOpen(m)).length;
+  const month = missions.filter(m => m.horizon === 'month' && isOpen(m)).length;
   const summary = $('#planSummary');
   if (summary) {
     summary.innerHTML = `
@@ -29,7 +30,7 @@ function renderGantt() {
   if (!el) return;
   const days = Array.from({ length: 7 }, (_, i) => dateFromOffset(i));
   const head = `<div class="gantt-head"><span>MISIÓN</span>${days.map((d, i) => `<span class="${i === 0 ? 'today' : ''}">${new Intl.DateTimeFormat('es', { weekday: 'short' }).format(d).replace('.', '').toUpperCase()} ${String(d.getDate()).padStart(2, '0')}</span>`).join('')}</div>`;
-  const missions = state.missions
+  const missions = scopedMissions()
     .filter(m => isOpen(m) && (m.startDay || 0) < 7)
     .sort((a, b) => (a.startDay || 0) - (b.startDay || 0));
   const rows = missions.map(m => {
@@ -50,7 +51,7 @@ function renderGantt() {
 function renderAfterList() {
   const el = $('#afterList');
   if (!el) return;
-  const items = state.missions
+  const items = scopedMissions()
     .filter(m => m.horizon === 'week' && isOpen(m))
     .sort((a, b) => (a.startDay || 0) - (b.startDay || 0));
   el.innerHTML = items.length ? items.map(m => {
@@ -68,7 +69,7 @@ function renderAfterList() {
 function renderMonthTrack() {
   const el = $('#monthTrack');
   if (!el) return;
-  const items = state.missions
+  const items = scopedMissions()
     .filter(m => m.horizon === 'month' && isOpen(m))
     .sort((a, b) => (a.startDay || 0) - (b.startDay || 0));
   el.innerHTML = items.length ? items.map(m => {
@@ -94,7 +95,8 @@ function isoWeek(date) {
 function renderLoopGrid() {
   const el = $('#loopGrid');
   if (!el) return;
-  el.innerHTML = state.loops.length ? state.loops.map(loop => {
+  const loops = scopedLoops();
+  el.innerHTML = loops.length ? loops.map(loop => {
     const agent = agentById(loop.agentId);
     const p = projectById(loop.projectId);
     return `<article class="loop-card">

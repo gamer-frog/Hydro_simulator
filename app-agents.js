@@ -1,12 +1,13 @@
 /* Conductor — agent agency library. */
 
 function renderAgents() {
+  const agents = scopedAgents();
   const faces = $('#agencyFaces');
-  if (faces) faces.innerHTML = state.agents.slice(0, 5).map(a => miniFace(a)).join('') + (state.agents.length > 5 ? `<span class="mini-agent-face more-face" style="display:grid;place-items:center;background:#25402e;color:#dcead2;font:500 8px var(--mono)">+${state.agents.length - 5}</span>` : '');
-  if ($('#agentTotal')) $('#agentTotal').textContent = state.agents.length;
+  if (faces) faces.innerHTML = agents.slice(0, 5).map(a => miniFace(a)).join('') + (agents.length > 5 ? `<span class="mini-agent-face more-face" style="display:grid;place-items:center;background:#25402e;color:#dcead2;font:500 8px var(--mono)">+${agents.length - 5}</span>` : '');
+  if ($('#agentTotal')) $('#agentTotal').textContent = agents.length;
   const grid = $('#agentGrid');
   if (grid) {
-    grid.innerHTML = state.agents.map(agent => {
+    grid.innerHTML = agents.map(agent => {
       const p = projectById(agent.projectId);
       const latest = latestEventForAgent(agent.id);
       return `<button class="agent-card" data-agent="${esc(agent.id)}">
@@ -34,7 +35,8 @@ function renderAgents() {
     ];
     steps.innerHTML = data.map(([title, body], i) => `<div class="step-card"><span class="step-number">${String(i + 1).padStart(2, '0')}</span><div class="step-copy"><strong>${title}</strong><p>${body}</p></div></div>`).join('');
   }
-  if ($('#agentTotal')) $('#agentTotal').textContent = state.agents.length;
+  if ($('#agentTotal')) $('#agentTotal').textContent = agents.length;
+  renderSidebar();
 }
 
 function openAgent(id, options = {}) {

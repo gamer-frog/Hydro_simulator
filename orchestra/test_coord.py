@@ -75,6 +75,21 @@ class ProtocolTest(unittest.TestCase):
         self.assertFalse(memory["isBlocked"])
         self.assertEqual(memory["claimStatus"], "claimed")
 
+    def test_issue_claims_support_unseeded_issues_and_share_identity_with_missions(self):
+        event = json.loads(self.run_cli("claim-issue", "luna", "Gamer-Frog/PlayGround#999").stdout)
+        state = self.state()
+        issue_claim = next(x for x in state["issueClaims"] if x["issueRef"] == "gamer-frog/playground#999")
+        self.assertEqual(issue_claim["claims"][0]["claimId"], event["id"])
+        self.run_cli("claim-issue", "sol", "gamer-frog/playground#999", ok=False)
+        self.run_cli("release-issue", "sol", "gamer-frog/playground#999", event["id"], ok=False)
+        self.run_cli("release-issue", "luna", "gamer-frog/playground#999", event["id"])
+        self.assertNotIn("gamer-frog/playground#999", [x["issueRef"] for x in self.state()["issueClaims"]])
+
+        mission_claim = json.loads(self.run_cli("claim", "luna", "mission-onboarding").stdout)
+        self.assertEqual(self.state()["issueClaims"][0]["issueRef"], "gamer-frog/playground#42")
+        self.run_cli("claim-issue", "sol", "gamer-frog/PlayGround#42", ok=False)
+        self.run_cli("release", "luna", "mission-onboarding", mission_claim["id"])
+
     def test_bad_history_fails_closed(self):
         events = self.root / "events"
         events.mkdir()

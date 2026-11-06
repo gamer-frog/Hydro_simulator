@@ -10,12 +10,13 @@ function renderMissions() {
 }
 
 function renderMissionToolbar() {
+  const missions = scopedMissions();
   const counts = {
-    open: state.missions.filter(isOpen).length,
-    working: state.missions.filter(m => m.status === 'working').length,
-    review: state.missions.filter(m => m.status === 'review').length,
-    blocked: state.missions.filter(m => isOpen(m) && isBlocked(m)).length,
-    done: state.missions.filter(m => m.status === 'done').length
+    open: missions.filter(isOpen).length,
+    working: missions.filter(m => m.status === 'working').length,
+    review: missions.filter(m => m.status === 'review').length,
+    blocked: missions.filter(m => isOpen(m) && isBlocked(m)).length,
+    done: missions.filter(m => m.status === 'done').length
   };
   if ($('#openCount')) $('#openCount').textContent = counts.open;
   if ($('#blockedCount')) $('#blockedCount').textContent = counts.blocked;
@@ -26,7 +27,7 @@ function renderMissionToolbar() {
 }
 
 function filteredMissions() {
-  let items = state.missions.slice();
+  let items = scopedMissions();
   if (projectFilter !== 'all') items = items.filter(m => m.projectId === projectFilter);
   if (missionFilter === 'open') items = items.filter(isOpen);
   else if (missionFilter === 'blocked') items = items.filter(m => isOpen(m) && isBlocked(m));
@@ -104,19 +105,25 @@ function renderGithubSource() {
 
 function githubItems(limit = 8) {
   if (github.live) {
-    return github.issues.filter(i => !i.pull_request).slice(0, limit).map(issue => ({
-      number: issue.number,
-      title: issue.title,
-      state: issue.state,
-      labels: (issue.labels || []).map(l => typeof l === 'string' ? l : l.name).filter(Boolean),
-      updated: issue.updated_at,
-      url: issue.html_url,
-      repo: github.repo,
-      live: true,
-      projectId: projectFromLabels(issue.labels)
-    }));
+    const visibleIds = scopedProjectIds();
+    const items = github.issues.filter(i => !i.pull_request).map(issue => {
+      const labels = (issue.labels || []).map(l => typeof l === 'string' ? l : l.name).filter(Boolean);
+      const projectId = projectFromLabels(labels);
+      return {
+        number: issue.number,
+        title: issue.title,
+        state: issue.state,
+        labels,
+        updated: issue.updated_at,
+        url: issue.html_url,
+        repo: github.repo,
+        live: true,
+        projectId
+      };
+    });
+    return items.filter(item => issueMatchesScope(item, visibleIds)).slice(0, limit);
   }
-  return state.missions.filter(m => isOpen(m) || m.horizon === 'done').slice(0, limit).map(m => ({
+  return scopedMissions().filter(m => isOpen(m) || m.horizon === 'done').slice(0, limit).map(m => ({
     number: m.issue,
     title: m.title,
     state: m.githubState || (m.status === 'done' ? 'closed' : 'open'),
@@ -130,9 +137,25 @@ function githubItems(limit = 8) {
 }
 
 function projectFromLabels(labels = []) {
-  const names = labels.map(l => typeof l === 'string' ? l : l.name).filter(Boolean);
-  const found = state.projects.find(p => names.some(n => n === `project:${p.id}` || n === p.name.toLowerCase()));
-  return found?.id || state.projects[0]?.id;
+  const names = labels.map(l => String(typeof l === 'string' ? l : l.name || '').trim().toLowerCase()).filter(Boolean);
+  const found = state.projects.find(project => names.some(name => name === `project:${project.id}` || name === project.name.toLowerCase()));
+  return found?.id || null;
+}
+
+function issueMatchesScope(item, visibleIds = scopedProjectIds()) {
+  if (scopeFilter.kind === 'all') return true;
+  if (item.projectId) return visibleIds.has(item.projectId);
+  const labels = (item.labels || []).map(label => String(label).trim().toLowerCase());
+  if (scopeFilter.kind === 'repo') return item.repo === scopeFilter.id || item.repo === github.repo;
+  if (scopeFilter.kind === 'client') {
+    const client = state.clients.find(value => value.id === scopeFilter.id);
+    return labels.includes(`client:${scopeFilter.id}`) || Boolean(client && labels.includes(client.name.toLowerCase()));
+  }
+  if (scopeFilter.kind === 'division') {
+    const division = state.divisions.find(value => value.id === scopeFilter.id);
+    return labels.includes(`division:${scopeFilter.id}`) || Boolean(division && labels.includes(division.name.toLowerCase()));
+  }
+  return false;
 }
 
 function issueRowMarkup(item, compact = false) {

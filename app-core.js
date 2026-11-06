@@ -72,11 +72,26 @@ const TYPE_LABEL = { push: 'push', commit: 'commit', comment: 'comment', review:
 /* A compact fallback keeps the viewer usable if the JSON snapshot cannot be fetched. */
 const FALLBACK = {
   workspace: { name: 'Conductor', repo: 'gamer-frog/PlayGround', replayMinutes: 15, heartbeatMinutes: 15 },
+  divisions: [
+    { id: 'music', name: 'Música' },
+    { id: 'games', name: 'Juegos' },
+    { id: 'cannabis-studios', name: 'Estudios Cannabis' },
+    { id: 'technology-studios', name: 'Estudios Tecnología' },
+    { id: 'marketing-studios', name: 'Estudios Marketing' },
+    { id: 'mimic-fanvue', name: 'Mimic PC + Fanvue AI' },
+    { id: 'vistta', name: 'VISTTA' },
+    { id: 'hydroponics-nft', name: 'Hidroponia NFT' },
+    { id: 'agent-orchestration', name: 'Orquestación de agentes' }
+  ],
+  clients: [
+    { id: 'vistta-sweetsoul', divisionId: 'vistta', name: 'SweetSoul', repos: ['VISTTA_SWEETSOUL'] },
+    { id: 'vistta-peluqueria-german', divisionId: 'vistta', name: 'Peluquería Germán', repos: [] }
+  ],
   projects: [
-    { id: 'project-playground', name: 'PlayGround', repo: 'gamer-frog/PlayGround', description: 'Producto principal.', status: 'active', color: '#8faa7d', issuesOpen: 4, progress: 68, room: { x: 1, y: 2, w: 48, h: 42 } },
-    { id: 'project-atlas', name: 'Atlas', repo: 'gamer-frog/atlas', description: 'Research e infraestructura.', status: 'active', color: '#c99b7e', issuesOpen: 3, progress: 42, room: { x: 51, y: 15, w: 48, h: 42 } },
-    { id: 'project-signal', name: 'Signal', repo: 'gamer-frog/signal', description: 'Observabilidad.', status: 'active', color: '#7d9f9d', issuesOpen: 2, progress: 81, room: { x: 1, y: 45, w: 48, h: 42 } },
-    { id: 'project-archive', name: 'Archive', repo: 'gamer-frog/archive', description: 'QA y memoria.', status: 'quiet', color: '#a89bb8', issuesOpen: 1, progress: 94, room: { x: 51, y: 57, w: 48, h: 42 } }
+    { id: 'project-playground', divisionId: 'agent-orchestration', name: 'PlayGround', repo: 'gamer-frog/PlayGround', description: 'Producto principal.', status: 'active', color: '#8faa7d', issuesOpen: 4, progress: 68, room: { x: 1, y: 2, w: 48, h: 42 } },
+    { id: 'project-atlas', divisionId: 'agent-orchestration', name: 'Atlas', repo: 'gamer-frog/atlas', description: 'Research e infraestructura.', status: 'active', color: '#c99b7e', issuesOpen: 3, progress: 42, room: { x: 51, y: 15, w: 48, h: 42 } },
+    { id: 'project-signal', divisionId: 'agent-orchestration', name: 'Signal', repo: 'gamer-frog/signal', description: 'Observabilidad.', status: 'active', color: '#7d9f9d', issuesOpen: 2, progress: 81, room: { x: 1, y: 45, w: 48, h: 42 } },
+    { id: 'project-archive', divisionId: 'agent-orchestration', name: 'Archive', repo: 'gamer-frog/archive', description: 'QA y memoria.', status: 'quiet', color: '#a89bb8', issuesOpen: 1, progress: 94, room: { x: 51, y: 57, w: 48, h: 42 } }
   ],
   missions: [
     { id: 'mission-onboarding', projectId: 'project-playground', title: 'Rediseñar el flujo de onboarding', description: 'Reducir la fricción de entrada.', status: 'working', githubState: 'open', horizon: 'now', priority: 'P1', issue: 42, labels: ['UX', 'P1'], dependsOn: [], startDay: 0, durationDays: 3, assignee: 'luna', type: 'mission', subtasks: 3, totalSubtasks: 5 },
@@ -123,6 +138,7 @@ let currentView = 'home';
 let activeRoom = 'all';
 let missionFilter = 'open';
 let projectFilter = 'all';
+let scopeFilter = { kind: 'all', id: 'all' };
 
 const REPLAY_DURATION = 900;
 const replay = { at: REPLAY_DURATION, playing: false, speed: 1, timer: null, base: Date.now() };
@@ -134,6 +150,8 @@ function normalizeState(raw) {
   const data = raw && typeof raw === 'object' ? raw : {};
   if (!Array.isArray(data.projects) || !Array.isArray(data.missions) || !Array.isArray(data.agents)) throw new Error('Snapshot inválido');
   data.workspace = data.workspace || FALLBACK.workspace;
+  data.divisions = Array.isArray(data.divisions) ? data.divisions : FALLBACK.divisions;
+  data.clients = Array.isArray(data.clients) ? data.clients : FALLBACK.clients;
   data.projects.forEach(p => {
     p.room = p.room || { x: 1, y: 2, w: 48, h: 42 };
     p.color = p.color || '#8faa7d';
@@ -178,6 +196,44 @@ function saveRequests() {
 
 const projectById = id => state.projects.find(p => p.id === id) || state.projects[0] || { id: '', name: 'Sin repo', repo: '', color: '#aab5a9' };
 const agentById = id => state.agents.find(a => a.id === id) || state.agents[0] || FALLBACK.agents[0];
+
+function scopedProjectIds() {
+  const { kind, id } = scopeFilter || { kind: 'all', id: 'all' };
+  if (!id || kind === 'all') return new Set(state.projects.map(project => project.id));
+  if (kind === 'project') return new Set(state.projects.some(project => project.id === id) ? [id] : []);
+  if (kind === 'repo') return new Set(state.projects.filter(project => project.repo === id || project.name === id).map(project => project.id));
+  if (kind === 'client') return new Set(state.projects.filter(project => project.clientId === id).map(project => project.id));
+  if (kind === 'division') {
+    const clientIds = new Set(state.clients.filter(client => client.divisionId === id).map(client => client.id));
+    return new Set(state.projects.filter(project => project.divisionId === id || clientIds.has(project.clientId)).map(project => project.id));
+  }
+  return new Set();
+}
+function scopedProjects() { const ids = scopedProjectIds(); return state.projects.filter(project => ids.has(project.id)); }
+function scopedMissions() { const ids = scopedProjectIds(); return state.missions.filter(mission => ids.has(mission.projectId)); }
+function scopedAgents() { const ids = scopedProjectIds(); return state.agents.filter(agent => ids.has(agent.projectId)); }
+function scopedActivity() { const ids = scopedProjectIds(); return state.activity.filter(event => ids.has(event.projectId)); }
+function scopedLoops() { const ids = scopedProjectIds(); return state.loops.filter(loop => ids.has(loop.projectId)); }
+function scopedEventsUpTo(at = replay.at) {
+  const ids = scopedProjectIds();
+  return eventsUpTo(at).filter(event => ids.has(event.projectId));
+}
+function scopeLabel() {
+  if (scopeFilter.kind === 'all') return '00 Brain';
+  if (scopeFilter.kind === 'division') return state.divisions.find(item => item.id === scopeFilter.id)?.name || 'División';
+  if (scopeFilter.kind === 'client') return state.clients.find(item => item.id === scopeFilter.id)?.name || 'Cliente';
+  const project = state.projects.find(item => item.id === scopeFilter.id);
+  if (project) return project.name;
+  return scopeFilter.kind === 'repo' ? String(scopeFilter.id) : 'Proyecto';
+}
+function selectScope(kind = 'all', id = 'all') {
+  scopeFilter = { kind, id };
+  projectFilter = 'all';
+  renderAll();
+  const crumb = $('#breadcrumb');
+  if (crumb) crumb.textContent = `${scopeLabel()} · ${VIEW_TITLES[currentView] || 'Vista'}`;
+}
+
 const missionById = id => state.missions.find(m => m.id === id);
 const isOpen = m => m.status !== 'done' && m.githubState !== 'closed';
 const isMissionComplete = m => Boolean(m && (m.status === 'done' || m.githubState === 'closed'));
@@ -289,7 +345,7 @@ function replayLabel(at = replay.at) {
 /* ------------------------------------------------------------------ */
 const ROUTE_VIEWS = ['home', 'world', 'missions', 'agents', 'plan'];
 const DETAIL_VIEWS = { mission: 'missions', agent: 'agents', project: 'world' };
-const VIEW_TITLES = { home: 'Hoy', world: 'El estudio', missions: 'Misiones', agents: 'Agentes', plan: 'Plan' };
+const VIEW_TITLES = { home: '00 Brain', world: 'El estudio', missions: 'Misiones', agents: 'Agentes', plan: 'Plan' };
 
 function routeHash(view, kind, id) {
   const base = `#/${ROUTE_VIEWS.includes(view) ? view : 'home'}`;
@@ -434,21 +490,44 @@ function togglePlayback() {
   }, 200);
 }
 
+function sidebarProjectMarkup(project, counts) {
+  const active = scopeFilter.kind === 'project' && scopeFilter.id === project.id;
+  return `<button class="sidebar-project ${active ? 'active' : ''}" data-scope-kind="project" data-scope-id="${esc(project.id)}" aria-current="${active ? 'page' : 'false'}"><i style="background:${esc(project.color || '#aab5a9')}"></i><span>${esc(project.name)}</span><small>${counts[project.id] || 0}</small></button>`;
+}
 function renderSidebar() {
   const counts = {};
   state.missions.forEach(m => { if (isOpen(m)) counts[m.projectId] = (counts[m.projectId] || 0) + 1; });
   const projectNav = $('#projectNav');
   if (projectNav) {
-    projectNav.innerHTML = state.projects.map(p => `
-      <button class="project-link ${projectFilter === p.id ? 'selected' : ''}" data-project-link="${esc(p.id)}">
-        <span class="project-dot" style="background:${esc(p.color)}"></span>
-        <span>${esc(p.name)}</span>
-        <span class="project-issues">${counts[p.id] || 0}</span>
-      </button>`).join('');
+    const brainActive = scopeFilter.kind === 'all';
+    const brain = `<button class="sidebar-scope ${brainActive ? 'active' : ''}" data-scope-kind="all" data-scope-id="all" aria-current="${brainActive ? 'page' : 'false'}"><span class="scope-glyph">✳</span><span><strong>00 Brain</strong><small>Centro de mando</small></span></button>`;
+    const divisions = state.divisions.map(division => ({
+      ...division,
+      clients: state.clients.filter(client => client.divisionId === division.id),
+      projects: state.projects.filter(project => project.divisionId === division.id && !project.clientId)
+    }));
+    const unassigned = state.projects.filter(project => !state.divisions.some(division => division.id === project.divisionId));
+    const divisionMarkup = divisions.map(division => {
+      const divisionActive = scopeFilter.kind === 'division' && scopeFilter.id === division.id;
+      const clientMarkup = division.clients.map(client => {
+        const clientProjects = state.projects.filter(project => project.clientId === client.id);
+        const clientActive = scopeFilter.kind === 'client' && scopeFilter.id === client.id;
+        const repoNames = [...new Set([...(client.repos || []), ...clientProjects.map(project => project.name)])];
+        const repos = repoNames.length ? repoNames.map(repo => {
+          const repoActive = scopeFilter.kind === 'repo' && scopeFilter.id === repo;
+          return `<button class="client-repo ${repoActive ? 'active' : ''}" data-scope-kind="repo" data-scope-id="${esc(repo)}" aria-current="${repoActive ? 'page' : 'false'}">${esc(repo)}</button>`;
+        }).join('') : '<span class="client-repo muted">Sin repo</span>';
+        return `<div class="sidebar-client"><button class="client-name ${clientActive ? 'active' : ''}" data-scope-kind="client" data-scope-id="${esc(client.id)}" aria-current="${clientActive ? 'page' : 'false'}">${esc(client.name)}</button>${repos}${clientProjects.map(project => sidebarProjectMarkup(project, counts)).join('')}</div>`;
+      }).join('');
+      const projectMarkup = division.projects.map(project => sidebarProjectMarkup(project, counts)).join('');
+      return `<section class="division-group"><button class="division-title ${divisionActive ? 'active' : ''}" data-scope-kind="division" data-scope-id="${esc(division.id)}" aria-current="${divisionActive ? 'page' : 'false'}">${esc(division.name)}</button>${clientMarkup}${projectMarkup || (!clientMarkup ? '<div class="division-empty">Sin repositorios</div>' : '')}</section>`;
+    }).join('');
+    const unassignedMarkup = unassigned.length ? `<section class="division-group"><div class="division-title">Sin asignar</div>${unassigned.map(project => sidebarProjectMarkup(project, counts)).join('')}</section>` : '';
+    projectNav.innerHTML = `${brain}${divisionMarkup}${unassignedMarkup}`;
   }
-  const openCount = state.missions.filter(isOpen).length;
+  const openCount = scopedMissions().filter(isOpen).length;
   if ($('#navMissionCount')) $('#navMissionCount').textContent = openCount;
-  if ($('#navAgentCount')) $('#navAgentCount').textContent = state.agents.length;
+  if ($('#navAgentCount')) $('#navAgentCount').textContent = scopedAgents().length;
   if ($('#sidebarConnectionTitle')) $('#sidebarConnectionTitle').textContent = github.live ? 'GitHub sincronizado' : 'GitHub conectado';
   if ($('#sidebarConnectionText')) $('#sidebarConnectionText').textContent = conexionSummary();
 }

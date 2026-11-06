@@ -15,6 +15,28 @@ import uuid
 ROOT = Path(__file__).resolve().parent
 ID = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9._-]{0,79}$")
 EVENT_ID = re.compile(r"^[0-9a-f]{32}$")
+ISSUE_REF = re.compile(r"^([A-Za-z0-9][A-Za-z0-9-]{0,38})/([A-Za-z0-9_.-]{1,100})#([1-9][0-9]*)$")
+
+
+def normalize_issue_ref(value):
+    if not isinstance(value, str):
+        return None
+    match = ISSUE_REF.fullmatch(value)
+    if not match:
+        return None
+    owner, repo, number = match.groups()
+    return f"{owner.lower()}/{repo.lower()}#{int(number)}"
+
+
+def mission_issue_ref(mission, projects):
+    number = mission.get("issue")
+    project = projects.get(mission.get("projectId"))
+    repo = project.get("repo") if project else None
+    if not isinstance(number, int) or isinstance(number, bool) or number < 1:
+        return None
+    if not isinstance(repo, str) or repo.count("/") != 1:
+        return None
+    return normalize_issue_ref(f"{repo}#{number}")
 
 
 def valid_id(value):
@@ -68,8 +90,15 @@ def read_events(root):
                 raise ValueError("unknown event type")
             if not valid_id(event.get("agentId")):
                 raise ValueError("invalid agentId")
-            if kind in {"claim", "release"} and not valid_id(event.get("missionId")):
-                raise ValueError("invalid missionId")
+            if kind in {"claim", "release"}:
+                mission_id = event.get("missionId")
+                issue_ref = event.get("issueRef")
+                if bool(mission_id) == bool(issue_ref):
+                    raise ValueError("claim/release must identify exactly one missionId or issueRef")
+                if mission_id is not None and not valid_id(mission_id):
+                    raise ValueError("invalid missionId")
+                if issue_ref is not None and normalize_issue_ref(issue_ref) != issue_ref:
+                    raise ValueError("invalid or non-normalized issueRef")
             if kind == "release" and (not isinstance(event.get("claimId"), str) or not EVENT_ID.fullmatch(event["claimId"])):
                 raise ValueError("invalid claimId")
             events.append(event)
@@ -118,24 +147,38 @@ def project(root):
             if agent["lastHeartbeat"] is None or event["timestamp"] > agent["lastHeartbeat"]:
                 agent["lastHeartbeat"] = event["timestamp"]
 
-    claims = {}
+    claims, issue_claims = {}, {}
     for event in events:
         if event["type"] != "claim":
             continue
-        if event["agentId"] not in agents or event.get("missionId") not in missions:
-            warnings.append(f"{event['id']}: claim references unknown agent or mission")
+        if event["agentId"] not in agents:
+            warnings.append(f"{event['id']}: claim references unknown agent")
             continue
-        claims[event["id"]] = event
-    released = set()
+        if event.get("missionId") is not None:
+            if event["missionId"] not in missions:
+                warnings.append(f"{event['id']}: claim references unknown mission")
+                continue
+            claims[event["id"]] = event
+        else:
+            issue_claims[event["id"]] = event
+    released, released_issues = set(), set()
     for event in events:
         if event["type"] != "release":
             continue
         claim_id = event.get("claimId")
         claim = claims.get(claim_id) if isinstance(claim_id, str) else None
-        if claim is None or claim["agentId"] != event["agentId"] or claim["missionId"] != event.get("missionId"):
-            warnings.append(f"{event['id']}: release does not match a claim by this agent")
+        if claim is not None:
+            if claim["agentId"] != event["agentId"] or claim["missionId"] != event.get("missionId"):
+                warnings.append(f"{event['id']}: release does not match a claim by this agent")
+                continue
+            released.add(claim_id)
             continue
-        released.add(claim_id)
+        claim = issue_claims.get(claim_id) if isinstance(claim_id, str) else None
+        if (claim is None or claim["agentId"] != event["agentId"]
+                or claim.get("issueRef") != event.get("issueRef")):
+            warnings.append(f"{event['id']}: release does not match an issue claim by this agent")
+            continue
+        released_issues.add(claim_id)
     for mission in state["missions"]:
         active = [
             {"claimId": event["id"], "agentId": event["agentId"], "timestamp": event["timestamp"]}
@@ -145,6 +188,30 @@ def project(root):
         active.sort(key=lambda claim: claim["claimId"])
         mission["claims"] = active
         mission["claimStatus"] = "available" if not active else "claimed" if len(active) == 1 else "conflict"
+
+    project_map = {item["id"]: item for item in state["projects"]}
+    grouped_issue_claims = {}
+    for event in claims.values():
+        if event["id"] in released:
+            continue
+        mission = missions[event["missionId"]]
+        issue_ref = mission_issue_ref(mission, project_map)
+        if issue_ref:
+            grouped_issue_claims.setdefault(issue_ref, []).append({
+                "claimId": event["id"], "agentId": event["agentId"], "timestamp": event["timestamp"],
+                "missionId": event["missionId"]
+            })
+    for event in issue_claims.values():
+        if event["id"] in released_issues:
+            continue
+        grouped_issue_claims.setdefault(event["issueRef"], []).append({
+            "claimId": event["id"], "agentId": event["agentId"], "timestamp": event["timestamp"]
+        })
+    state["issueClaims"] = [
+        {"issueRef": issue_ref, "claims": sorted(active, key=lambda claim: claim["claimId"]),
+         "claimStatus": "claimed" if len(active) == 1 else "conflict"}
+        for issue_ref, active in sorted(grouped_issue_claims.items())
+    ]
 
     # Dependencies are seed metadata, not clock-based. A mission is blocked until
     # every mission it depends on is done (or its GitHub issue is closed).
@@ -216,6 +283,13 @@ def main(argv=None):
     release.add_argument("agent")
     release.add_argument("mission")
     release.add_argument("claim_id", help="exact claim ID to release")
+    claim_issue = commands.add_parser("claim-issue", help="claim a GitHub issue using owner/repo#number")
+    claim_issue.add_argument("agent")
+    claim_issue.add_argument("issue")
+    release_issue = commands.add_parser("release-issue", help="release an issue claim by its exact claim ID")
+    release_issue.add_argument("agent")
+    release_issue.add_argument("issue")
+    release_issue.add_argument("claim_id", help="exact claim ID to release")
     args = parser.parse_args(argv)
     try:
         state = project(args.root)
@@ -229,11 +303,28 @@ def main(argv=None):
             if find(state["agents"], args.agent):
                 raise ValueError("agent already exists")
             event = append_event(args.root, "register", args.agent, name=args.name, role=args.role)
-        elif args.command in {"heartbeat", "claim", "release"}:
+        elif args.command in {"heartbeat", "claim", "release", "claim-issue", "release-issue"}:
             if not find(state["agents"], args.agent):
                 raise ValueError("unknown agent; register it first")
             if args.command == "heartbeat":
                 event = append_event(args.root, "heartbeat", args.agent)
+            elif args.command in {"claim-issue", "release-issue"}:
+                issue_ref = normalize_issue_ref(args.issue)
+                if not issue_ref:
+                    raise ValueError("issue must be written as owner/repo#number")
+                if args.command == "claim-issue":
+                    if state["protocol"]["warnings"]:
+                        raise ValueError("protocol warnings make claims unsafe; reconcile history first")
+                    active = next((item for item in state["issueClaims"] if item["issueRef"] == issue_ref), None)
+                    if active:
+                        raise ValueError("issue has active claims; reconcile or release them first")
+                    event = append_event(args.root, "claim", args.agent, issueRef=issue_ref)
+                else:
+                    active = next((item for item in state["issueClaims"] if item["issueRef"] == issue_ref), None)
+                    matching = [c for c in active["claims"] if c["claimId"] == args.claim_id and c["agentId"] == args.agent] if active else []
+                    if not matching:
+                        raise ValueError("issue claim is not active for this agent")
+                    event = append_event(args.root, "release", args.agent, issueRef=issue_ref, claimId=args.claim_id)
             else:
                 mission = find(state["missions"], args.mission)
                 if mission is None:
@@ -245,6 +336,10 @@ def main(argv=None):
                         raise ValueError("mission is blocked by " + ", ".join(mission["blockedBy"]))
                     if mission["claims"]:
                         raise ValueError("mission has active claims; reconcile or release them first")
+                    issue_ref = mission_issue_ref(mission, {item["id"]: item for item in state["projects"]})
+                    active = next((item for item in state["issueClaims"] if item["issueRef"] == issue_ref), None) if issue_ref else None
+                    if active:
+                        raise ValueError("GitHub issue has an active claim; reconcile or release it first")
                     event = append_event(args.root, "claim", args.agent, missionId=args.mission)
                 else:
                     matching = [c for c in mission["claims"] if c["claimId"] == args.claim_id and c["agentId"] == args.agent]

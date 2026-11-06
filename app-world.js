@@ -3,12 +3,14 @@
 function renderWorld() {
   const stage = $('#worldStage');
   if (!stage) return;
+  const projects = scopedProjects();
+  if (activeRoom !== 'all' && !projects.some(project => project.id === activeRoom)) activeRoom = 'all';
   const filters = $('#roomFilters');
   if (filters) {
     filters.innerHTML = `<button class="room-chip ${activeRoom === 'all' ? 'active' : ''}" data-room-filter="all">Todos</button>` +
-      state.projects.map(p => `<button class="room-chip ${activeRoom === p.id ? 'active' : ''}" data-room-filter="${esc(p.id)}">${esc(p.name)}</button>`).join('');
+      projects.map(p => `<button class="room-chip ${activeRoom === p.id ? 'active' : ''}" data-room-filter="${esc(p.id)}">${esc(p.name)}</button>`).join('');
   }
-  stage.innerHTML = state.projects.map((p, i) => worldRoomMarkup(p, i)).join('');
+  stage.innerHTML = projects.map((p, i) => worldRoomMarkup(p, i)).join('');
   renderWorldSignals();
   renderRoomList();
   renderWorldMachine();
@@ -74,7 +76,7 @@ function worldRoomMarkup(project, index) {
 function syncWorldLive() {
   const stage = $('#worldStage');
   if (!stage) return;
-  const events = eventsUpTo();
+  const events = scopedEventsUpTo();
   const latestByProject = new Map();
   events.forEach(e => {
     const eventAt = REPLAY_DURATION - e.agoSeconds;

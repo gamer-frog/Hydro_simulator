@@ -225,6 +225,13 @@ function bindEvents() {
   window.addEventListener('hashchange', () => applyRouteFromHash());
 
   document.addEventListener('click', event => {
+    const scope = event.target.closest('[data-scope-kind]');
+    if (scope) {
+      event.preventDefault();
+      selectScope(scope.dataset.scopeKind, scope.dataset.scopeId);
+      return;
+    }
+
     const copyLink = event.target.closest('[data-copy-link]');
     if (copyLink) { event.preventDefault(); copyCurrentLink(); return; }
 

@@ -7,9 +7,25 @@
     "replayMinutes": 15,
     "heartbeatMinutes": 15
   },
+  "divisions": [
+    { "id": "music", "name": "Música" },
+    { "id": "games", "name": "Juegos" },
+    { "id": "cannabis-studios", "name": "Estudios Cannabis" },
+    { "id": "technology-studios", "name": "Estudios Tecnología" },
+    { "id": "marketing-studios", "name": "Estudios Marketing" },
+    { "id": "mimic-fanvue", "name": "Mimic PC + Fanvue AI" },
+    { "id": "vistta", "name": "VISTTA" },
+    { "id": "hydroponics-nft", "name": "Hidroponia NFT" },
+    { "id": "agent-orchestration", "name": "Orquestación de agentes" }
+  ],
+  "clients": [
+    { "id": "vistta-sweetsoul", "divisionId": "vistta", "name": "SweetSoul", "repos": ["VISTTA_SWEETSOUL"] },
+    { "id": "vistta-peluqueria-german", "divisionId": "vistta", "name": "Peluquería Germán", "repos": [] }
+  ],
   "projects": [
     {
       "id": "project-playground",
+      "divisionId": "agent-orchestration",
       "name": "PlayGround",
       "repo": "gamer-frog/PlayGround",
       "description": "Producto principal y experiments.",
@@ -26,6 +42,7 @@
     },
     {
       "id": "project-atlas",
+      "divisionId": "agent-orchestration",
       "name": "Atlas",
       "repo": "gamer-frog/atlas",
       "description": "Research e infraestructura de datos.",
@@ -42,6 +59,7 @@
     },
     {
       "id": "project-signal",
+      "divisionId": "agent-orchestration",
       "name": "Signal",
       "repo": "gamer-frog/signal",
       "description": "Observabilidad y automatizaciones.",
@@ -58,6 +76,7 @@
     },
     {
       "id": "project-archive",
+      "divisionId": "agent-orchestration",
       "name": "Archive",
       "repo": "gamer-frog/archive",
       "description": "Documentación, QA y memoria del sistema.",
