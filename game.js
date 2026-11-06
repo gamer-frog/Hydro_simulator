@@ -62,7 +62,20 @@
   function loadImage(id) {
     return new Promise(resolve => {
       const image = new Image();
-      image.onload = () => resolve([id, image]);
+      image.onload = () => {
+        // AO's legacy indexed-color sheets use palette entry 0 (pure black) as transparency.
+        // PNG palette exports lost that color key, so restore alpha before drawing them.
+        const normalized = document.createElement('canvas');
+        normalized.width = image.naturalWidth; normalized.height = image.naturalHeight;
+        const sheet = normalized.getContext('2d', { willReadFrequently: true });
+        sheet.drawImage(image, 0, 0);
+        const pixels = sheet.getImageData(0, 0, normalized.width, normalized.height);
+        for (let i = 0; i < pixels.data.length; i += 4) {
+          if (pixels.data[i] === 0 && pixels.data[i + 1] === 0 && pixels.data[i + 2] === 0) pixels.data[i + 3] = 0;
+        }
+        sheet.putImageData(pixels, 0, 0);
+        resolve([id, normalized]);
+      };
       image.onerror = () => {
         console.warn(`No se pudo cargar assets/ao/graphics/${id}.png; se dibujará el mapa sin esa lámina.`);
         resolve([id, null]);
