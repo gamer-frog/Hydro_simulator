@@ -45,7 +45,8 @@ crear un issue nuevo desde el formulario de pedido; nunca modifica uno existente
 - **Trello (opcional)**: un espejo de solo lectura del *machine state* con las
   cartas y las últimas acciones de los agentes.
 - **Ops health**: frescura de heartbeats, claims activos, conflictos, warnings y
-  última sincronización. El snapshot se refresca solo cada 60 segundos.
+  última sincronización; la bandeja “necesita atención” prioriza bloqueos y señales
+  que requieren revisión. El snapshot se refresca solo cada 60 segundos.
 - **Buscador de comandos**: `⌘K` / `Ctrl K` para saltar a cualquier vista, repo,
   agente, misión o acción sin recorrer menús.
 - **Deep links**: cada vista y ficha tiene URL propia, por ejemplo
