@@ -16,6 +16,12 @@
   ];
   const HEADINGS = { N: 1, E: 2, S: 3, W: 4 };
   const DELTAS = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] };
+  const PLAYER_DIRECTIONS = {
+    arrowup: [0, -1], w: [0, -1],
+    arrowright: [1, 0], d: [1, 0],
+    arrowdown: [0, 1], s: [0, 1],
+    arrowleft: [-1, 0], a: [-1, 0]
+  };
   const names = Object.fromEntries(ACTORS.map(actor => [actor.id, actor.name]));
   const CLASS_PROFILES = {
     warrior: { label: 'GUERRERO', body: 1, head: 1, hp: 130, mana: 70, skills: [
@@ -293,9 +299,9 @@
   }
   function updatePlayer() {
     if (player.step) return;
-    const dx = (keys.has('arrowright') || keys.has('d') ? 1 : 0) - (keys.has('arrowleft') || keys.has('a') ? 1 : 0);
-    const dy = (keys.has('arrowdown') || keys.has('s') ? 1 : 0) - (keys.has('arrowup') || keys.has('w') ? 1 : 0);
-    if (dx || dy) startStep(player, dx, dy);
+    // Use only the most recently pressed direction: holding two keys never creates a diagonal.
+    const key = [...keys].reverse().find(pressed => PLAYER_DIRECTIONS[pressed]);
+    if (key) startStep(player, ...PLAYER_DIRECTIONS[key]);
   }
   function updateBots(dt) {
     for (const actor of fighters.slice(1)) {
