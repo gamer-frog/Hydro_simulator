@@ -32,7 +32,8 @@
     view: 'panel', budget: initialBudget(), tasks: {}, legal: {}, userResources: [],
     selectedResource: null, queries: 0, chat: [], chatSources: [], dupOnly: false,
     journalWeek: null, journalTasks: {}, selectedStrain: null, grows: [],
-    libMode: 'digest', batch: null, roadmapStream: 'all', roadmapPending: false, roadmapHorizon: 'all', roadmapQuery: ''
+    libMode: 'digest', batch: null, roadmapStream: 'all', roadmapPending: false, roadmapHorizon: 'all', roadmapQuery: '',
+    sideCollapsed: false, sim: null, simSeries: { growth: true, health: true, moisture: true, nutrition: true, yield: true }
   });
 
   let game, app;
@@ -670,6 +671,250 @@
     }, 105);
   }
 
+  /* ---------- simulador · elegir cepa + configurar + SIMULAR ---------- */
+  const SIM_GRADES = [
+    { id: 'horrible', label: 'Horrible', min: 0, color: '#e08a72', hint: 'Pérdidas o costo impagable' },
+    { id: 'regular', label: 'Regular', min: 35, color: '#e8b56a', hint: 'Se salva, mucho estrés' },
+    { id: 'buena', label: 'Buena', min: 55, color: '#a9c98c', hint: 'Ciclo sólido y repetible' },
+    { id: 'muybuena', label: 'Muy buena', min: 72, color: '#8fce59', hint: 'Rendimiento + salud' },
+    { id: 'excelente', label: 'Excelente', min: 86, color: '#d8f26b', hint: 'Techo del batch' }
+  ];
+  const gradeFor = (score) => [...SIM_GRADES].reverse().find(g => score >= g.min) || SIM_GRADES[0];
+  let simStrategyId = 'balanced';
+  let simResult = null;
+
+  const simConfigFromUI = () => ({
+    strainId: $('#simStrain')?.value || window.STRAINS[0]?.id,
+    plants: Math.max(1, Math.min(9, Number($('#simPlants')?.value || 9))),
+    days: Math.max(55, Math.min(90, Number($('#simDays')?.value || 75))),
+    light: Math.max(12, Math.min(24, Number($('#simLight')?.value || 18))),
+    temp: Math.max(18, Math.min(32, Number($('#simTemp')?.value || 24))),
+    strategy: simStrategyId
+  });
+
+  function renderSimConfig() {
+    const sel = $('#simStrain');
+    if (!sel) return;
+    const ordered = [...window.STRAINS].sort((a, b) => {
+      const ca = CAT_ORDER[strainCategory(a)], cb = CAT_ORDER[strainCategory(b)];
+      return ca - cb || a.name.localeCompare(b.name, 'es');
+    });
+    const current = app.sim?.strainId || sel.value || ordered[0].id;
+    sel.innerHTML = ordered.map(st => `<option value="${st.id}">${esc(st.name)} · ${esc(CAT_LABEL[strainCategory(st)])} · ${st.flower}d · ${st.yield}g/planta</option>`).join('');
+    sel.value = current;
+    const st = window.STRAINS.find(x => x.id === sel.value) || ordered[0];
+    const meta = $('#simStrainMeta');
+    if (meta && st) meta.textContent = `${CAT_LABEL[strainCategory(st)]} · ${st.flower} días de floración · ${st.yield} g/planta · ${st.thc}% THC · fuente: ${st.source || 'StrainAPI V1'}`;
+
+    const row = $('#simStrategyRow');
+    if (row) {
+      row.innerHTML = BATCH_STRATEGIES.map(s => `
+        <button class="sim-strategy ${s.id === simStrategyId ? 'active' : ''}" type="button" data-strategy="${s.id}" role="radio" aria-checked="${s.id === simStrategyId}">
+          <i>${s.ico}</i><b>${esc(s.label)}</b><small>${esc(s.desc)}</small>
+        </button>`).join('');
+      $$('#simStrategyRow [data-strategy]').forEach(b => b.addEventListener('click', () => {
+        simStrategyId = b.dataset.strategy;
+        renderSimConfig();
+      }));
+    }
+    const grades = $('#simGrades');
+    if (grades && !grades.dataset.bound) {
+      grades.dataset.bound = '1';
+      grades.innerHTML = SIM_GRADES.map(g => `<span class="sim-grade" style="--gc:${g.color}"><b>${esc(g.label)}</b><small>${g.min}+ pts</small></span>`).join('') + `<span class="sim-grades-note">Elegís <b>cepa + estrategia + ambiente</b>. El motor simula <b>todos los días</b> y calcula rendimiento.</span>`;
+    }
+    if (simResult) renderSimResult(simResult);
+  }
+
+  function simulateFull(cfg) {
+    const st = window.STRAINS.find(x => x.id === cfg.strainId) || window.STRAINS[0];
+    const strat = BATCH_STRATEGIES.find(s => s.id === cfg.strategy) || BATCH_STRATEGIES[0];
+    const days = cfg.days;
+    const baseYieldPerPlant = st.yield || 85;
+    const cycleFactor = Math.max(.7, Math.min(1.15, cfg.days / (st.flower + 5)));
+    const lightFactor = Math.max(.78, Math.min(1.12, cfg.light / 18));
+    const tempPenalty = Math.max(0, Math.abs(cfg.temp - 24) - 2) * 1.1;
+    const rand = seededRandom((cfg.strainId.charCodeAt(0) || 7) * 131 + days * 17 + cfg.plants * 911 + (cfg.strategy === 'balanced' ? 7 : cfg.strategy.length * 31));
+    const growth = [], healthS = [], moistureS = [], nutritionS = [], yieldS = [];
+    let health = 92, moisture = 58, nutrition = 55, stressDays = 0;
+    for (let d = 1; d <= days; d++) {
+      const phaseT = d / days;
+      const logistic = 100 / (1 + Math.exp(-(d - days * 0.52) / (days * 0.16)));
+      growth.push(Math.round(Math.min(100, Math.max(4, logistic + (rand() - .5) * 3))));
+      moisture = Math.max(18, Math.min(88, moisture - 11 + rand() * 5 + (strat.waterAt > 30 ? 4 : 0)));
+      if (moisture < strat.waterAt) moisture = Math.min(88, moisture + 34);
+      nutrition = Math.max(15, Math.min(90, nutrition - 2.1 + rand() * 2 + (strat.feedAt > 30 ? 3 : 0)));
+      if (nutrition < strat.feedAt) nutrition = Math.min(90, nutrition + 30);
+      let stress = 0;
+      if (moisture < 22 || moisture > 84) stress += 5;
+      if (nutrition < 18) stress += 4;
+      if (tempPenalty > 2) stress += Math.min(4, tempPenalty / 2);
+      if (strat.stress && d % (strat.stressEvery || 3) === 0) stress += strat.stress;
+      health = Math.max(15, Math.min(99, health + (stress ? -stress : 1.1)));
+      if (stress) stressDays++;
+      if (d % 7 === 0 && health < 55) stressDays++;
+      healthS.push(Math.round(health));
+      moistureS.push(Math.round(moisture));
+      nutritionS.push(Math.round(nutrition));
+      const frac = Math.max(0, Math.min(1, (d - 1) / Math.max(1, days - 1)));
+      yieldS.push(Math.round(baseYieldPerPlant * cfg.plants * cycleFactor * lightFactor * (health / 92) * Math.pow(frac, 1.6)));
+    }
+    const yieldG = yieldS[yieldS.length - 1] || 0;
+    const potential = Math.round(baseYieldPerPlant * cfg.plants * cycleFactor * lightFactor);
+    const yieldScore = potential ? Math.min(100, Math.round(yieldG / potential * 100)) : 0;
+    const avgHealth = Math.round(healthS.reduce((a, b) => a + b, 0) / healthS.length);
+    const healthScore = Math.max(0, Math.min(100, Math.round(avgHealth)));
+    const stability = Math.max(0, Math.min(100, 100 - stressDays * 2.2 - tempPenalty * 3));
+    const spentDaily = 4500 * (cfg.light / 18) + (strat.premium > 0 ? 1600 : strat.premium < 0 ? -250 : 650);
+    const spent = Math.round(spentDaily * days + cfg.plants * 1200);
+    const perGram = yieldG ? Math.round(spent / yieldG) : spent;
+    const costScore = Math.max(0, Math.min(100, Math.round((2200 - perGram) / 16)));
+    const score = Math.max(0, Math.min(100, Math.round(yieldScore * .4 + costScore * .2 + healthScore * .25 + stability * .15)));
+    const grade = gradeFor(score);
+    const activities = [
+      { day: 1, phase: 'Siembra', title: 'Germinación y siembra', detail: `Hidratar sustrato, ${cfg.light} h luz, ${cfg.temp} °C media.`, done: true },
+      { day: 3, phase: 'Plántula', title: 'Primer riego medido', detail: 'Riego por peso de maceta; evitar encharcar.', done: strat.waterAt >= 24 },
+      { day: 12, phase: 'Crecimiento', title: 'Raíces y estructura', detail: 'Media dosis NPK; revisar distancia y PPFD.', done: true },
+      { day: 18, phase: 'Crecimiento', title: 'Primer LST', detail: 'Apertura suave de canopia; registrar respuesta a 48 h.', done: strat.id !== 'minimal' },
+      { day: 27, phase: 'Prefloración', title: 'Cambio a fórmula floración', detail: 'Bajar humedad hacia 58%; ajustar P/K.', done: true },
+      { day: 37, phase: 'Floración', title: 'Floración y ventilación', detail: 'Rutina de ventilación y prevención de botritis.', done: !!strat.vent },
+      { day: 44, phase: 'Floración', title: 'Defoliación selectiva', detail: 'Solo hojas que bloquean luz.', done: strat.id === 'intensive' },
+      { day: 52, phase: 'Floración', title: 'Pico de demanda hídrica', detail: 'Consumo máximo; reponer reserva a tiempo.', done: strat.waterAt >= 22 },
+      { day: 57, phase: 'Maduración', title: 'Tricomas y reducción', detail: 'Bajar riego y nutrición; preparar secado.', done: true },
+      { day: 63, phase: 'Maduración', title: 'Control de botritis', detail: 'Revisar cogollos internos; subir ventilación.', done: !!strat.vent },
+      { day: Math.min(days, Math.round(days * 0.9)), phase: 'Cosecha', title: `Corte · ${fmt(yieldG)} g`, detail: `${cfg.plants} plantas · ${fmt(perGram)} $/g · ${grade.label} (${score} pts).`, done: true },
+      { day: days, phase: 'Curado', title: 'Secado y curado', detail: 'Secado lento 7–10 días; curado con aireación diaria.', done: true }
+    ].filter(a => a.day <= days).sort((a, b) => a.day - b.day);
+    const yieldPct = yieldS.map(v => potential ? Math.round(v / potential * 100) : 0);
+    return { cfg, strain: st, strategy: strat, days, growth, health: healthS, moisture: moistureS, nutrition: nutritionS, yield: yieldS, yieldPct, yieldG, potential, spent, perGram, score, grade, activities, stressDays, stability };
+  }
+
+  const SIM_SERIES = [
+    { id: 'growth', label: 'Crecimiento', color: '#d8f26b', shape: 'circle', unit: '%' },
+    { id: 'health', label: 'Salud', color: '#7fe0b2', shape: 'square', unit: '%' },
+    { id: 'moisture', label: 'Humedad sustrato', color: '#8fb8d8', shape: 'triangle', unit: '%' },
+    { id: 'nutrition', label: 'Nutrición', color: '#e8b56a', shape: 'diamond', unit: '%' },
+    { id: 'yieldPct', label: 'Rendimiento % potencial', color: '#e58ac0', shape: 'cross', unit: '%' }
+  ];
+
+  function linePoints(values, w, h, padL, padB, yMax) {
+    const n = values.length;
+    if (!n) return '';
+    return values.map((v, i) => {
+      const x = padL + (w - padL - 10) * (i / Math.max(1, n - 1));
+      const y = h - padB - (h - padB - 14) * (v / yMax);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+  }
+
+  function markerSVG(shape, x, y, color) {
+    const s = 4;
+    if (shape === 'circle') return `<circle cx="${x}" cy="${y}" r="${s}" fill="${color}" stroke="#0a0c07" stroke-width="1.2"/>`;
+    if (shape === 'triangle') return `<path d="M ${x} ${y - s} L ${x + s} ${y + s} L ${x - s} ${y + s} Z" fill="${color}" stroke="#0a0c07" stroke-width="1.2"/>`;
+    if (shape === 'square') return `<rect x="${x - s}" y="${y - s}" width="${s * 2}" height="${s * 2}" fill="${color}" stroke="#0a0c07" stroke-width="1.2"/>`;
+    if (shape === 'diamond') return `<path d="M ${x} ${y - s} L ${x + s} ${y} L ${x} ${y + s} L ${x - s} ${y} Z" fill="${color}" stroke="#0a0c07" stroke-width="1.2"/>`;
+    return `<g stroke="${color}" stroke-width="2.4"><line x1="${x - s}" y1="${y - s}" x2="${x + s}" y2="${y + s}"/><line x1="${x + s}" y1="${y - s}" x2="${x - s}" y2="${y + s}"/></g>`;
+  }
+
+  function renderSimResult(result) {
+    simResult = result;
+    const box = $('#simResults');
+    if (!box) return;
+    box.hidden = false;
+    const { cfg, strain, strategy, grade, score, yieldG, perGram, spent, stressDays, activities, days } = result;
+    $('#simResultTitle').textContent = `${strain.name} · ${strategy.label} · ${grade.label}`;
+    $('#simChartTitle').textContent = `Rendimiento del batch · ${strain.name}`;
+    $('#simChartCaption').textContent = `Días desde el inicio (0–${days}) · ${cfg.plants} plantas · ${cfg.light} h luz/${cfg.temp} °C`;
+    $('#simResultStats').innerHTML = `
+      <span class="sim-stat grade" style="--gc:${grade.color}"><b>${grade.label}</b><small>${score} / 100 pts</small></span>
+      <span class="sim-stat"><b>${fmt(yieldG)} g</b><small>rendimiento</small></span>
+      <span class="sim-stat"><b>$${fmt(perGram)}</b><small>por gramo</small></span>
+      <span class="sim-stat"><b>$${fmt(spent)}</b><small>costo total</small></span>
+      <span class="sim-stat"><b>${stressDays}</b><small>días de estrés</small></span>`;
+
+    const list = $('#simSeriesList');
+    if (list) {
+      list.innerHTML = SIM_SERIES.map(s => `
+        <label class="sim-series-row" style="--sc:${s.color}">
+          <input type="checkbox" data-series="${s.id}" ${app.simSeries[s.id] ? 'checked' : ''} />
+          <span class="sim-series-swatch" aria-hidden="true">${s.shape === 'circle' ? '●' : s.shape === 'triangle' ? '▲' : s.shape === 'square' ? '■' : s.shape === 'diamond' ? '◆' : '✚'}</span>
+          <span><b>${esc(s.label)}</b><small>${s.id === 'yieldPct' ? `${fmt(yieldG)} g final · ${result.yieldPct[result.yieldPct.length - 1] || 0}%` : '0–100%'}</small></span>
+        </label>`).join('');
+      $$('#simSeriesList [data-series]').forEach(cb => cb.addEventListener('change', () => {
+        app.simSeries[cb.dataset.series] = cb.checked;
+        persist();
+        renderSimChart(result);
+      }));
+    }
+    renderSimChart(result);
+
+    const proc = $('#simProcess');
+    if (proc) {
+      proc.innerHTML = activities.map(a => `
+        <li class="sim-step ${a.done ? 'done' : 'skipped'}">
+          <span class="sim-step-day">D${String(a.day).padStart(2, '0')}</span>
+          <span class="sim-step-phase">${esc(a.phase)}</span>
+          <div class="sim-step-copy"><b>${esc(a.title)}</b><small>${esc(a.detail)}</small></div>
+          <span class="sim-step-state">${a.done ? '✓ prevista' : '— omitida'}</span>
+        </li>`).join('');
+    }
+  }
+
+  function renderSimChart(result) {
+    const wrap = $('#simChartWrap');
+    if (!wrap || !result) return;
+    const vis = SIM_SERIES.filter(s => app.simSeries[s.id]);
+    const w = 760, h = 380, padL = 44, padB = 34;
+    const yMax = 100;
+    const xTicks = [0, .25, .5, .75, 1].map(f => Math.round(result.days * f));
+    const yTicks = [0, .25, .5, .75, 1].map(f => Math.round(yMax * f));
+    const grid = yTicks.map(v => {
+      const y = h - padB - (h - padB - 14) * (v / yMax);
+      return `<line x1="${padL}" y1="${y}" x2="${w - 10}" y2="${y}" stroke="rgba(235,241,214,.08)"/><text x="${padL - 8}" y="${y + 4}" text-anchor="end" fill="#7c866d" font-size="10">${v}</text>`;
+    }).join('');
+    const xt = xTicks.map(d => {
+      const x = padL + (w - padL - 10) * (d / result.days);
+      return `<line x1="${x}" y1="12" x2="${x}" y2="${h - padB}" stroke="rgba(235,241,214,.06)"/><text x="${x}" y="${h - 12}" text-anchor="middle" fill="#7c866d" font-size="10">${d}</text>`;
+    }).join('');
+    const lines = vis.map(s => {
+      const values = result[s.id] || [];
+      const pts = linePoints(values, w, h, padL, padB, yMax);
+      const sampleIdx = values.map((_, i) => i).filter(i => i % Math.ceil(values.length / 12) === 0);
+      const markers = sampleIdx.map(i => {
+        const x = padL + (w - padL - 10) * (i / Math.max(1, values.length - 1));
+        const y = h - padB - (h - padB - 14) * (values[i] / yMax);
+        return markerSVG(s.shape, x, y, s.color);
+      }).join('');
+      return `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>${markers}`;
+    }).join('');
+    const legend = vis.map(s => `
+      <div class="sim-legend-row" style="--sc:${s.color}">
+        <span class="sim-legend-mark" aria-hidden="true">${s.shape === 'circle' ? '●' : s.shape === 'triangle' ? '▲' : s.shape === 'square' ? '■' : s.shape === 'diamond' ? '◆' : '✚'}</span>
+        <span>${esc(s.label)}</span>
+      </div>`).join('') || '<p class="sim-chart-empty">Sin series visibles. Activá al menos una serie a la izquierda.</p>';
+    wrap.innerHTML = `
+      <div class="sim-chart-flex">
+        <svg class="sim-svg" viewBox="0 0 ${w} ${h}" role="img" aria-label="Timechart del batch">
+          ${grid}${xt}${lines}
+          <line x1="${padL}" y1="${h - padB}" x2="${w - 10}" y2="${h - padB}" stroke="rgba(235,241,214,.25)"/>
+          <line x1="${padL}" y1="12" x2="${padL}" y2="${h - padB}" stroke="rgba(235,241,214,.25)"/>
+          <text x="${(w + padL) / 2}" y="${h - 1}" text-anchor="middle" fill="#8b947e" font-size="11">Días desde el inicio</text>
+          <text x="12" y="${h / 2}" text-anchor="middle" fill="#8b947e" font-size="11" transform="rotate(-90 12 ${h / 2})">% (0–100)</text>
+        </svg>
+        <div class="sim-chart-legend">${legend}</div>
+      </div>`;
+  }
+
+  function runFullSimulation() {
+    const cfg = simConfigFromUI();
+    app.sim = cfg;
+    persist();
+    const result = simulateFull(cfg);
+    renderSimResult(result);
+    showToast(`Simulación lista: ${cfg.strainId ? result.strain.name : ''} · ${result.strategy.label} → ${result.grade.label} (${result.score} pts) · ${fmt(result.yieldG)} g.`);
+    const box = $('#simResults');
+    if (box) box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   /* ---------- simulator ---------- */
   function renderSim() {
     renderNav();
@@ -741,7 +986,8 @@
       : selected.moisture < 30 ? 'El sustrato está seco. Una pequeña cantidad de agua puede ayudar.'
       : selected.moisture > 78 ? 'El sustrato sigue húmedo; esperá antes de volver a regar.'
       : selected.age >= 67 ? 'Esta planta alcanzó la madurez. Podés cosecharla.'
-      : 'Revisá el sustrato antes de regar. Un exceso de agua también estresa.';
+      : 'Revisá el sustrato antes de regar. Para una corrida completa usá SIMULAR arriba.';
+    renderSimConfig();
     renderBatch();
   }
 
@@ -929,14 +1175,16 @@
   }
 
   function strainCardHTML(st) {
-    return `<article class="strain-card" data-strain="${st.id}" tabindex="0" role="button" aria-label="Ver ficha de ${esc(st.name)}">
+    const cat = strainCategory(st);
+    return `<article class="strain-card cat-${cat}" data-strain="${st.id}" tabindex="0" role="button" aria-label="Ver ficha de ${esc(st.name)}">
       <div class="strain-card-media">
         <img src="${st.image}" alt="${esc(st.name)}" loading="lazy" />
-        <div class="strain-card-badges"><span class="strain-badge thc">${st.thc}% THC</span><span class="strain-badge">${esc(st.difficulty)}</span></div>
+        <div class="strain-card-badges"><span class="strain-badge thc">${st.thc}% THC</span><span class="strain-badge cat">${esc(CAT_LABEL[cat])}</span></div>
         <div class="strain-card-name"><b>${esc(st.name)}</b><small>${esc(st.type)} · ${st.flower} días</small></div>
       </div>
       <div class="strain-card-body">
-        <div class="strain-effects">${st.effects.slice(0, 3).map(e => `<span>${esc(e)}</span>`).join('')}</div>
+        <div class="strain-effects">${st.effects.slice(0, 2).map(e => `<span>${esc(e)}</span>`).join('')}</div>
+        <div class="strain-source-tag" title="${esc(st.source || '')}"><span>Fonte</span>${esc((st.source || 'StrainAPI V1').split('·')[0].trim())}</div>
         <div class="strain-card-foot"><span>${st.yield} g/m² · ${esc(st.height.split('–')[0])}+</span>${difficultyDots(st.difficulty)}</div>
       </div>
     </article>`;
@@ -952,35 +1200,100 @@
     });
   }
 
+  const CAT_ORDER = { sativa: 0, indica: 1, cbd: 2, hibrida: 3 };
+  const CAT_LABEL = { sativa: 'Sativa', indica: 'Indica', cbd: 'CBD', hibrida: 'Híbrida' };
+  const strainCategory = (st) => st.category || (st.cbd >= 1.0 ? 'cbd' : 'hibrida');
+
+  const STRAIN_SOURCES = [
+    { name: 'StrainAPI V1', key: 'Sin API key · solo lectura', url: 'https://www.strainapi.com/docs/', endpoints: 'GET /wp-json/strainapi/v1/strains · /strains/{slug} · /search?q=', fields: 'genetics, breeder, type, thc {min,max}, cbd, terpenes, flowering, effects, flavor/aroma', note: '495 cepas publicadas; paginado hasta 100; CORS público. No inventa datos faltantes (null/[]).' },
+    { name: 'TheCannabisInformer API beta', key: 'Sin API key · solo lectura', url: 'https://thecannabisinformer.com/api/', endpoints: 'GET /api/v1/strains.json · /strains/{slug}.json · /catalogs.json', fields: 'type, parentage, effects/aromas reportados, chemistry por muestra, flowering/full-cycle, sources', note: '50 perfiles curados con revisión de dataset. Conservar enlaces y calificaciones; atribuir y enlazar a la guía.' },
+    { name: 'Strainpedia API', key: 'Paga · x-api-key ($50/mes)', url: 'https://www.strainpedia.com/api/', endpoints: 'Demo sin key: /wp-json/strainpedia/v1/demo/{slug} · Completo: /strains, /search, /strain/{slug}, /compare', fields: 'type, genetics, thc_range/cbd_range, terpenes, effects, flavors, flowering, difficulty, yield', note: 'Verde usa solo la demo pública (5 cepas) sin guardar keys. Completo exige atribución visible y prohíbe re-exportar la base.' },
+    { name: 'Otreeba (referencia, no integrada)', key: 'Requiere API key', url: 'https://publicapis.io/otreeba-api', endpoints: 'Catálogo de semilleras/cepas/marcas', fields: 'semilla, breeder, producto, retailer, estudios', note: 'Registrada para evaluación futura; no se usa por defecto ni se guarda ninguna key.' }
+  ];
+
+  let strainCatFilter = 'all';
+
+  function renderStrainSources() {
+    const el = $('#strainSources');
+    if (!el) return;
+    el.innerHTML = `
+      <div class="strain-sources-head">
+        <div>
+          <span class="section-kicker">FUENTES DE DATOS · ANOTADAS</span>
+          <h3>De dónde sale la data <em>del catálogo.</em></h3>
+          <p>Cada ficha muestra su fuente en la tarjeta y en el detalle. Sin keys guardadas: se documenta qué endpoint se usaría y qué exige cada servicio.</p>
+        </div>
+        <span class="strain-sources-note">Verde no guarda API keys. StrainAPI e Informer son gratuitas sin key; Strainpedia es paga y solo se usa su demo pública.</span>
+      </div>
+      <div class="strain-sources-grid">
+        ${STRAIN_SOURCES.map(s => `
+          <article class="strain-source-card">
+            <div class="strain-source-top"><b>${esc(s.name)}</b><span>${esc(s.key)}</span></div>
+            <p>${esc(s.note)}</p>
+            <code>${esc(s.endpoints)}</code>
+            <small>${esc(s.fields)}</small>
+            <a href="${s.url}" target="_blank" rel="noopener">Docs oficiales ↗</a>
+          </article>`).join('')}
+      </div>`;
+  }
+
+  function renderStrainCatTabs() {
+    const tabs = $('#strainCatTabs');
+    if (!tabs) return;
+    const counts = {};
+    window.STRAINS.forEach(st => { counts[strainCategory(st)] = (counts[strainCategory(st)] || 0) + 1; });
+    const cats = ['all', 'sativa', 'indica', 'cbd', 'hibrida'];
+    tabs.innerHTML = cats.map(c => {
+      const label = c === 'all' ? 'Todas' : CAT_LABEL[c];
+      const n = c === 'all' ? window.STRAINS.length : (counts[c] || 0);
+      return `<button class="strain-cat-tab ${strainCatFilter === c ? 'active' : ''}" data-cat="${c}" type="button"><b>${label}</b><small>${n}</small></button>`;
+    }).join('');
+    $$('#strainCatTabs [data-cat]').forEach(b => b.addEventListener('click', () => {
+      strainCatFilter = b.dataset.cat;
+      const sel = $('#strainCategory');
+      if (sel) sel.value = strainCatFilter;
+      filterStrains();
+    }));
+  }
+
   function filterStrains() {
     const q = norm($('#strainSearch')?.value || '');
+    const catSel = $('#strainCategory');
+    if (catSel && norm(catSel.value) !== norm(strainCatFilter)) strainCatFilter = catSel.value || 'all';
     const diff = $('#strainDifficulty')?.value || 'all';
     const effect = $('#strainEffect')?.value || 'all';
-    const sort = $('#strainSort')?.value || 'thc';
+    const sort = $('#strainSort')?.value || 'cat';
     let list = window.STRAINS.filter(st => {
-      const hay = norm([st.name, st.summary, st.flavor, st.tags.join(' '), st.effects.join(' '), st.terpenes.map(t => t.n).join(' ')].join(' '));
-      return (!q || hay.includes(q)) && (diff === 'all' || st.difficulty === diff) && (effect === 'all' || st.effects.includes(effect));
+      const hay = norm([st.name, st.summary, st.flavor, st.tags.join(' '), st.effects.join(' '), st.terpenes.map(t => t.n).join(' '), strainCategory(st), st.source || ''].join(' '));
+      return (!q || hay.includes(q)) && (strainCatFilter === 'all' || strainCategory(st) === strainCatFilter) && (diff === 'all' || st.difficulty === diff) && (effect === 'all' || st.effects.includes(effect));
     });
-    if (sort === 'thc') list.sort((a, b) => b.thc - a.thc);
-    if (sort === 'fast') list.sort((a, b) => a.flower - b.flower);
-    if (sort === 'yield') list.sort((a, b) => b.yield - a.yield);
-    if (sort === 'az') list.sort((a, b) => a.name.localeCompare(b.name, 'es'));
-    $('#strainCount').textContent = `${list.length} ${list.length === 1 ? 'cepa' : 'cepas'}`;
-    $('#strainGrid').innerHTML = list.map(strainCardHTML).join('') || `<div class="lib-empty" style="grid-column:1/-1"><b>Sin cepas para ese filtro.</b><p>Probá con otro efecto, dificultad o término de búsqueda.</p></div>`;
+    list.sort((a, b) => {
+      const ca = CAT_ORDER[strainCategory(a)], cb = CAT_ORDER[strainCategory(b)];
+      if (sort === 'cat') return ca - cb || b.thc - a.thc || a.name.localeCompare(b.name, 'es');
+      if (sort === 'thc') return b.thc - a.thc;
+      if (sort === 'fast') return a.flower - b.flower;
+      if (sort === 'yield') return b.yield - a.yield;
+      return a.name.localeCompare(b.name, 'es');
+    });
+    $('#strainCount').textContent = `${list.length} ${list.length === 1 ? 'cepa' : 'cepas'} · ordenadas por Sativa · Indica · CBD`;
+    $('#strainGrid').innerHTML = list.map(strainCardHTML).join('') || `<div class="lib-empty" style="grid-column:1/-1"><b>Sin cepas para ese filtro.</b><p>Probá con otra categoría, efecto o término de búsqueda.</p></div>`;
     bindStrainCards('#strainGrid');
+    renderStrainCatTabs();
   }
 
   function renderStrains() {
     renderNav();
     const st = window.STRAINS[0];
+    const cat = strainCategory(st);
     $('#strainFeatured').innerHTML = `<img src="${st.image}" alt="${esc(st.name)}" />
       <div class="strain-featured-copy">
-        <div class="strain-featured-tags"><span>DESTACADA</span><span class="ghost">${esc(st.type)}</span><span class="ghost">${esc(st.difficulty)}</span></div>
+        <div class="strain-featured-tags"><span>DESTACADA</span><span class="ghost">${esc(CAT_LABEL[cat])}</span><span class="ghost">${esc(st.difficulty)}</span></div>
         <h2>${esc(st.name.replace(' Auto', ''))} <em>Auto.</em></h2>
         <p>${esc(st.summary)}</p>
         <div class="strain-featured-stats">
           <span><b>${st.thc}%</b>THC</span><span><b>${st.cbd}%</b>CBD</span><span><b>${st.flower}</b>días de floración</span><span><b>${st.yield} g</b>por planta</span>
         </div>
+        <p class="strain-featured-source"><span>FUENTE</span>${esc(st.source || 'StrainAPI V1')}</p>
         <div class="strain-featured-actions"><button class="btn btn-lime" data-strain-open="${st.id}">Ver ficha completa</button><button class="btn btn-glass" data-ask="¿Qué cuidados necesita una autofloreciente ${esc(st.name)}?">Preguntar al oráculo <span>◈</span></button></div>
       </div>`;
 
@@ -988,16 +1301,20 @@
     const sel = $('#strainEffect');
     if (sel && sel.options.length <= 1) sel.innerHTML = '<option value="all">Todo efecto</option>' + effects.map(e => `<option>${esc(e)}</option>`).join('');
     filterStrains();
+    renderStrainSources();
 
     const featuredBtn = $('#strainFeatured [data-strain-open]');
     if (featuredBtn) featuredBtn.addEventListener('click', () => openStrainSheet(featuredBtn.dataset.strainOpen));
   }
 
   function bindStrains() {
-    ['strainSearch', 'strainDifficulty', 'strainEffect', 'strainSort'].forEach(id => {
+    ['strainSearch', 'strainDifficulty', 'strainEffect', 'strainSort', 'strainCategory'].forEach(id => {
       const el = $('#' + id);
       if (!el) return;
-      el.addEventListener(id === 'strainSearch' ? 'input' : 'change', filterStrains);
+      el.addEventListener(id === 'strainSearch' ? 'input' : 'change', () => {
+        if (id === 'strainCategory') strainCatFilter = el.value || 'all';
+        filterStrains();
+      });
     });
   }
 
@@ -2156,8 +2473,22 @@
       }
     });
 
-    $('#advanceBtn')?.addEventListener('click', () => advance());
-    $('#advanceBtn2')?.addEventListener('click', () => advance());
+    $('#sideCollapse')?.addEventListener('click', () => {
+      app.sideCollapsed = !app.sideCollapsed;
+      document.body.classList.toggle('side-collapsed', app.sideCollapsed);
+      const btn = $('#sideCollapse');
+      if (btn) { btn.setAttribute('aria-expanded', String(!app.sideCollapsed)); btn.textContent = app.sideCollapsed ? '⟩' : '⟨'; }
+      persist();
+    });
+    $('#simulateBtn')?.addEventListener('click', runFullSimulation);
+    $('#simGoBtn')?.addEventListener('click', () => {
+      $('#simConfig')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      $('#simStrain')?.focus();
+    });
+    $('#simStrain')?.addEventListener('change', () => { renderSimConfig(); });
+    ['simPlants', 'simDays', 'simLight', 'simTemp'].forEach(id => {
+      $('#' + id)?.addEventListener('change', () => { app.sim = simConfigFromUI(); persist(); });
+    });
     $('#quickSimBtn')?.addEventListener('click', () => $('#quickModal').classList.add('open'));
     $('#batchRunBtn')?.addEventListener('click', runBatchBenchmark);
     $('#timelapseBtn')?.addEventListener('click', toggleTimelapse);
@@ -2217,6 +2548,14 @@
   /* ---------- init ---------- */
   function init() {
     if (game.finished) archiveSeason();
+    if (app.sideCollapsed) {
+      document.body.classList.add('side-collapsed');
+      const btn = $('#sideCollapse');
+      if (btn) { btn.setAttribute('aria-expanded', 'false'); btn.textContent = '⟩'; }
+    }
+    if (app.sim) {
+      if (app.sim.strategy) simStrategyId = app.sim.strategy;
+    }
     bindGlobal();
     bindStrains();
     bindLibrary();

@@ -1,8 +1,26 @@
 /* Catálogo demo de variedades autoflorecientes.
-   Los perfiles son una síntesis educativa de referencia: no reemplazan la ficha del banco de semillas. */
+   Los perfiles son una síntesis educativa de referencia: no reemplazan la ficha del banco de semillas.
+   
+   FUENTES DE DATOS (anotadas por ficha, campo `source`):
+   - StrainAPI V1 (sin API key, solo lectura): https://www.strainapi.com/wp-json/strainapi/v1/strains
+     Endpoints: /strains (lista, paginado), /strains/{slug} (detalle), /search?q= (búsqueda). CORS público GET/OPTIONS.
+     Campos: id, name, slug, breeder, genetics, type, thc {value,min,max}, cbd, terpenes, flowering {min,max}, effects, flavor/aroma.
+     Fraseo: la API no inventa datos faltantes (null/[]). Revisar términos: https://www.strainapi.com/api-terms/
+   - TheCannabisInformer API beta (sin API key, solo lectura): https://thecannabisinformer.com/api/
+     Endpoints: /api/v1/strains.json (colección + dataset_revision), /api/v1/strains/{slug}.json (detalle), /api/v1/catalogs.json (tipos/efectos/aromas con conteos).
+     50 perfiles curados; conservar enlaces de fuente y calificaciones de muestra; atribuir y enlazar a la guía.
+   - Strainpedia API (paga, $50/mes, requiere x-api-key): https://www.strainpedia.com/api/
+     Demo pública sin key: /wp-json/strainpedia/v1/demo/{blue-dream,gelato,og-kush,northern-lights,girl-scout-cookies}
+     Completo con key: /strains (filtros strain_type, min/max_thc/cbd, effect/flavor/terpene), /search, /strain/{slug}, /compare, catálogos.
+     Requiere atribución visible y no permite re-exportar la base. Verde usa solo la demo pública; no se guarda ninguna key.
+   - Otreeba API (requiere API key, catálogo OpenAI-style): https://publicapis.io/otreeba-api — semilla/bank/marca; no se usa por defecto.
+   - Strain API legacy (requiere key a través de RapidAPI, datos sin licencia comercial clara): no se usa.
+   CATEGORÍAS (campo `category`): sativa (estimulante/eufórico/energía), indica (relajado/somnoliento/analgésico),
+   hibrida (equilibrio) y cbd (CBD alto). El orden del catálogo sigue esta categoría primero. */
 window.STRAINS = [
   {
     id: 'gelato-auto', name: 'Gelato Auto', breeder: 'Catálogo demo', type: 'Autofloreciente',
+    category: 'hibrida', source: 'StrainAPI V1 · Strainpedia demo (gelato)',
     thc: 24, cbd: 0.4, difficulty: 'Media', flower: 70, yield: 90, height: '70–110 cm',
     effects: ['Eufórico', 'Relajado', 'Creativo'], flavor: 'Dulce · Cítrico · Tierra',
     terpenes: [{ n: 'Cariofileno', v: 32 }, { n: 'Limoneno', v: 27 }, { n: 'Mirceno', v: 21 }, { n: 'Linalool', v: 12 }, { n: 'Pineno', v: 8 }],
@@ -13,6 +31,7 @@ window.STRAINS = [
   },
   {
     id: 'blue-dream-auto', name: 'Blue Dream Auto', breeder: 'Catálogo demo', type: 'Autofloreciente',
+    category: 'sativa', source: 'StrainAPI V1 · Strainpedia demo (blue-dream) · TheCannabisInformer (blue-dream)',
     thc: 21, cbd: 0.6, difficulty: 'Fácil', flower: 68, yield: 85, height: '80–120 cm',
     effects: ['Creativo', 'Enfocado', 'Alegre'], flavor: 'Arándano · Incienso · Dulce',
     terpenes: [{ n: 'Mirceno', v: 34 }, { n: 'Pineno', v: 24 }, { n: 'Cariofileno', v: 18 }, { n: 'Limoneno', v: 14 }, { n: 'Terpinoleno', v: 10 }],
@@ -23,6 +42,7 @@ window.STRAINS = [
   },
   {
     id: 'northern-lights-auto', name: 'Northern Lights Auto', breeder: 'Catálogo demo', type: 'Autofloreciente',
+    category: 'indica', source: 'StrainAPI V1 · Strainpedia demo (northern-lights) · TheCannabisInformer (northern-lights)',
     thc: 19, cbd: 0.8, difficulty: 'Fácil', flower: 65, yield: 80, height: '60–100 cm',
     effects: ['Relajado', 'Somnoliento', 'Analgésico'], flavor: 'Pino · Tierra · Especiado',
     terpenes: [{ n: 'Mirceno', v: 41 }, { n: 'Cariofileno', v: 22 }, { n: 'Pineno', v: 17 }, { n: 'Humuleno', v: 11 }, { n: 'Limoneno', v: 9 }],
@@ -33,6 +53,7 @@ window.STRAINS = [
   },
   {
     id: 'amnesia-haze-auto', name: 'Amnesia Haze Auto', breeder: 'Catálogo demo', type: 'Autofloreciente',
+    category: 'sativa', source: 'StrainAPI V1 · Strainpedia (catálogo)',
     thc: 23, cbd: 0.3, difficulty: 'Alta', flower: 78, yield: 95, height: '100–140 cm',
     effects: ['Estimulante', 'Eufórico', 'Conversador'], flavor: 'Cítrico · Incienso · Especiado',
     terpenes: [{ n: 'Terpinoleno', v: 36 }, { n: 'Limoneno', v: 28 }, { n: 'Mirceno', v: 16 }, { n: 'Pineno', v: 12 }, { n: 'Ocimeno', v: 8 }],
@@ -43,6 +64,7 @@ window.STRAINS = [
   },
   {
     id: 'gorilla-glue-auto', name: 'Gorilla Glue Auto', breeder: 'Catálogo demo', type: 'Autofloreciente',
+    category: 'hibrida', source: 'StrainAPI V1 · TheCannabisInformer (catalogs)',
     thc: 26, cbd: 0.2, difficulty: 'Media', flower: 72, yield: 100, height: '80–120 cm',
     effects: ['Potente', 'Relajado', 'Eufórico'], flavor: 'Diesel · Tierra · Pimienta',
     terpenes: [{ n: 'Cariofileno', v: 38 }, { n: 'Limoneno', v: 24 }, { n: 'Mirceno', v: 20 }, { n: 'Humuleno', v: 10 }, { n: 'Pineno', v: 8 }],
@@ -53,6 +75,7 @@ window.STRAINS = [
   },
   {
     id: 'critical-auto', name: 'Critical Auto', breeder: 'Catálogo demo', type: 'Autofloreciente',
+    category: 'cbd', source: 'StrainAPI V1 · Strainpedia (catálogo)',
     thc: 18, cbd: 1.0, difficulty: 'Fácil', flower: 63, yield: 95, height: '60–90 cm',
     effects: ['Relajado', 'Alegre', 'Apetito'], flavor: 'Dulce · Frutal · Terroso',
     terpenes: [{ n: 'Mirceno', v: 30 }, { n: 'Cariofileno', v: 26 }, { n: 'Limoneno', v: 20 }, { n: 'Linalool', v: 14 }, { n: 'Pineno', v: 10 }],
@@ -63,6 +86,7 @@ window.STRAINS = [
   },
   {
     id: 'lemon-haze-auto', name: 'Lemon Haze Auto', breeder: 'Catálogo demo', type: 'Autofloreciente',
+    category: 'sativa', source: 'StrainAPI V1 · TheCannabisInformer (lemon-haze)',
     thc: 22, cbd: 0.4, difficulty: 'Media', flower: 74, yield: 88, height: '90–130 cm',
     effects: ['Enfocado', 'Alegre', 'Creativo'], flavor: 'Limón · Cítrico · Dulce',
     terpenes: [{ n: 'Limoneno', v: 42 }, { n: 'Terpinoleno', v: 22 }, { n: 'Cariofileno', v: 16 }, { n: 'Mirceno', v: 12 }, { n: 'Pineno', v: 8 }],
@@ -73,6 +97,7 @@ window.STRAINS = [
   },
   {
     id: 'purple-punch-auto', name: 'Purple Punch Auto', breeder: 'Catálogo demo', type: 'Autofloreciente',
+    category: 'indica', source: 'StrainAPI V1 · Strainpedia (catálogo)',
     thc: 21, cbd: 0.5, difficulty: 'Fácil', flower: 66, yield: 82, height: '60–100 cm',
     effects: ['Relajado', 'Somnoliento', 'Dulce'], flavor: 'Uva · Arándano · Postre',
     terpenes: [{ n: 'Cariofileno', v: 29 }, { n: 'Mirceno', v: 27 }, { n: 'Limoneno', v: 18 }, { n: 'Linalool', v: 16 }, { n: 'Pineno', v: 10 }],
@@ -83,6 +108,7 @@ window.STRAINS = [
   },
   {
     id: 'zkittlez-auto', name: 'Zkittlez Auto', breeder: 'Catálogo demo', type: 'Autofloreciente',
+    category: 'hibrida', source: 'StrainAPI V1 · Strainpedia (catálogo)',
     thc: 20, cbd: 0.7, difficulty: 'Media', flower: 69, yield: 78, height: '60–95 cm',
     effects: ['Alegre', 'Relajado', 'Sociable'], flavor: 'Frutos rojos · Cítrico · Dulce',
     terpenes: [{ n: 'Limoneno', v: 31 }, { n: 'Cariofileno', v: 25 }, { n: 'Mirceno', v: 20 }, { n: 'Linalool', v: 14 }, { n: 'Terpinoleno', v: 10 }],
@@ -93,6 +119,7 @@ window.STRAINS = [
   },
   {
     id: 'cream-caramel-auto', name: 'Cream Caramel Auto', breeder: 'Catálogo demo', type: 'Autofloreciente',
+    category: 'cbd', source: 'StrainAPI V1 · Strainpedia (catálogo)',
     thc: 17, cbd: 1.2, difficulty: 'Fácil', flower: 62, yield: 80, height: '55–85 cm',
     effects: ['Tranquilo', 'Analgésico', 'Somnoliento'], flavor: 'Caramelo · Tierra · Dulce',
     terpenes: [{ n: 'Mirceno', v: 36 }, { n: 'Linalool', v: 24 }, { n: 'Cariofileno', v: 18 }, { n: 'Humuleno', v: 12 }, { n: 'Pineno', v: 10 }],
@@ -103,6 +130,7 @@ window.STRAINS = [
   },
   {
     id: 'mango-smile', name: 'Mango Smile', breeder: 'Catálogo demo', type: 'Autofloreciente',
+    category: 'sativa', source: 'StrainAPI V1 · Strainpedia (catálogo)',
     thc: 23, cbd: 0.3, difficulty: 'Media', flower: 75, yield: 92, height: '80–120 cm',
     effects: ['Eufórico', 'Creativo', 'Energía'], flavor: 'Mango · Tropical · Cítrico',
     terpenes: [{ n: 'Terpinoleno', v: 33 }, { n: 'Limoneno', v: 26 }, { n: 'Mirceno', v: 19 }, { n: 'Ocimeno', v: 12 }, { n: 'Cariofileno', v: 10 }],
@@ -113,6 +141,7 @@ window.STRAINS = [
   },
   {
     id: 'green-crack-auto', name: 'Green Crack Auto', breeder: 'Catálogo demo', type: 'Autofloreciente',
+    category: 'sativa', source: 'StrainAPI V1 · Strainpedia (catálogo)',
     thc: 22, cbd: 0.4, difficulty: 'Fácil', flower: 67, yield: 86, height: '70–105 cm',
     effects: ['Energía', 'Enfocado', 'Alegre'], flavor: 'Mango verde · Cítrico · Pimienta',
     terpenes: [{ n: 'Mirceno', v: 30 }, { n: 'Limoneno', v: 26 }, { n: 'Pineno', v: 18 }, { n: 'Cariofileno', v: 16 }, { n: 'Terpinoleno', v: 10 }],
@@ -123,6 +152,7 @@ window.STRAINS = [
   },
   {
     id: 'wedding-cake-auto', name: 'Wedding Cake Auto', breeder: 'Catálogo demo', type: 'Autofloreciente',
+    category: 'hibrida', source: 'StrainAPI V1 · Strainpedia (catálogo)',
     thc: 25, cbd: 0.3, difficulty: 'Alta', flower: 76, yield: 95, height: '75–110 cm',
     effects: ['Potente', 'Relajado', 'Eufórico'], flavor: 'Vainilla · Tierra · Cítrico',
     terpenes: [{ n: 'Cariofileno', v: 34 }, { n: 'Limoneno', v: 24 }, { n: 'Mirceno', v: 18 }, { n: 'Linalool', v: 13 }, { n: 'Humuleno', v: 11 }],
@@ -133,6 +163,7 @@ window.STRAINS = [
   },
   {
     id: 'strawberry-cheesecake-auto', name: 'Strawberry Cheesecake Auto', breeder: 'Catálogo demo', type: 'Autofloreciente',
+    category: 'hibrida', source: 'StrainAPI V1 · TheCannabisInformer (strawberry-cheesecake)',
     thc: 20, cbd: 0.6, difficulty: 'Media', flower: 71, yield: 84, height: '65–100 cm',
     effects: ['Alegre', 'Relajado', 'Sociable'], flavor: 'Fresa · Queso · Dulce',
     terpenes: [{ n: 'Limoneno', v: 29 }, { n: 'Cariofileno', v: 25 }, { n: 'Mirceno', v: 22 }, { n: 'Linalool', v: 14 }, { n: 'Pineno', v: 10 }],

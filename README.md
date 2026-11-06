@@ -34,7 +34,10 @@ Aplicación web en español para acompañar un autocultivo de cannabis de princi
 
 ### Cepas
 - Catálogo de 14 autoflorecientes con THC/CBD, dificultad, ciclo, rendimiento, altura, efectos, terpenos, linaje y notas de cultivo.
-- Búsqueda por nombre, efecto, aroma o terpeno; filtros por dificultad y efecto; orden por THC, ciclo, rendimiento o nombre.
+- Grilla de **5 columnas** desktop con imágenes compactas; en móvil 2 columnas y en tablet 3–4 sin overflow.
+- **Categorías Sativa · Indica · CBD · Híbrida** con tabs, select y orden por categoría.
+- **Fuentes anotadas** por ficha y panel público: StrainAPI V1 (sin key), TheCannabisInformer beta (sin key), Strainpedia demo pública (completa $50/mes) y Otreeba como referencia. No se guarda ninguna API key.
+- Búsqueda por nombre, efecto, aroma o terpeno; filtros por dificultad y efecto; orden por categoría, THC, ciclo, rendimiento o nombre.
 - Ficha completa en hoja lateral, con consulta directa al oráculo.
 
 ### Diario
@@ -44,14 +47,13 @@ Aplicación web en español para acompañar un autocultivo de cannabis de princi
 - Exportación del diario completo a Markdown.
 
 ### Simulador
-- 9 plantas en una grilla de 3 × 3 dentro de un espacio de 3 × 5 m.
-- Acciones diarias: regar, nutrir, inspeccionar, ventilar y cosechar.
-- Clima, VPD, recursos, bitácora, objetivo de temporada y tienda de suministros.
-- Simulación veloz de los 75 días con seis estrategias (equilibrada, rápida, orgánica, mínima, low-cost e intensiva).
-- Batch benchmark: timelapse de 75 días con eventos, score compuesto y comparación de estrategias.
-- Replay exportable en Markdown y JSON con ranking, eventos, semilla y supuestos.
-- Resultado con rendimiento, costo, costo por gramo y aprendizajes.
-- Archivo de temporadas: conserva hasta 12 cultivos cerrados con rendimiento y costo.
+- Sin “avanzar un día”: el flujo es **elegir cepa → configurar → SIMULAR** y ver el proceso completo de inicio a fin.
+- Configuración: cepa (14), plantas (1–9), días de ciclo (55–90), luz/día y temperatura media, más 6 estrategias (equilibrada, rápida, orgánica, mínima, low-cost e intensiva).
+- **Timechart multi-serie** estilo Chart Wizard: crecimiento, salud, humedad, nutrición y rendimiento % potencial, con filtros a la izquierda y leyenda a la derecha; cada serie se activa/desactiva al instante.
+- **Proceso completo** de 12 actividades previstas con día, fase, detalle y estado prevista/omitida.
+- **5 notas de resultado** mapeadas desde score 0–100: Horrible · Regular · Buena · Muy buena · Excelente, con rendimiento, costo total, $/g y días de estrés.
+- Benchmark de 6 estrategias con replay exportable en Markdown y JSON.
+- Vista de invernadero, clima, recursos y bitácora para el cultivo actual (ya no bloquean la simulación).
 
 ### Biblioteca
 - Índice de 28 recursos demo organizados en 6 diplomaturas.
@@ -63,11 +65,11 @@ Aplicación web en español para acompañar un autocultivo de cannabis de princi
 - Exportación del índice plano y del índice de sabiduría a Markdown.
 
 ### Roadmap
-- Página viva de desarrollo con **14 frentes**, **200 hitos**, 4 horizontes, métricas dinámicas, principios, no objetivos y riesgos.
+- Página viva de desarrollo con **14 frentes**, **210 hitos**, 4 horizontes, métricas dinámicas, principios, no objetivos y riesgos. Versión **v4.0**.
 - **Ingeniería inversa de 20 apps de cannabis** (catálogos, diarios, marketplaces, sensores, knowledge tools y benchmarks): qué tomar, qué no copiar y qué oportunidad queda libre.
 - **Radar de 18 oportunidades** priorizadas por impacto, esfuerzo y horizonte.
 - **Matriz de 12 brechas** con estado actual, ausencia concreta y apuesta de implementación.
-- Búsqueda sobre los 200 hitos, filtros por frente, horizonte y pendientes; exportación completa a Markdown.
+- Búsqueda sobre los 210 hitos, filtros por frente, horizonte y pendientes; exportación completa a Markdown.
 - Los hitos completados actualizan el progreso y las métricas del roadmap en vivo.
 
 ### Oráculo
@@ -108,9 +110,9 @@ views.css       Cepas, diario y simulador
 panels.css      Biblioteca, oráculo, costos, proceso y responsive
 verde-v3.css    Overlay compacto: índice, biblioteca digerida, batch, roadmap y ⌘K
 game.js         Estado, simulador, filtros, render, búsqueda global y eventos
-roadmap.js      Roadmap v3.0: 14 frentes, 200 hitos, 20 apps, 18 apuestas y 12 brechas
+roadmap.js      Roadmap v4.0: 14 frentes, 210 hitos, 20 apps, 18 apuestas y 12 brechas
 library.js      Biblioteca demo, fases, checks legales y base del oráculo
-strains.js      Catálogo demo de 14 autoflorecientes
+strains.js      Catálogo demo de 14 autoflorecientes con category + source anotada
 assets/         Fotografías locales optimizadas
 ```
 
