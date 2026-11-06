@@ -564,6 +564,10 @@
     elapsed += dt; remaining = Math.max(0, remaining - dt);
     for (const actor of fighters) {
       if (actor.attackCd > 0) actor.attackCd -= dt;
+      if (actor.retreatTimer > 0) {
+        actor.retreatTimer = Math.max(0, actor.retreatTimer - dt);
+        if (actor.retreatTimer === 0) actor.retreatTargetId = null;
+      }
       if (actor.flash > 0) actor.flash -= dt;
       actor.skillCooldowns = actor.skillCooldowns.map(value => Math.max(0, value - dt));
       actor.immobilized = Math.max(0, actor.immobilized - dt);
@@ -780,7 +784,7 @@
     $('resultSub').textContent = won ? 'La arena reconoce tu victoria.' : 'La arena volverá a abrir sus puertas.';
   }
   function resetGame() {
-    for (const actor of fighters) Object.assign(actor, { x: actor.homeX, y: actor.homeY, hp: actor === player ? player.maxHp : actor.maxHp, mana: actor === player ? player.maxMana : actor.maxMana, alive: true, kills: 0, step: null, stepTime: 0, respawn: 0, flash: 0, attackCd: rand(.2, .8), aiTimer: rand(.2, 1), aim: null, immobilized: 0, skillCooldowns: Array(CLASS_PROFILES[actor.className].skills.length).fill(0) });
+    for (const actor of fighters) Object.assign(actor, { x: actor.homeX, y: actor.homeY, hp: actor === player ? player.maxHp : actor.maxHp, mana: actor === player ? player.maxMana : actor.maxMana, alive: true, kills: 0, step: null, stepTime: 0, respawn: 0, flash: 0, attackCd: rand(.2, .8), aiTimer: rand(.2, 1), aim: null, immobilized: 0, retreatTimer: 0, retreatTargetId: null, skillCooldowns: Array(CLASS_PROFILES[actor.className].skills.length).fill(0) });
     potionInventory.health = 3; potionInventory.mana = 3;
     floatingTexts.length = 0; spellEffects.length = 0;
     selected = 'luna'; selectedSkill = null; kills = 0; remaining = 180; elapsed = 0; gameOver = false; paused = false; keys.clear();
