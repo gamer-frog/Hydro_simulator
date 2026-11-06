@@ -1081,3 +1081,13 @@ button.book-row{appearance:none;-webkit-appearance:none}
 .oracle-compare>span{font:600 7px var(--mono);letter-spacing:.08em;color:var(--lime);text-transform:uppercase}
 .oracle-compare p{font-size:10px;line-height:1.55;color:#b7c2a6;margin:5px 0 0}
 .oracle-compare b{color:#e6ebd9}
+
+/* ---- accesibilidad AA: foco visible, skip link, reduced motion ---- */
+.skip-link{position:fixed;left:8px;top:8px;transform:translateY(-150%);background:var(--lime);color:#121708;padding:8px 12px;border-radius:8px;font:700 12px var(--sans);z-index:200;transition:.15s}
+.skip-link:focus{transform:translateY(0)}
+:focus-visible{outline:2px solid var(--lime);outline-offset:2px;box-shadow:0 0 0 4px rgba(216,242,107,.2)}
+a,button,input,select,textarea{outline-color:var(--lime)}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}
+  .tl-playhead,.north-progress i,.is-bar i{transition:none !important}
+}

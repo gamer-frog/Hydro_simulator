@@ -65,7 +65,7 @@ Aplicación web en español para acompañar un autocultivo de cannabis de princi
 - Exportación del índice plano y del índice de sabiduría a Markdown.
 
 ### Roadmap
-- Página viva de desarrollo con **14 frentes**, **210 hitos**, 4 horizontes, métricas dinámicas, principios, no objetivos y riesgos. Versión **v4.1** (app de estudio, sin Diario).
+- Página viva de desarrollo con **14 frentes**, **210 hitos**, 4 horizontes, métricas dinámicas, principios, no objetivos y riesgos. Versión **v4.3** (app de estudio: parser PDF→Markdown, presupuestos indoor/outdoor con Mercado Libre, PWA offline, accesibilidad base).
 - **Ingeniería inversa de 20 apps de cannabis** (catálogos, diarios, marketplaces, sensores, knowledge tools y benchmarks): qué tomar, qué no copiar y qué oportunidad queda libre.
 - **Radar de 18 oportunidades** priorizadas por impacto, esfuerzo y horizonte.
 - **Matriz de 12 brechas** con estado actual, ausencia concreta y apuesta de implementación.
@@ -110,7 +110,7 @@ views.css       Cepas, diario y simulador
 panels.css      Biblioteca, oráculo, costos, proceso y responsive
 verde-v3.css    Overlay compacto: índice, biblioteca digerida, batch, roadmap y ⌘K
 game.js         Estado, simulador, filtros, render, búsqueda global y eventos
-roadmap.js      Roadmap v4.1: 14 frentes, 210 hitos, orden de desarrollo, fuera de alcance, 20 apps, 18 apuestas y 12 brechas
+roadmap.js      Roadmap v4.3: 14 frentes, 221 hitos, 60 hechos, orden de desarrollo, fuera de alcance, 20 apps, 18 apuestas y 12 brechas
 library.js      Biblioteca demo, fases, checks legales y base del oráculo
 strains.js      Catálogo demo de 14 autoflorecientes con category + source anotada
 assets/         Fotografías locales optimizadas

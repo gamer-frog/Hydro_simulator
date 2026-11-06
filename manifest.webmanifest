@@ -1,0 +1,12 @@
+{
+  "name": "Verde — Cultivo con criterio",
+  "short_name": "Verde",
+  "description": "App de estudio del cannabis medicinal: simulador batch, biblioteca digerida y oráculo con fuentes.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#080a06",
+  "theme_color": "#d8f26b",
+  "icons": [
+    { "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='44' fill='%230d110b'/%3E%3Cpath d='M40 140c6-48 40-78 112-90-6 48-40 78-112 90Z' fill='%23d8f26b'/%3E%3C/svg%3E", "sizes": "192x192", "type": "image/svg+xml" }
+  ]
+}
