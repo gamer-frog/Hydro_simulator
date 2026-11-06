@@ -2254,6 +2254,10 @@
         : `${rp.total} hitos · ${R.streams.length} frentes · ${R.reverseEngineering?.length || 0} apps analizadas`;
     }
 
+    const devEl = $('#roadmapDevOrder');
+    if (devEl && R.devOrder) devEl.innerHTML = R.devOrder.map(d => `<div class="road-dev-row"><span>${String(d.n).padStart(2, '0')}</span><div><b>${esc(d.title)}</b><small>${esc(d.desc)}</small></div></div>`).join('');
+    const niEl = $('#roadmapNotInterested');
+    if (niEl && R.notInterested) niEl.innerHTML = R.notInterested.map(x => `<div class="road-ni-row"><span>×</span><div><b>${esc(x.title)}</b><small>${esc(x.note)}</small></div></div>`).join('');
     $('#roadmapPrinciples').innerHTML = R.principles.map((p, i) => `<div><span>0${i + 1}</span><p>${esc(p)}</p></div>`).join('');
     $('#roadmapNonGoals').innerHTML = R.nonGoals.map(p => `<div><span>×</span><p>${esc(p)}</p></div>`).join('');
     $('#roadmapRisks').innerHTML = R.risks.map(r => `<div class="road-risk"><div><b>${esc(r.title)}</b><em class="risk-${norm(r.level)}">${esc(r.level)}</em></div><p>${esc(r.note)}</p></div>`).join('');
@@ -2305,7 +2309,11 @@
         });
         txt += '\n';
       });
-      txt += `## No objetivos\n` + R.nonGoals.map(x => `- ${x}`).join('\n') + '\n\n## Riesgos\n' + R.risks.map(r => `- ${r.title} (${r.level}): ${r.note}`).join('\n') + '\n\n## Principios\n' + R.principles.map(x => `- ${x}`).join('\n') + '\n';
+      txt += `## Orden de desarrollo (app de estudio)\n\n`;
+      (R.devOrder || []).forEach(d => { txt += `${d.n}. **${d.title}** — ${d.desc}\n`; });
+      txt += `\n## Fuera de alcance — cosas que harían la app completa pero que no me interesan\n\n`;
+      (R.notInterested || []).forEach(x => { txt += `- **${x.title}** — ${x.note}\n`; });
+      txt += `\n## No objetivos\n` + R.nonGoals.map(x => `- ${x}`).join('\n') + '\n\n## Riesgos\n' + R.risks.map(r => `- ${r.title} (${r.level}): ${r.note}`).join('\n') + '\n\n## Principios\n' + R.principles.map(x => `- ${x}`).join('\n') + '\n';
       downloadText('verde-roadmap.md', txt);
       showToast('Roadmap completo exportado en Markdown.');
     });

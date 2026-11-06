@@ -4,8 +4,8 @@
 const H = (t, status, horizon, effort, note, metric) => ({ t, status, horizon, effort, note, metric });
 
 window.ROADMAP = {
-  version: 'v4.0 · noviembre 2026',
-  northStar: 'Que cualquiera pueda entender un batch completo de cannabis —de semilla a frasco— simulándolo, cruzándolo con su biblioteca y viendo el porqué de cada evento.',
+  version: 'v4.1 · noviembre 2026',
+  northStar: 'Una app personal de estudio del cannabis medicinal en Argentina: entender un batch completo —de semilla a frasco— simulándolo, cruzándolo con tu biblioteca y viendo el porqué de cada evento.',
   statement: 'Verde no es un diario de cultivo. Es un laboratorio de comprensión: elegir cepa, configurar y SIMULAR todo el ciclo con timechart, un índice de sabiduría que conecta PDFs, y un banco de pruebas de estrategias comparables. El roadmap es la memoria del proyecto: lo que ya está, lo que falta, lo que aprendimos de otras apps y lo que decidimos no copiar.',
   horizons: [
     { id: 'h0', label: 'Ahora', window: 'Q4 2026', note: 'Consolidar el índice, la biblioteca digerida, el batch benchmark y el roadmap como sistema operativo del producto.' },
@@ -42,7 +42,9 @@ window.ROADMAP = {
     'Si una función no ayuda a entender el batch, la biblioteca o el costo real, no entra.',
     'Legibilidad ante todo: la letra chica se sube hasta que cualquiera la lee sin esfuerzo en móvil y desktop.',
     'La barra lateral se pliega y recuerda su estado: espacio solo cuando aporta orientación.',
-    'El catálogo declara su fuente en cada ficha y en una panel público: sin data a ciegas.'
+    'El catálogo declara su fuente en cada ficha y en una panel público: sin data a ciegas.',
+    'Verde es una app de estudio personal: sin login, sin marketplace, sin red social. Solo estudio, simulación y biblioteca.',
+    'Orientación medicinal Argentina balanceada: CBD y cepas medicinales conviven con Sativa/Indica/Híbrida; sin prescribir dosis individuales.'
   ],
   nonGoals: [
     'Vender semillas, flores, insumos o servicios de cultivo.',
@@ -54,7 +56,12 @@ window.ROADMAP = {
     'Copiar el marketplace, los ads nativos o las reseñas pagas de las apps comerciales.',
     'Usar dark patterns, streaks ansiosos o notificaciones que empujen consumo.',
     'Prometer resultados exactos de cosecha o “recetas” universales.',
-    'Depender de una nube propietaria para leer tus propios documentos.'
+    'Depender de una nube propietaria para leer tus propios documentos.',
+    'Gamificación de puntos, niveles o recompensas: como mucho, una animación de la simulación.',
+    'Marketplace, tienda o afiliados: ni venta ni checkout de semillas, flores o insumos.',
+    'Login, cuentas o perfiles de usuario: la app es personal y local-first.',
+    'El Diario como módulo separado: no se desarrolla; su contexto vive en el batch y el proceso.',
+    'Foros, rankings o comunidad pública: solo estudio personal hasta que se decida lo contrario.'
   ],
   risks: [
     { title: 'Dataset demo vs. biblioteca real', level: 'Alto', note: 'La vista digerida no debe confundirse con una biblioteca procesada de verdad. Etiquetar siempre el estado real.' },
@@ -245,6 +252,29 @@ window.ROADMAP = {
     { area: 'Legal', today: 'Aviso 2026 y checklist REPROCANN', missing: 'Selector de jurisdicción y changelog normativo', bet: 'Packs legales fechados y revisables', horizon: 'h1' },
     { area: 'Integraciones', today: 'Ninguna', missing: 'CSV, MQTT, Home Assistant y APIs de sensores', bet: 'Estándares abiertos antes que marcas', horizon: 'h2' },
     { area: 'Confianza', today: 'Transparencia de datos demo', missing: 'Auditoría externa, sesgos y precisión', bet: 'Informe público anual', horizon: 'h3' }
+  ],
+  devOrder: [
+    { n: 1, title: 'Cerrar el índice de estudio', desc: 'Inicio simple en 7 capítulos, sin KPIs random, sin Diario, sin gamificación.' },
+    { n: 2, title: 'Biblioteca en dos capas', desc: 'Ingesta (PDFs con tapa por curso/carpeta + Markdown) y Vista digerida como datos que emergen.' },
+    { n: 3, title: 'Simulador de estudio', desc: 'Cepa + config + SIMULAR con timechart y notas Horrible–Excelente. Nada más.' },
+    { n: 4, title: 'Catálogo medicinal balanceado', desc: 'Sativa / Indica / CBD / Híbrida con fuentes anotadas y fichas medicinales sin prescribir.' },
+    { n: 5, title: 'Oráculo con cita exacta', desc: 'Respuesta + pasaje + página + hash. Si no hay evidencia: “no sé”.' },
+    { n: 6, title: 'Costo real por gramo (AR 2026)', desc: 'Supuestos editables y cálculo transparente, sin promesa de venta.' },
+    { n: 7, title: 'Proceso + marco REPROCANN', desc: '6 fases con checklist y normativa fechada; verificar fuente oficial.' },
+    { n: 8, title: 'Datos locales y exports', desc: 'Todo en el navegador; Markdown/JSON exportables; cero login.' },
+    { n: 9, title: 'Accesibilidad y letra legible', desc: 'AA, teclado completo y tipografía que se lee en móvil y desktop.' },
+    { n: 10, title: 'PWA offline', desc: 'Estudiar sin conexión en el cultivo.' }
+  ],
+  notInterested: [
+    { title: 'Diario completo', note: 'No se desarrolla como módulo separado. El contexto vive en el batch, el proceso y la biblioteca.' },
+    { title: 'Gamificación', note: 'Sin puntos, niveles ni recompensas. Como mucho, la animación de la simulación.' },
+    { title: 'Marketplace / tienda', note: 'Ni semillas, ni flores, ni insumos, ni afiliados. No hay checkout.' },
+    { title: 'Login y cuentas', note: 'App personal y local-first. Nada de perfiles ni nube obligatoria.' },
+    { title: 'Red social / comunidad pública', note: 'Sin foros, rankings ni matching. Solo estudio personal.' },
+    { title: 'Dispensario / delivery', note: 'Fuera del marco de estudio. Sin directorios comerciales ni pedidos.' },
+    { title: 'Dosis medicinales individuales', note: 'Se educa con fuentes; nunca se prescribe una dosis ni se reemplaza a un profesional.' },
+    { title: 'Automatización física', note: 'No se controla hardware. Solo se simula y se estudia.' },
+    { title: 'Monetización por ads', note: 'Sin publicidad ni datos de usuarios. El roadmap es el producto.' }
   ],
   streams: [
     {

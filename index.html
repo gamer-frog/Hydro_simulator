@@ -32,8 +32,9 @@
         <p class="side-label" data-label="Explorar"><span>Explorar</span><i></i></p>
         <nav class="side-nav" aria-label="Explorar">
           <button class="nav-item active" data-nav="panel" title="Inicio"><span class="nav-ico">◐</span><span class="nav-text">Inicio</span></button>
-          <button class="nav-item" data-nav="strains" title="Cepas"><span class="nav-ico">❧</span><span class="nav-text">Cepas</span><em>14</em></button>
-          <button class="nav-item" data-nav="journal" title="Diario"><span class="nav-ico">▤</span><span class="nav-text">Diario</span><em id="navWeek">S1</em></button>
+          <button class="nav-item" data-nav="strains" title="Cepas"><span class="nav-ico">❧</span><span class="nav-text">Cepas</span><em>16</em></button>
+          <!-- Diario fuera de la navegación: app de estudio, no se desarrolla (ver Roadmap · No me interesa) -->
+          <button class="nav-item" data-nav="journal" title="Diario (oculto)" hidden><span class="nav-ico">▤</span><span class="nav-text">Diario</span><em id="navWeek">S1</em></button>
         </nav>
 
         <p class="side-label" data-label="Cultivar"><span>Cultivar</span><i></i></p>
@@ -86,7 +87,7 @@
           <div class="book-head">
             <div class="eyebrow"><span class="live-dot"></span>VERDE <i>/</i> <span>ÍNDICE GENERAL</span></div>
             <h1>El índice<br><em>de la app.</em></h1>
-            <p class="lead">Verde tiene 8 partes. Cada una se abre sola y se entiende sola: elegí una y empezá a leer.</p>
+            <p class="lead">Verde tiene 7 partes. Es tu app de estudio del cannabis medicinal en Argentina: cada una se abre sola y se entiende sola.</p>
           </div>
 
           <div class="book-batch-line">
@@ -116,28 +117,23 @@
               <span class="book-copy"><b>Cepas</b><small>14 autoflorecientes por Sativa, Indica y CBD, con su fuente anotada.</small></span>
               <span class="book-arrow" aria-hidden="true">→</span>
             </button>
-            <button class="book-row" data-nav="journal">
-              <span class="book-num">04</span>
-              <span class="book-copy"><b>Diario</b><small>La temporada semana a semana: ambiente, tareas y resultado.</small></span>
-              <span class="book-arrow" aria-hidden="true">→</span>
-            </button>
             <button class="book-row" data-nav="oracle">
-              <span class="book-num">05</span>
+              <span class="book-num">04</span>
               <span class="book-copy"><b>Oráculo</b><small>Preguntás y la biblioteca responde citando la fuente exacta.</small></span>
               <span class="book-arrow" aria-hidden="true">→</span>
             </button>
             <button class="book-row" data-nav="budget">
-              <span class="book-num">06</span>
+              <span class="book-num">05</span>
               <span class="book-copy"><b>Costos</b><small>El costo real por gramo según tus supuestos editables.</small></span>
               <span class="book-arrow" aria-hidden="true">→</span>
             </button>
             <button class="book-row" data-nav="process">
-              <span class="book-num">07</span>
+              <span class="book-num">06</span>
               <span class="book-copy"><b>Proceso</b><small>Las 6 fases, su checklist y el marco legal argentino.</small></span>
               <span class="book-arrow" aria-hidden="true">→</span>
             </button>
             <button class="book-row book-row-roadmap" data-nav="roadmap">
-              <span class="book-num">08</span>
+              <span class="book-num">07</span>
               <span class="book-copy"><b>Roadmap</b><small>Qué falta construir, qué aprendimos de otras apps y el backlog eterno.</small></span>
               <span class="book-arrow" aria-hidden="true">→</span>
             </button>
@@ -152,7 +148,7 @@
         <section class="view" id="view-strains">
           <div class="view-head">
             <div>
-              <div class="eyebrow"><span class="live-dot"></span>CATÁLOGO <i>/</i> <span>14 AUTOFLORECIENTES</span></div>
+              <div class="eyebrow"><span class="live-dot"></span>CATÁLOGO <i>/</i> <span>16 AUTOFLORECIENTES · CBD MEDICINAL</span></div>
               <h1>El catálogo,<br><em>curado.</em></h1>
               <p class="lead">Perfiles, terpenos, efectos y tiempos reales de cultivo. Toda ficha es una síntesis educativa: contrastá siempre con la información del banco de semillas.</p>
             </div>
@@ -634,12 +630,20 @@
             <div class="roadmap-streams" id="roadmapStreams"></div>
             <aside class="roadmap-side">
               <section class="card roadmap-panel">
+                <div class="roadmap-panel-head"><span class="section-kicker">APP DE ESTUDIO · ORDEN</span><h3>Qué desarrollar primero</h3></div>
+                <div class="roadmap-devorder" id="roadmapDevOrder"></div>
+              </section>
+              <section class="card roadmap-panel">
                 <div class="roadmap-panel-head"><span class="section-kicker">CÓMO LEERLO</span><h3>Reglas del camino</h3></div>
                 <div class="roadmap-principles" id="roadmapPrinciples"></div>
               </section>
               <section class="card roadmap-panel">
                 <div class="roadmap-panel-head"><span class="section-kicker">LO QUE NO VAMOS A HACER</span><h3>No objetivos</h3></div>
                 <div class="roadmap-nongoals" id="roadmapNonGoals"></div>
+              </section>
+              <section class="card roadmap-panel">
+                <div class="roadmap-panel-head"><span class="section-kicker">FUERA DE ALCANCE</span><h3>App completa, pero no me interesa</h3></div>
+                <div class="roadmap-notinterested" id="roadmapNotInterested"></div>
               </section>
               <section class="card roadmap-panel">
                 <div class="roadmap-panel-head"><span class="section-kicker">RIESGOS ABIERTOS</span><h3>Qué vigilar</h3></div>
@@ -660,8 +664,8 @@
   <nav class="mobile-nav" aria-label="Navegación móvil">
     <button class="active" data-nav="panel"><span>◐</span>Inicio</button>
     <button data-nav="strains"><span>❧</span>Cepas</button>
-    <button data-nav="journal"><span>▤</span>Diario</button>
     <button data-nav="sim"><span>✳</span>Cultivo</button>
+    <button data-nav="library"><span>▦</span>Biblio</button>
     <button id="moreBtn"><span>⋯</span>Más</button>
   </nav>
 

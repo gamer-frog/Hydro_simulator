@@ -969,3 +969,18 @@ body.side-collapsed .side-user{justify-content:center;border-top:0;margin-top:8p
   .book-copy b{font-size:14px}
   .book-copy small{font-size:10px}
 }
+
+/* ---- roadmap: orden + fuera de alcance ---- */
+.roadmap-devorder{display:flex;flex-direction:column;gap:6px}
+.road-dev-row{display:flex;gap:8px;align-items:flex-start;border-bottom:1px solid rgba(235,241,214,.05);padding-bottom:6px}
+.road-dev-row:last-child{border-bottom:0;padding-bottom:0}
+.road-dev-row>span{font:500 8px var(--mono);color:var(--lime);background:rgba(216,242,107,.07);border:1px solid rgba(216,242,107,.18);border-radius:5px;padding:2px 5px;flex-shrink:0}
+.road-dev-row b{display:block;font:600 9px var(--sans);color:#cfd8c2}
+.road-dev-row small{display:block;font-size:8px;line-height:1.45;color:#77806a;margin-top:1px}
+.roadmap-notinterested{display:flex;flex-direction:column;gap:6px}
+.road-ni-row{display:flex;gap:7px;align-items:flex-start}
+.road-ni-row>span{font:500 10px var(--mono);color:var(--danger);flex-shrink:0;line-height:1.4}
+.road-ni-row b{display:block;font:600 9px var(--sans);color:#b9c4a9}
+.road-ni-row small{display:block;font-size:8px;line-height:1.45;color:#77806a;margin-top:1px}
+
+[hidden]{display:none !important}
