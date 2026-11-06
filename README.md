@@ -33,7 +33,7 @@ Aplicación web en español para acompañar un autocultivo de cannabis de princi
 - Búsqueda global con `⌘K` / `Ctrl+K` sobre sectores, cepas, cursos, PDFs, roadmap y etiquetas.
 
 ### Cepas
-- Catálogo de 14 autoflorecientes con THC/CBD, dificultad, ciclo, rendimiento, altura, efectos, terpenos, linaje y notas de cultivo.
+- Catálogo de 16 autoflorecientes (balanceado: Sativa / Indica / CBD medicinal / Híbrida) con THC/CBD, dificultad, ciclo, rendimiento, altura, efectos, terpenos, linaje y notas de cultivo.
 - Grilla de **5 columnas** desktop con imágenes compactas; en móvil 2 columnas y en tablet 3–4 sin overflow.
 - **Categorías Sativa · Indica · CBD · Híbrida** con tabs, select y orden por categoría.
 - **Fuentes anotadas** por ficha y panel público: StrainAPI V1 (sin key), TheCannabisInformer beta (sin key), Strainpedia demo pública (completa $50/mes) y Otreeba como referencia. No se guarda ninguna API key.
@@ -65,7 +65,7 @@ Aplicación web en español para acompañar un autocultivo de cannabis de princi
 - Exportación del índice plano y del índice de sabiduría a Markdown.
 
 ### Roadmap
-- Página viva de desarrollo con **14 frentes**, **210 hitos**, 4 horizontes, métricas dinámicas, principios, no objetivos y riesgos. Versión **v4.0**.
+- Página viva de desarrollo con **14 frentes**, **210 hitos**, 4 horizontes, métricas dinámicas, principios, no objetivos y riesgos. Versión **v4.1** (app de estudio, sin Diario).
 - **Ingeniería inversa de 20 apps de cannabis** (catálogos, diarios, marketplaces, sensores, knowledge tools y benchmarks): qué tomar, qué no copiar y qué oportunidad queda libre.
 - **Radar de 18 oportunidades** priorizadas por impacto, esfuerzo y horizonte.
 - **Matriz de 12 brechas** con estado actual, ausencia concreta y apuesta de implementación.
@@ -110,7 +110,7 @@ views.css       Cepas, diario y simulador
 panels.css      Biblioteca, oráculo, costos, proceso y responsive
 verde-v3.css    Overlay compacto: índice, biblioteca digerida, batch, roadmap y ⌘K
 game.js         Estado, simulador, filtros, render, búsqueda global y eventos
-roadmap.js      Roadmap v4.0: 14 frentes, 210 hitos, 20 apps, 18 apuestas y 12 brechas
+roadmap.js      Roadmap v4.1: 14 frentes, 210 hitos, orden de desarrollo, fuera de alcance, 20 apps, 18 apuestas y 12 brechas
 library.js      Biblioteca demo, fases, checks legales y base del oráculo
 strains.js      Catálogo demo de 14 autoflorecientes con category + source anotada
 assets/         Fotografías locales optimizadas

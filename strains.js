@@ -171,5 +171,27 @@ window.STRAINS = [
     summary: 'Aroma goloso y efecto social. Una auto de porte medio con buena resistencia si se mantiene la sanidad temprana. El curado realza mucho su perfil.',
     growNote: 'Curá al menos 21 días: la diferencia aromática frente al secado rápido es notoria.',
     tags: ['golosa', 'social', 'aromática', 'intermedia']
+  },
+  {
+    id: 'harlequin-auto', name: 'Harlequin Auto', breeder: 'Catálogo demo', type: 'Autofloreciente',
+    category: 'cbd', source: 'StrainAPI V1 · Strainpedia (catálogo)',
+    thc: 6, cbd: 10, difficulty: 'Media', flower: 70, yield: 80, height: '60–95 cm',
+    effects: ['Tranquilo', 'Enfocado', 'Analgésico'], flavor: 'Tierra · Especiado · Dulce',
+    terpenes: [{ n: 'Mirceno', v: 36 }, { n: 'Cariofileno', v: 24 }, { n: 'Limoneno', v: 16 }, { n: 'Pineno', v: 14 }, { n: 'Linalool', v: 10 }],
+    lineage: 'Harlequin T × Ruderalis', image: 'assets/strain-classic.jpg', accent: '#9cc24f',
+    summary: 'Referencia medicinal: CBD alto y THC bajo. Enfoque balanceado, CBD-dominante. Ficha educativa, no recomendación terapéutica.',
+    growNote: 'Ciclo estándar. No requiere entrenamiento; priorizá estabilidad sobre rendimiento.',
+    tags: ['medicinal', 'cbd-alto', 'balanceada', 'intermedia']
+  },
+  {
+    id: 'danceworld-auto', name: 'Dance World Auto', breeder: 'Catálogo demo', type: 'Autofloreciente',
+    category: 'cbd', source: 'StrainAPI V1 · Strainpedia (catálogo)',
+    thc: 12, cbd: 9, difficulty: 'Fácil', flower: 66, yield: 78, height: '55–90 cm',
+    effects: ['Alegre', 'Enfocado', 'Sociable'], flavor: 'Cítrico · Frutal · Fresco',
+    terpenes: [{ n: 'Limoneno', v: 32 }, { n: 'Mirceno', v: 26 }, { n: 'Pineno', v: 18 }, { n: 'Terpinoleno', v: 14 }, { n: 'Cariofileno', v: 10 }],
+    lineage: 'Juanita la Lagrimosa × Ruderalis', image: 'assets/strain-blue.jpg', accent: '#7fe0b2',
+    summary: 'Híbrida CBD-rich de uso diurno social. THC moderado con CBD apreciable. Perfil medicinal sin pesadez.',
+    growNote: 'Compacta y fácil de leer. Ideal para ciclos cortos medicinales.',
+    tags: ['medicinal', 'cbd-rich', 'diurna', 'fácil']
   }
 ];
