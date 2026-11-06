@@ -474,3 +474,4 @@ function fmtMoney(n, sign) {
   return sign ? (n >= 0 ? '+' + s : '−' + s) : (n < 0 ? '−' + s : s);
 }
 function fmtPrice(n) { return '$' + n.toFixed(2).replace('.', ','); }
+function fmtNum(n, digits = 1) { return Number(n).toFixed(digits).replace('.', ','); }

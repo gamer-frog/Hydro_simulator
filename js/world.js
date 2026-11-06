@@ -670,6 +670,7 @@ const World = (() => {
     }
 
     // ── plano de la unidad: contorno, cotas y etiqueta de conteo ──
+    const labelBoost = window.innerWidth < 700 ? 1.45 : 1;
     const dim = new THREE.Group();
     const outlinePts = [
       new THREE.Vector3(-size.w / 2, 0.035, -size.d / 2),
@@ -687,9 +688,9 @@ const World = (() => {
       new THREE.Vector3(size.w / 2, 0.035, size.d / 2 + 0.12),
     ]);
     dim.add(new THREE.Line(tickGeoW, tickMat));
-    const dimW = textSprite([`${size.w.toFixed(2).replace('.', ',')} m`], { scale: 0.0042, fontSize: 19, border: 'rgba(56,214,224,.55)' });
+    const dimW = textSprite([`${size.w.toFixed(2).replace('.', ',')} m`], { scale: 0.0042 * labelBoost, fontSize: 19, border: 'rgba(56,214,224,.55)' });
     dimW.position.set(0, 0.28, size.d / 2 + 0.5); dim.add(dimW);
-    const dimD = textSprite([`${size.d.toFixed(2).replace('.', ',')} m`], { scale: 0.0042, fontSize: 19, border: 'rgba(56,214,224,.55)' });
+    const dimD = textSprite([`${size.d.toFixed(2).replace('.', ',')} m`], { scale: 0.0042 * labelBoost, fontSize: 19, border: 'rgba(56,214,224,.55)' });
     dimD.position.set(-size.w / 2 - 0.55, 0.28, 0); dim.add(dimD);
     g.add(dim);
 
@@ -705,7 +706,7 @@ const World = (() => {
       `${layout.units} × ${layout.perUnit} = ${layout.total} plantas · ${layout.unit}s`,
       `${size.w.toFixed(1).replace('.', ',')} × ${size.d.toFixed(1).replace('.', ',')} m · ${crop ? crop.name : 'vacía'}`,
       eta,
-    ], { scale: 0.0046, fontSize: 23, border: crop ? '#3ee08a' : 'rgba(143,184,164,.7)', titleColor: crop ? '#eafff2' : '#8fb8a4' });
+    ], { scale: 0.0046 * labelBoost, fontSize: 23, border: crop ? '#3ee08a' : 'rgba(143,184,164,.7)', titleColor: crop ? '#eafff2' : '#8fb8a4' });
     label.position.set(0, labelY, 0);
     label.visible = blueprintOn;
     g.add(label);

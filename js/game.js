@@ -67,7 +67,7 @@ let lastSaveAt = 0;
 let clearArmed = false, clearTimer = null;
 let lastSell = 0;
 const lab = { tab: 'systems', system: 'nft', crop: 'lettuce' };
-const advisor = { messages: [], greenhouse: 'tunel', system: 'nft', beds: 12 };
+const advisor = { messages: [], greenhouse: 'tunel', system: 'nft', beds: 4 };
 let dashFilter = 'all';
 const GOD_CASH = 9999999;
 
@@ -539,8 +539,8 @@ function sellCrop(cropId, kg) {
   state.inventory[cropId] = +(stock - kg).toFixed(2);
   state.cash += revenue;
   state.stats.revenue += revenue;
-  toast(`💵 Vendiste ${kg.toFixed(1)} kg de ${crop.name} por <strong>${fmtMoney(revenue)}</strong> a ${fmtMoney(price)}/kg.`, 'money');
-  logEvent('money', `Venta de ${kg.toFixed(1)} kg de ${crop.name} a ${fmtMoney(price)}/kg.`, revenue);
+  toast(`💵 Vendiste ${fmtNum(kg)} kg de ${crop.name} por <strong>${fmtMoney(revenue)}</strong> a ${fmtMoney(price)}/kg.`, 'money');
+  logEvent('money', `Venta de ${fmtNum(kg)} kg de ${crop.name} a ${fmtMoney(price)}/kg.`, revenue);
   snapshotCash();
   updateHUD();
   flashCash(1);
@@ -560,8 +560,8 @@ function sellAll() {
   if (kg < 0.01) { toast('Todavía no hay nada en el depósito para vender.', 'warn'); Sfx.play('error'); return; }
   state.cash += total;
   state.stats.revenue += total;
-  toast(`💵 Vendiste ${kg.toFixed(1)} kg de producción por <strong>${fmtMoney(total)}</strong>.`, 'money');
-  logEvent('money', `Venta total de ${kg.toFixed(1)} kg de producción.`, total);
+  toast(`💵 Vendiste ${fmtNum(kg)} kg de producción por <strong>${fmtMoney(total)}</strong>.`, 'money');
+  logEvent('money', `Venta total de ${fmtNum(kg)} kg de producción.`, total);
   snapshotCash();
   updateHUD(); flashCash(1); Sfx.play('sell');
   checkGoals(); saveGame(true);
@@ -599,7 +599,7 @@ function deliverContract(id) {
   if (!c) return;
   const crop = cropById(c.cropId);
   if ((state.inventory[c.cropId] || 0) < c.qty - 0.001) {
-    toast(`No alcanza ${crop.name}: tenés ${(state.inventory[c.cropId] || 0).toFixed(1)} de ${c.qty} kg.`, 'warn');
+    toast(`No alcanza ${crop.name}: tenés ${fmtNum(state.inventory[c.cropId] || 0)} de ${c.qty} kg.`, 'warn');
     Sfx.play('error'); return;
   }
   state.inventory[c.cropId] = +(state.inventory[c.cropId] - c.qty).toFixed(2);
@@ -740,7 +740,7 @@ function placeBed(x, z) {
   const bed = makeBed(type, null, 0, x, z);
   state.beds.push(bed);
   toast(`🛠️ Construiste <strong>${BED_TYPES[type].name}</strong> por ${fmtMoney(cost)}.`, 'money');
-  logEvent('system', `Construcción de ${BED_TYPES[type].name} en (${x.toFixed(1)}, ${z.toFixed(1)}).`, -cost);
+  logEvent('system', `Construcción de ${BED_TYPES[type].name} en (${fmtNum(x)}, ${fmtNum(z)}).`, -cost);
   Sfx.play('place'); flashCash(-1);
   refreshWorld(); renderBuildCards(); updateHUD(); checkGoals(); saveGame(true);
   if (!state.godMode && state.cash < bedCost(type)) {
@@ -787,11 +787,11 @@ function harvestBed(bedId) {
   state.stats.kgHarvested = +(state.stats.kgHarvested + kg).toFixed(2);
   const rec = state.stats.bySystem[bed.type];
   if (rec) { rec.harvests++; rec.kg = +(rec.kg + kg).toFixed(2); rec.revenue += kg * sellPrice(crop.id, state); }
-  toast(`🧺 Cosechaste <strong>${kg} kg de ${crop.name}</strong>. Ventala en el Mercado.`, 'money');
-  logEvent('crop', `Cosecha de ${kg} kg de ${crop.name} en ${BED_TYPES[bed.type].name}.`);
+  toast(`🧺 Cosechaste <strong>${fmtNum(kg)} kg de ${crop.name}</strong>. Ventala en el Mercado.`, 'money');
+  logEvent('crop', `Cosecha de ${fmtNum(kg)} kg de ${crop.name} en ${BED_TYPES[bed.type].name}.`);
   addHarvestHistory(kg, crop.id);
   Sfx.play('harvest');
-  popupAtBed(bed, `+${kg} kg ${crop.icon}`, 'good');
+  popupAtBed(bed, `+${fmtNum(kg)} kg ${crop.icon}`, 'good');
   bed.cropId = null; bed.growth = 0; bed.health = 100; bed.plantedDay = null; bed.taskDone = {};
   refreshWorld(); updateHUD(); checkGoals(); renderBedPanel(true); saveGame(true);
 }
@@ -980,7 +980,7 @@ function renderBedPanel(force) {
         const afford = state.cash >= c.seedCost;
         return `<button class="seed-card" data-seed="${id}" ${afford ? '' : 'disabled'}>
           <span class="s-icon">${c.icon}</span>
-          <span class="s-meta"><strong>${c.name}</strong><small>${c.cycleWeeks} sem de ciclo · ${(bt.plants * c.yieldKg).toFixed(1)} kg/cama · ${fmtPrice(sellPrice(c.id, state))}/kg</small></span>
+          <span class="s-meta"><strong>${c.name}</strong><small>${c.cycleWeeks} sem de ciclo · ${fmtNum(bt.plants * c.yieldKg)} kg/cama · ${fmtPrice(sellPrice(c.id, state))}/kg</small></span>
           <span class="s-cost">$${c.seedCost}</span>
         </button>`;
       }).join('');
@@ -1014,9 +1014,9 @@ function renderBedPanel(force) {
   D.waterLabel.textContent = `${Math.round(bed.water)} / ${mw} L`;
   D.waterFill.style.width = (bed.water / mw * 100) + '%';
   D.waterFill.style.background = bed.water < 10 ? 'linear-gradient(90deg,#8a2f28,#ff6b5e)' : '';
-  D.phLabel.textContent = bed.ph.toFixed(1);
+  D.phLabel.textContent = fmtNum(bed.ph);
   D.phPin.style.left = clamp((bed.ph - 4.5) / 3.5 * 100, 2, 98) + '%';
-  D.ecLabel.textContent = bed.ec.toFixed(2);
+  D.ecLabel.textContent = fmtNum(bed.ec, 2);
   D.ecPin.style.left = clamp(bed.ec / 4 * 100, 2, 98) + '%';
 
   const worst = worstCondition(bed, crop);
@@ -1027,7 +1027,7 @@ function renderBedPanel(force) {
 
   const ready = bed.growth >= 0.995;
   D.btnHarvest.disabled = !ready;
-  D.btnHarvest.textContent = ready ? `🧺 Cosechar ${estHarvestKg(bed)} kg` : `Creciendo… ${Math.floor(bed.growth * 100)}%`;
+  D.btnHarvest.textContent = ready ? `🧺 Cosechar ${fmtNum(estHarvestKg(bed))} kg` : `Creciendo… ${Math.floor(bed.growth * 100)}%`;
 
   const auto = state.upgrades.autoDoser && bed.type !== 'kratky';
   D.doseWater.disabled = auto || bed.water >= mw - 0.5 || state.cash < (state.upgrades.rain ? 1 : 3);
@@ -1068,8 +1068,8 @@ function conditionHint(bed, crop, worst) {
   const s = worst.scores;
   if (bed.water <= 0.5) return { text: 'Tanque vacío: ¡las raíces se están secando! Rellená ya.', cls: 'bad' };
   if (bed.health < 35) return { text: 'Salud del cultivo crítica. Corregí pH / EC / temperatura o perdés la cosecha.', cls: 'bad' };
-  if (s.ph < 0.6) return { text: `El pH ${bed.ph.toFixed(1)} está fuera de rango: apuntá a 5,5–6,5. Usá pH${bed.ph > 6.5 ? '−' : '+'}.`, cls: 'warn' };
-  if (s.ec < 0.6) return { text: `La EC ${bed.ec.toFixed(2)} está fuera de ${crop.ec[0]}–${crop.ec[1]} mS/cm. Agregá o diluí nutrientes.`, cls: 'warn' };
+  if (s.ph < 0.6) return { text: `El pH ${fmtNum(bed.ph)} está fuera de rango: apuntá a 5,5–6,5. Usá pH${bed.ph > 6.5 ? '−' : '+'}.`, cls: 'warn' };
+  if (s.ec < 0.6) return { text: `La EC ${fmtNum(bed.ec, 2)} está fuera de ${crop.ec[0]}–${crop.ec[1]} mS/cm. Agregá o diluí nutrientes.`, cls: 'warn' };
   if (s.temp < 0.6) return { text: `El invernadero está a ${t}°C: ${t > 29 ? '¡estrés por calor!' : 'muy frío para crecer fuerte.'} ${state.upgrades.hvac ? 'El HVAC está ayudando.' : 'Considerá HVAC o media sombra.'}`, cls: 'warn' };
   if (bed.water < 10) return { text: 'Queda poca solución nutritiva: rellená pronto.', cls: 'warn' };
   if (bed.ph > 6.5) return { text: 'Un poco alcalino. Una dosis chica de pH− mantiene la absorción óptima.', cls: 'warn' };
@@ -1089,7 +1089,7 @@ function renderMarket() {
       <div class="m-icon">${c.icon}</div>
       <div class="m-name"><strong>${c.name}</strong><small>EC ideal ${c.ec[0]}–${c.ec[1]}</small></div>
       <div class="m-price">${fmtMoney(price)}/kg ${arrow}</div>
-      <div class="m-stock">${stock.toFixed(1)} kg</div>
+      <div class="m-stock">${fmtNum(stock)} kg</div>
       <button class="mini-btn" data-sell="1" data-crop="${c.id}" ${stock < 0.05 ? 'disabled' : ''}>1 kg</button>
       <button class="mini-btn all" data-sell="all" data-crop="${c.id}" ${stock < 0.05 ? 'disabled' : ''}>Todo</button>
     </div>`;
@@ -1123,7 +1123,7 @@ function renderContracts() {
       <div class="c-icon">${crop.icon}</div>
       <div class="c-body">
         <strong>${c.qty} kg ${crop.name}</strong>
-        <small>En depósito: ${stock.toFixed(1)} kg · <span class="c-deadline ${days <= 1 ? 'urgent' : ''}">${days <= 0 ? 'VENCE HOY' : days + ' día' + (days > 1 ? 's' : '') + ' restante' + (days > 1 ? 's' : '')}</span></small>
+        <small>En depósito: ${fmtNum(stock)} kg · <span class="c-deadline ${days <= 1 ? 'urgent' : ''}">${days <= 0 ? 'VENCE HOY' : days + ' día' + (days > 1 ? 's' : '') + ' restante' + (days > 1 ? 's' : '')}</span></small>
       </div>
       <div class="c-reward"><strong>${fmtMoney(c.reward)}</strong><small>pedido premium</small></div>
       <button class="mini-btn ${enough ? 'all' : ''}" data-deliver="${c.id}" ${enough ? '' : 'disabled'}>${enough ? 'Entregar' : 'Falta stock'}</button>
@@ -1282,7 +1282,7 @@ function renderLabSystems() {
             <div><small>VELOCIDAD</small><b>${Math.round(sp.growth * 100)}%</b></div>
             <div><small>AGUA / DÍA</small><b>${bt.water.consumptionLDay} L</b></div>
             <div><small>DIFICULTAD</small><b>${sp.difficulty}</b></div>
-            <div><small>MANO DE OBRA</small><b>${sp.laborHrsWeek} h/sem</b></div>
+            <div><small>MANO DE OBRA</small><b>${fmtNum(sp.laborHrsWeek)} h/sem</b></div>
           </div>
           <div class="layout-box">
             <div class="lb-title">GEOMETRÍA DEL MÓDULO</div>
@@ -1378,7 +1378,7 @@ function renderLabTimeline() {
     const x = 40 + clamp(b.growth, 0, 1) * 520;
     return `<line x1="${x}" y1="30" x2="${x}" y2="130" stroke="#ffc44d" stroke-width="2"/><circle cx="${x}" cy="${130 - clamp(b.growth,0,1)*100}" r="4" fill="#ffc44d"/>`;
   })() : '';
-  const harvestKg = (bt.layout.total * crop.yieldKg * bt.spec.growth).toFixed(1);
+  const harvestKg = fmtNum(bt.layout.total * crop.yieldKg * bt.spec.growth);
   const start = Math.max(1, state.day - 2);
   const harvestDays = state.beds.filter(b => b.cropId).map(b => (b.plantedDay || state.day) + Math.ceil(cropById(b.cropId).growDays / (BED_TYPES[b.type].spec.growth || 1)));
   const end = Math.max(state.day + 18, ...harvestDays, state.day + 7);
@@ -1491,7 +1491,7 @@ function renderLabCycles() {
       <td>${target}</td>
     </tr>`);
   }
-  const harvestKg = (BED_TYPES[sys].plants * crop.yieldKg * bt.spec.growth).toFixed(1);
+  const harvestKg = fmtNum(BED_TYPES[sys].plants * crop.yieldKg * bt.spec.growth);
   const rev = harvestKg * crop.basePrice;
   D.labCycles.innerHTML = `
     <div class="cycle-controls">${sysChips}</div>
@@ -1522,7 +1522,7 @@ function renderLabProfit() {
     const cls = net >= 0 ? 'profit-positive' : 'profit-negative';
     return `<tr>
       <td>${bt.icon} <b>${bt.name}</b><br><small style="color:var(--text-dim)">${beds} cama${beds === 1 ? '' : 's'}</small></td>
-      <td>${rec.harvests} / ${rec.kg.toFixed(1)} kg</td>
+      <td>${rec.harvests} / ${fmtNum(rec.kg)} kg</td>
       <td>${fmtMoney(rec.revenue)}</td>
       <td>${fmtMoney(costs)}</td>
       <td class="${cls}">${fmtMoney(net)}</td>
@@ -1669,7 +1669,7 @@ function harvestChartSVG() {
     if (!v) return '';
     const h = Math.max(2, v / max * (H - padT - padB));
     const x = padL + i * bw + bw * 0.18, y = H - padB - h;
-    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw * 0.64).toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="url(#harvGrad)"><title>Día ${d}: ${v.toFixed(1)} kg</title></rect>`;
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw * 0.64).toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="url(#harvGrad)"><title>Día ${d}: ${fmtNum(v)} kg</title></rect>`;
   }).join('');
   const labels = days.map((d, i) => (i === 0 || i === days.length - 1 || d % 5 === 0) ? `<text x="${(padL + i * bw + bw / 2).toFixed(1)}" y="${H - 7}" fill="#9fc7b2" font-size="9.5" text-anchor="middle">D${d}</text>` : '').join('');
   const total = hs.filter(h => h.day >= start).reduce((acc, h) => acc + h.kg, 0);
@@ -1677,9 +1677,9 @@ function harvestChartSVG() {
     <defs><linearGradient id="harvGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3ee08a"/><stop offset="1" stop-color="#1b6f45"/></linearGradient></defs>
     <line x1="${padL}" y1="${H - padB}" x2="${W - padR}" y2="${H - padB}" stroke="rgba(255,255,255,.14)"/>
     <line x1="${padL}" y1="${padT}" x2="${W - padR}" y2="${padT}" stroke="rgba(255,255,255,.06)" stroke-dasharray="3 4"/>
-    <text x="${padL}" y="${padT - 4}" fill="#9fc7b2" font-size="10">máx ${max.toFixed(1)} kg/día</text>
+    <text x="${padL}" y="${padT - 4}" fill="#9fc7b2" font-size="10">máx ${fmtNum(max)} kg/día</text>
     ${bars}${labels}
-    <text x="${W - padR}" y="${padT - 4}" fill="#3ee08a" font-size="10" text-anchor="end">${total.toFixed(1)} kg en ${days.length} días</text>
+    <text x="${W - padR}" y="${padT - 4}" fill="#3ee08a" font-size="10" text-anchor="end">${fmtNum(total)} kg en ${days.length} días</text>
   </svg>`;
 }
 
@@ -1792,7 +1792,7 @@ function budgetVerdict(b) {
     return `🟡 <b>Falta caja:</b> te faltan ${fmtMoney(deficit)} para la inversión + capital de trabajo. Con tu caja actual entran <b>${b.affordable} módulo${b.affordable === 1 ? '' : 's'}</b> de ${b.bt.name} en este invernadero. Podés vender inventario, entregar pedidos o arrancar más chico.`;
   }
   if (b.payback && b.payback <= 26) {
-    return `✅ <b>Viable:</b> repago en ${Math.round(b.payback)} semanas (${(b.payback / 4.33).toFixed(1)} meses) y ${fmtPrice(b.perM2Wk)}/m²/semana. Es un plan defendible para presentar a un socio o cliente.`;
+    return `✅ <b>Viable:</b> repago en ${Math.round(b.payback)} semanas (${fmtNum(b.payback / 4.33)} meses) y ${fmtPrice(b.perM2Wk)}/m²/semana. Es un plan defendible para presentar a un socio o cliente.`;
   }
   return `🟢 <b>Escalable:</b> el plan cierra y deja ${fmtMoney(b.netWk)}/semana, pero el repago tarda ${Math.round(b.payback)} semanas. Conviene validar precios y clientes antes de comprometer toda la inversión.`;
 }
@@ -1882,7 +1882,7 @@ function advisorAnswer(question) {
       return { id, beds: beds.length, liters };
     }).filter(x => x.beds).sort((a, b) => b.liters - a.liters);
     const lines = bySystem.map(x => `• ${BED_TYPES[x.id].icon} <b>${BED_TYPES[x.id].name}</b>: ${x.beds} módulo${x.beds === 1 ? '' : 's'}, ${x.liters.toFixed(1).replace('.', ',')} L/día. Ciclo: ${BED_TYPES[x.id].water.cycle}. Retorno: ${BED_TYPES[x.id].water.return}.`).join('\n');
-    return `Consumo estimado: <b>${water.toFixed(1).replace('.', ',')} L/día</b> (${(water * 7).toFixed(0)} L/semana). Costo de agua de red: ${fmtPrice(water * WATER_COST_L)}/día.\n\n` +
+    return `Consumo estimado: <b>${water.toFixed(1).replace('.', ',')} L/día</b> (${fmtNum(water * 7, 0)} L/semana). Costo de agua de red: ${fmtPrice(water * WATER_COST_L)}/día.\n\n` +
       (lines || 'Todavía no tenés camas construidas.') +
       `\n\n<b>Cómo leer el circuito:</b> el agua entra por la <b>ida</b> (tanque → bomba → filtro → colector → módulos) y vuelve por <b>gravedad o drenaje</b> al tanque. En el plano 3D, la línea celeste es la ida y la ámbar es la vuelta.\n\n` +
       `Si el consumo te preocupa: el <b>colector de lluvia</b> baja el costo de reposición 70%, el <b>tanque más grande</b> da margen y un sistema <b>Kratky</b> no usa bomba. Revisá que ningún retorno quede tapado: un desborde silencioso te vacía el tanque y mata raíces.`;
@@ -1895,14 +1895,14 @@ function advisorAnswer(question) {
     ).join('\n');
     const kg = ready.reduce((sum, b) => sum + estHarvestKg(b), 0);
     return `Próximas cosechas:\n${lines}\n\n` +
-      (ready.length ? `Ahora mismo podés juntar <b>${kg} kg</b> de ${ready.length} cama${ready.length === 1 ? '' : 's'}. Cosechá, vendé en el Mercado y compará el precio antes de aceptar un pedido.` : `Todavía no hay nada listo. La ETA se recalcula con el crecimiento y la salud: si una cama se estresa, la fecha se corre.`) +
+      (ready.length ? `Ahora mismo podés juntar <b>${fmtNum(kg)} kg</b> de ${ready.length} cama${ready.length === 1 ? '' : 's'}. Cosechá, vendé en el Mercado y compará el precio antes de aceptar un pedido.` : `Todavía no hay nada listo. La ETA se recalcula con el crecimiento y la salud: si una cama se estresa, la fecha se corre.`) +
       `\n\nTip: escaloná siembras cada 3–7 días. Así no te entra toda la producción junta ni se te vacía la caja entre ciclos.`;
   }
 
   if (/cliente|mercado|vender|precio|pedido|contrato|reputacion|marketing|venta/.test(q)) {
     const marketing = upgradeLevel('marketing');
-    const inventory = CROPS.filter(c => (state.inventory[c.id] || 0) > 0).map(c => `${c.icon} ${c.name}: ${(state.inventory[c.id] || 0).toFixed(1)} kg a ${fmtMoney(sellPrice(c.id, state))}/kg`).join(' · ');
-    return `Tu reputación es <b>${state.reputation.toFixed(1)}★</b> y el marketing está en nivel <b>${marketing}</b>. ` +
+    const inventory = CROPS.filter(c => (state.inventory[c.id] || 0) > 0).map(c => `${c.icon} ${c.name}: ${fmtNum(state.inventory[c.id] || 0)} kg a ${fmtMoney(sellPrice(c.id, state))}/kg`).join(' · ');
+    return `Tu reputación es <b>${fmtNum(state.reputation)}★</b> y el marketing está en nivel <b>${marketing}</b>. ` +
       `Cada nivel de marketing suma +8/15/25% a todos los precios; la reputación arriba de 3★ agrega hasta +5%.\n\n` +
       (inventory ? `<b>Inventario para vender:</b> ${inventory}. Vendé antes de que el mercado baje.\n\n` : '') +
       `Para conseguir más clientes:\n• Aceptá pedidos chicos y entregalos a tiempo: suben reputación y desbloquean ofertas mejores.\n• Mantené producción escalonada para no fallar entregas.\n• Invertí en <b>Marketing</b> cuando tengas excedente: es el aumento de precio más parejo.\n• Compará pedido vs. mercado: un pedido premium a 10 días puede pagar menos que vender hoy si el precio está alto.\n\n` +
