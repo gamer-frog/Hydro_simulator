@@ -2033,7 +2033,13 @@
           const r = allResources().find(x => x.id === id);
           return r ? `<span class="cite">${esc(r.diploma)} · ${String(r.id).padStart(3, '0')}</span>` : '';
         }).join(' ');
-        html = `<p>${entry.answer}</p><p>${cited}</p>`;
+        const frag = (entry.sources || []).map(id => {
+          const r = allResources().find(x => x.id === id);
+          if (!r) return '';
+          const excerpt = String(r.summary || '').slice(0, 220);
+          return `<blockquote class="oracle-fragment"><span>${esc(r.diploma)} · ${esc(r.module)} · ${r.pages} pp · hash ${mdHash(r)}</span><q>${esc(excerpt)}…</q><small>${esc(mdPath(r))}</small></blockquote>`;
+        }).join('');
+        html = `<p>${entry.answer}</p>${frag}<p>${cited}</p>`;
         sources = entry.sources.map((id, i) => ({ id, score: 92 - i * 7 })).filter(s => allResources().some(r => r.id === s.id));
         if (norm(q).includes('legal')) html += '<div class="legal-callout">Información educativa. Verificá tu inscripción REPROCANN y la normativa provincial vigente antes de tomar decisiones.</div>';
       } else {

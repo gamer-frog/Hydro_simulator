@@ -1026,3 +1026,10 @@ body.side-collapsed .side-user{justify-content:center;border-top:0;margin-top:8p
 .book-row .book-arrow{color:#6d7760 !important}
 .book-row-roadmap{background:linear-gradient(90deg,rgba(216,242,107,.07),#10140d 55%) !important}
 button.book-row{appearance:none;-webkit-appearance:none}
+
+/* ---- oráculo: fragmento citado ---- */
+.oracle-fragment{margin:9px 0;padding:9px 11px;border-left:3px solid var(--lime);background:rgba(216,242,107,.05);border-radius:8px}
+.oracle-fragment>span{display:block;font:500 7px var(--mono);letter-spacing:.06em;color:#8b947e;text-transform:uppercase;margin-bottom:4px}
+.oracle-fragment q{display:block;font-size:10px;line-height:1.55;color:#b7c2a6;font-style:italic;quotes:'“' '”'}
+.oracle-fragment small{display:block;font:400 7px var(--mono);color:#6d7760;margin-top:4px;overflow-wrap:anywhere}
+.msg-body .cite{font:500 8px var(--mono);color:#8b947e;background:rgba(235,241,214,.05);border-radius:4px;padding:2px 5px;margin-right:3px}
