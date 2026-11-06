@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101611">
+  <link rel="icon" href="data:,">
+  <title>Tierras de Niebla — Crónicas del Sur</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Tierras de Niebla inicio">
+        <span class="brand-mark">✦</span><span class="brand-copy"><strong>TIERRAS DE NIEBLA</strong><small>CRÓNICAS DEL SUR</small></span>
+      </a>
+      <div class="realm"><span class="online-dot"></span><span>ARENA LOCAL <b>PvP VS BOTS</b></span><i>●</i><span>3 rivales activos</span></div>
+      <button class="menu-button" id="soundToggle" aria-label="Activar o desactivar sonido">♫ <span>SONIDO</span></button>
+    </header>
+
+    <main class="layout">
+      <section class="game-column">
+        <div class="scene-heading"><div><span class="eyebrow">CONTINENTE DE ARANDOR</span><h1><span class="location-pin">⌖</span> Villa del Sauce <span class="heading-separator">/</span> <small>Los Prados</small></h1></div><div class="time-chip"><span>☀</span> DÍA 03 <b>·</b> 14:32</div></div>
+        <div class="game-frame">
+          <div class="canvas-wrap"><canvas id="game" aria-label="Mundo de juego: movete, explorá y combatí"></canvas>
+            <div class="scene-vignette"></div>
+            <div class="zone-label"><span class="zone-icon">⚔</span><span><b>ARENA DE ARANDOR</b><small>Combate PvP · Entrenamiento contra bots</small></span></div>
+            <div class="mini-map"><canvas id="minimap" width="112" height="84"></canvas><span class="map-label">ARANDOR</span></div>
+            <div class="mobile-controls" aria-label="Controles táctiles"><div class="dpad"><button data-move="up" aria-label="Arriba">▲</button><div><button data-move="left" aria-label="Izquierda">◀</button><button data-move="down" aria-label="Abajo">▼</button><button data-move="right" aria-label="Derecha">▶</button></div></div><div class="touch-skills"><button class="touch-skill" data-skill="spell" aria-label="Lanzar pulso arcano">✧<small>ARCANO</small></button><button class="touch-attack" id="touchAttack" aria-label="Atacar">⚔<small>ATACAR</small></button><button class="touch-skill potion-touch" data-skill="potion" aria-label="Usar poción">🧪<small id="touchPotionCount">3</small></button></div></div>
+            <div id="toast" class="toast" aria-live="polite"></div>
+          </div>
+          <div class="game-footer"><span><i class="keycap">WASD</i> o flechas para moverte</span><span><i class="keycap">ESPACIO</i> atacar <i class="keycap">E</i> hablar</span><span class="coords" id="coords">X: 24 · Y: 26</span></div>
+        </div>
+        <div class="action-bar">
+          <div class="bar-player"><div class="avatar">🧙🏻</div><div class="bar-info"><div class="bar-name"><b id="playerName">Lunara</b><span id="levelText">NIVEL 1</span></div><div class="meter health"><span id="healthFill"></span></div><div class="meter mana"><span id="manaFill"></span></div></div></div>
+          <div class="quick-slots"><button class="slot active" data-slot="attack" title="Ataque básico (Espacio)"><span>⚔</span><small>1</small></button><button class="slot" data-slot="potion" title="Poción de vida"><span>🧪</span><small>2</small><i id="potionCount">3</i></button><button class="slot" data-slot="spell" title="Pulso arcano"><span>✧</span><small>3</small></button><button class="slot empty" title="Espacio vacío"><span>＋</span><small>4</small></button><button class="slot empty" title="Espacio vacío"><span>＋</span><small>5</small></button></div>
+          <div class="xp-block"><div><span>EXPERIENCIA</span><b id="xpText">0 / 100</b></div><div class="xp-meter"><span id="xpFill"></span></div></div>
+          <button class="inventory-button" id="inventoryButton"><span>▤</span><b>MOCHILA</b><small id="inventoryCount">4</small></button>
+        </div>
+      </section>
+
+      <aside class="sidebar">
+        <section class="panel character-panel"><div class="panel-title"><span>✥</span><h2>PERSONAJE</h2><button class="dots" aria-label="Más opciones">···</button></div><div class="character-card"><div class="portrait">🧙🏻</div><div><h3>Lunara</h3><span class="class-tag">HUMANA <i>·</i> MAGA</span><div class="character-level">Nivel <b id="sideLevel">1</b><span class="rank-dot">✦</span> Novicia</div></div></div><div class="stat-grid"><div><small>VIDA</small><b id="healthText">100 <i>/ 100</i></b></div><div><small>MANA</small><b id="manaText">60 <i>/ 60</i></b></div><div><small>ORO</small><b id="goldText">125</b></div><div><small>REPUTACIÓN</small><b>Neutral</b></div></div><button class="outline-button" id="characterButton">VER ATRIBUTOS <span>↗</span></button></section>
+
+        <section class="panel quest-panel"><div class="panel-title"><span>⚑</span><h2>AVENTURA ACTIVA</h2><span class="quest-count">01</span></div><div class="quest-content"><div class="quest-kicker">ENCARGO DE VILLA</div><h3>Una plaga en los prados</h3><p>La guardia necesita ayuda. Derrotá a los limos que amenazan los caminos.</p><div class="quest-objective"><span class="objective-check" id="questCheck">○</span><span>Derrotar limos</span><b id="questProgress">0 / 5</b></div><div class="quest-reward"><span>RECOMPENSA</span><b>✦ 80 XP <i>·</i> ◉ 40 oro</b></div></div><button class="quest-link" id="questHint">RASTREAR ENCARGO <span>⌖</span></button></section>
+
+        <section class="panel chat-panel"><div class="panel-title"><span>☷</span><h2>CRÓNICA LOCAL</h2><button class="chat-expand" id="clearChat">⌄</button></div><div class="chat-log" id="chatLog"><p><time>14:30</time><span class="system-msg">La brisa del sur recorre los prados...</span></p><p><time>14:31</time><b class="chat-npc">Guardia Elian:</b> <span>¡Cuidado con los limos al este del molino!</span></p><p><time>14:32</time><b class="chat-world">Mundo:</b> <span>Bienvenida a Arandor, Lunara.</span></p></div><form class="chat-form" id="chatForm"><span>›</span><input id="chatInput" aria-label="Mensaje de chat" placeholder="Escribí un mensaje..." autocomplete="off"><button aria-label="Enviar">↗</button></form></section>
+      </aside>
+    </main>
+    <footer class="site-footer"><span>TIERRAS DE NIEBLA <i>©</i> 2026</span><span>Un mundo por descubrir, una leyenda por escribir.</span><button id="helpButton">¿CÓMO JUGAR?</button></footer>
+  </div>
+  <div class="modal-backdrop" id="modalBackdrop" hidden><section class="modal" role="dialog" aria-modal="true"><button class="modal-close" id="modalClose" aria-label="Cerrar">×</button><div class="modal-icon" id="modalIcon">✦</div><div class="eyebrow" id="modalEyebrow">VILLA DEL SAUCE</div><h2 id="modalTitle">Una plaga en los prados</h2><p id="modalBody"></p><div id="modalExtra"></div><button class="primary-button" id="modalAction">ACEPTAR</button></section></div>
+  <script src="game.js"></script>
+</body>
+</html>
