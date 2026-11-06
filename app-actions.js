@@ -339,6 +339,9 @@ function bindEvents() {
     const viewButton = event.target.closest('[data-view]');
     if (viewButton) { event.preventDefault(); navigate(viewButton.dataset.view); return; }
 
+    const planning = event.target.closest('[data-open-planning]');
+    if (planning) { event.preventDefault(); openPlanning(); return; }
+
     const go = event.target.closest('[data-go]');
     if (go) { event.preventDefault(); navigate(go.dataset.go); return; }
 
