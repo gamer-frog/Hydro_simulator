@@ -28,9 +28,9 @@ Aplicación web en español para acompañar un autocultivo de cannabis de princi
 ## Qué incluye
 
 ### Inicio
-- Estado de la temporada: día, fase, salud media, próximos hitos y cosechas.
-- Invernadero en miniatura, colección de cepas y resumen de la semana.
-- Accesos rápidos al oráculo, la biblioteca y el simulador.
+- Índice real de la aplicación: 8 sectores que muestran su estado y llevan a cada parte.
+- Estado del batch, biblioteca por curso, extras, insights y accesos rápidos.
+- Búsqueda global con `⌘K` / `Ctrl+K` sobre sectores, cepas, cursos, PDFs, roadmap y etiquetas.
 
 ### Cepas
 - Catálogo de 14 autoflorecientes con THC/CBD, dificultad, ciclo, rendimiento, altura, efectos, terpenos, linaje y notas de cultivo.
@@ -47,16 +47,28 @@ Aplicación web en español para acompañar un autocultivo de cannabis de princi
 - 9 plantas en una grilla de 3 × 3 dentro de un espacio de 3 × 5 m.
 - Acciones diarias: regar, nutrir, inspeccionar, ventilar y cosechar.
 - Clima, VPD, recursos, bitácora, objetivo de temporada y tienda de suministros.
-- Simulación veloz de los 75 días con tres estrategias (equilibrada, mínima e intensiva).
+- Simulación veloz de los 75 días con seis estrategias (equilibrada, rápida, orgánica, mínima, low-cost e intensiva).
+- Batch benchmark: timelapse de 75 días con eventos, score compuesto y comparación de estrategias.
+- Replay exportable en Markdown y JSON con ranking, eventos, semilla y supuestos.
 - Resultado con rendimiento, costo, costo por gramo y aprendizajes.
 - Archivo de temporadas: conserva hasta 12 cultivos cerrados con rendimiento y costo.
 
 ### Biblioteca
 - Índice de 28 recursos demo organizados en 6 diplomaturas.
+- Vista digerida por defecto: tarjetas de curso con nombre, PDFs, páginas, % cargado y extras.
+- Índice de sabiduría curso → módulo → recurso, con estado, ruta Markdown, hash y enlaces.
 - Cada recurso conserva diplomatura, módulo, año, páginas, estado de procesamiento y ruta física.
 - Búsqueda, filtros, orden, detección de duplicados y comparación de versiones sin borrar el original.
 - Alta de nuevos PDFs con metadatos de origen y detección de títulos repetidos.
-- Exportación del índice a Markdown.
+- Exportación del índice plano y del índice de sabiduría a Markdown.
+
+### Roadmap
+- Página viva de desarrollo con **14 frentes**, **200 hitos**, 4 horizontes, métricas dinámicas, principios, no objetivos y riesgos.
+- **Ingeniería inversa de 20 apps de cannabis** (catálogos, diarios, marketplaces, sensores, knowledge tools y benchmarks): qué tomar, qué no copiar y qué oportunidad queda libre.
+- **Radar de 18 oportunidades** priorizadas por impacto, esfuerzo y horizonte.
+- **Matriz de 12 brechas** con estado actual, ausencia concreta y apuesta de implementación.
+- Búsqueda sobre los 200 hitos, filtros por frente, horizonte y pendientes; exportación completa a Markdown.
+- Los hitos completados actualizan el progreso y las métricas del roadmap en vivo.
 
 ### Oráculo
 - Respuestas locales basadas en una base de conocimiento y en los recursos indexados.
@@ -90,11 +102,13 @@ También puede servirse con cualquier servidor estático. El estado se guarda en
 ## Estructura
 
 ```text
-index.html      Estructura de las 8 vistas, modales y navegación
+index.html      Estructura de las 8 vistas, modales, command palette y navegación
 styles.css      Sistema visual, shell, dashboard y componentes base
 views.css       Cepas, diario y simulador
 panels.css      Biblioteca, oráculo, costos, proceso y responsive
-game.js         Estado, simulador, filtros, render y eventos
+verde-v3.css    Overlay compacto: índice, biblioteca digerida, batch, roadmap y ⌘K
+game.js         Estado, simulador, filtros, render, búsqueda global y eventos
+roadmap.js      Roadmap v3.0: 14 frentes, 200 hitos, 20 apps, 18 apuestas y 12 brechas
 library.js      Biblioteca demo, fases, checks legales y base del oráculo
 strains.js      Catálogo demo de 14 autoflorecientes
 assets/         Fotografías locales optimizadas

@@ -32,7 +32,7 @@
     view: 'panel', budget: initialBudget(), tasks: {}, legal: {}, userResources: [],
     selectedResource: null, queries: 0, chat: [], chatSources: [], dupOnly: false,
     journalWeek: null, journalTasks: {}, selectedStrain: null, grows: [],
-    libMode: 'digest', batch: null, roadmapStream: 'all', roadmapPending: false, roadmapHorizon: 'all'
+    libMode: 'digest', batch: null, roadmapStream: 'all', roadmapPending: false, roadmapHorizon: 'all', roadmapQuery: ''
   });
 
   let game, app;
@@ -178,7 +178,7 @@
     if (target === 'process') renderProcess();
     if (target === 'panel') renderPanel();
     if (target === 'sim') renderSim();
-    if (target === 'strains') { renderStrains(); if (opts.strainId) setTimeout(() => openStrainSheet(Number(opts.strainId)), 90); }
+    if (target === 'strains') { renderStrains(); if (opts.strainId) setTimeout(() => openStrainSheet(String(opts.strainId)), 90); }
     if (target === 'journal') renderJournal();
     if (target === 'roadmap') renderRoadmap();
     persist();
@@ -316,8 +316,12 @@
 
     // roadmap
     const rp = roadmapProgress();
+    const road = window.ROADMAP;
     $('#idxRoadmapDone').textContent = `${rp.done}/${rp.total}`;
     $('#idxRoadPct').textContent = rp.pct + '%';
+    if (road && $('#idxRoadMeta')) {
+      $('#idxRoadMeta').textContent = `${road.streams.length} FRENTES · ${rp.total} HITOS · ${road.reverseEngineering?.length || 0} APPS`;
+    }
     const nextItem = rp.items.find(i => i.status === 'now') || rp.items.find(i => i.status === 'next');
     $('#idxRoadNext').textContent = nextItem ? nextItem.t : 'Roadmap completo';
     if ($('#roadmapProgressBar')) {
@@ -382,9 +386,12 @@
 
   /* ---------- simulador · benchmark batch ---------- */
   const BATCH_STRATEGIES = [
-    { id: 'balanced', label: 'Equilibrada', ico: '◎', tone: 'lime', desc: 'Riego y nutrición por necesidad. Ventila cuando el ambiente lo pide.', waterAt: 32, feedAt: 30, premium: 0, stable: .9 },
-    { id: 'minimal', label: 'Mínima', ico: '−', tone: 'stone', desc: 'Bajo insumo. Ahorra costo operativo y asume más estrés biológico.', waterAt: 20, feedAt: 14, premium: -.16, stable: 1.7 },
-    { id: 'intensive', label: 'Intensiva', ico: '＋', tone: 'amber', desc: 'Correcciones frecuentes. Busca el techo biológico pagando más costo.', waterAt: 48, feedAt: 48, premium: .18, stable: .6 }
+    { id: 'balanced', label: 'Equilibrada', ico: '◎', tone: 'lime', desc: 'Riego y nutrición por necesidad. Ventila cuando el ambiente lo pide.', waterAt: 32, feedAt: 30, premium: 0, stable: .9, stress: 0, stressEvery: 0, quality: 1, vent: true, harvestDay: 71 },
+    { id: 'rapid', label: 'Rápida', ico: '⚡', tone: 'blue', desc: 'Ciclo corto y correcciones tempranas. Menos margen para recuperar errores.', waterAt: 40, feedAt: 38, premium: .08, stable: 1, stress: 0, stressEvery: 0, quality: .93, vent: true, harvestDay: 67 },
+    { id: 'organic', label: 'Orgánica', ico: '❧', tone: 'green', desc: 'Insumos suaves y ambiente estable. Prioriza salud y calidad sobre velocidad.', waterAt: 28, feedAt: 24, premium: .02, stable: 1.2, stress: 0, stressEvery: 0, quality: 1.02, vent: true, harvestDay: 73 },
+    { id: 'minimal', label: 'Mínima', ico: '−', tone: 'stone', desc: 'Bajo insumo. Ahorra costo operativo y asume más estrés biológico.', waterAt: 20, feedAt: 14, premium: -.16, stable: 1.7, stress: 1, stressEvery: 3, quality: .82, vent: false, harvestDay: 75 },
+    { id: 'lowcost', label: 'Low-cost', ico: '$', tone: 'teal', desc: 'Optimiza cada peso. Riega y alimenta al límite bajo, con tolerancia al estrés.', waterAt: 22, feedAt: 16, premium: -.12, stable: 1.5, stress: 1, stressEvery: 2, quality: .88, vent: false, harvestDay: 75 },
+    { id: 'intensive', label: 'Intensiva', ico: '＋', tone: 'amber', desc: 'Correcciones frecuentes. Busca el techo biológico pagando más costo.', waterAt: 48, feedAt: 48, premium: .18, stable: .6, stress: 0, stressEvery: 0, quality: 1.05, vent: true, harvestDay: 69 }
   ];
 
   function seededRandom(seed) {
@@ -400,11 +407,23 @@
 
   function simulateBatch(strategy, seed = 7) {
     const cfg = BATCH_STRATEGIES.find(s => s.id === strategy) || BATCH_STRATEGIES[0];
-    const rand = seededRandom(seed * 977 + cfg.id.length * 131);
     const plants = Array.from({ length: 9 }, (_, i) => ({
       id: i + 1, age: 1 + (i % 3), health: 88 + (i % 4) * 3,
       moisture: 46 + (i * 11) % 31, nutrition: 48 + (i * 7) % 28, alive: true
     }));
+
+    // El clima se genera una sola vez por semilla: las seis estrategias enfrentan
+    // exactamente el mismo escenario y solo cambian sus decisiones de manejo.
+    const weather = [];
+    const weatherRand = seededRandom(seed * 977 + 17);
+    for (let d = 1; d <= 75; d++) {
+      const temp = Math.max(21, Math.min(28, 24 + Math.sin(d / 8.5) * 2.2 + (weatherRand() - .5) * 1.4));
+      const humidity = Math.max(45, Math.min(70, 58 + Math.sin(d / 6.5 + 1.2) * 5.5 + (weatherRand() - .5) * 3));
+      weather.push({ temp, humidity });
+    }
+    const dropRand = seededRandom(seed * 613 + 29);
+    const drops = plants.map(() => Array.from({ length: 76 }, () => 10 + dropRand() * 6));
+
     let temp = 24, humidity = 58, spent = 0, water = 15, nutrients = 7, energy = 88;
     let stressDays = 0, vpdAlerts = 0, harvests = 0, yieldG = 0;
     const events = [
@@ -412,18 +431,18 @@
     ];
 
     for (let day = 1; day <= 75; day++) {
-      temp = Math.max(18, Math.min(31, temp + (rand() < .38 ? (rand() < .5 ? -1 : 1) : 0)));
-      humidity = Math.max(35, Math.min(78, humidity + (rand() < .5 ? -3 : 3)));
+      temp = weather[day - 1].temp;
+      humidity = weather[day - 1].humidity;
       energy = Math.max(0, energy - 2);
-      spent += 4200 + Math.round(rand() * 600) + (cfg.premium > 0 ? 1600 : cfg.premium < 0 ? -250 : 650);
+      spent += 4500 + (cfg.premium > 0 ? 1600 : cfg.premium < 0 ? -250 : 650);
       const svp = 0.6108 * Math.exp(17.27 * temp / (temp + 237.3));
       const vpd = svp * (1 - humidity / 100);
       if (vpd > 1.8 || vpd < 0.6) vpdAlerts++;
 
-      plants.forEach(p => {
+      plants.forEach((p, i) => {
         if (!p.alive) return;
         p.age++;
-        p.moisture = Math.max(0, p.moisture - 10 - rand() * 6);
+        p.moisture = Math.max(0, p.moisture - drops[i][day]);
         p.nutrition = Math.max(0, p.nutrition - 2.2);
         if (p.moisture < cfg.waterAt) { p.moisture = Math.min(88, p.moisture + 40); spent += 150; water = Math.max(0, water - 1); }
         if (p.nutrition < cfg.feedAt) { p.nutrition = Math.min(88, p.nutrition + 42); spent += 850; nutrients = Math.max(0, nutrients - 1); }
@@ -431,13 +450,13 @@
         if (p.moisture < 16 || p.moisture > 93) stress += 6;
         if (p.nutrition < 10) stress += 4;
         if (temp > 29 || temp < 19) stress += 4;
-        if (cfg.id === 'minimal') stress += 1;
+        if (cfg.stress && cfg.stressEvery && day % cfg.stressEvery === 0) stress += cfg.stress;
         p.health = Math.max(0, Math.min(100, p.health + (stress ? -stress : 1)));
         if (p.health <= 0) p.alive = false;
       });
 
       if (energy < 10) energy = 80;
-      if ((temp > 27 || humidity > 69) && cfg.id !== 'minimal' && energy > 0 && rand() < .55) {
+      if (cfg.vent && (temp > 27 || humidity > 69) && energy > 0) {
         temp -= 2; humidity -= 5; energy--; spent += 120;
       }
       if (day % 7 === 0) {
@@ -457,12 +476,12 @@
       if (day === 67) events.push({ day, kind: 'phase', title: 'Ventana de corte', note: 'Empieza la ventana de cosecha. Se revisa tricoma por planta.' });
     }
 
-    const harvestDay = cfg.id === 'intensive' ? 69 : cfg.id === 'balanced' ? 71 : 75;
+    const harvestDay = cfg.harvestDay || 75;
     plants.forEach(p => {
       if (!p.alive) return;
       harvests++;
       const q = Math.max(.4, Math.min(1.1, p.health / 88));
-      yieldG += Math.round(55 * q * (1 + Math.min(.06, (p.age - 67) * .002)));
+      yieldG += Math.round(55 * q * cfg.quality * (1 + Math.min(.06, (p.age - 67) * .002)));
     });
     // La cosecha se registra en el día de corte; el costo acumulado ya incluye el ciclo completo.
     events.push({ day: harvestDay, kind: 'harvest', title: `Cosecha · ${yieldG} g`, note: `${harvests} plantas cerraron el batch y se registró el peso por lote.` });
@@ -476,8 +495,9 @@
     const yieldScore = Math.min(100, Math.round(yieldG / (9 * 55) * 100));
     const costScore = Math.max(0, Math.min(100, Math.round((1800 - perGram) / 14)));
     const healthScore = Math.round(healthy / 9 * 100);
-    const stability = Math.max(0, Math.min(100, Math.round(100 - stressDays / 75 * 100 - vpdAlerts * 2)));
-    const score = Math.round(yieldScore * .35 + costScore * .25 + healthScore * .25 + stability * .15);
+    const stablePenalty = Math.max(0, cfg.stable - .6) * 12;
+    const stability = Math.max(0, Math.min(100, Math.round(100 - Math.min(50, vpdAlerts * 1.4) - stressDays / 75 * 60 - stablePenalty)));
+    const score = Math.max(0, Math.min(100, Math.round(yieldScore * .35 + costScore * .25 + healthScore * .25 + stability * .15)));
     return {
       id: cfg.id, label: cfg.label, ico: cfg.ico, tone: cfg.tone, desc: cfg.desc,
       yield: yieldG, spent, perGram, healthy, harvests, alive: alive.length,
@@ -504,7 +524,7 @@
       const rank = [...runs].sort((a, b) => b.score - a.score).findIndex(x => x.id === r.id) + 1;
       return `<article class="batch-run ${r.id === best.id ? 'best' : ''}" style="--tone:${r.tone}">
         <div class="br-top">
-          <span class="br-rank">${rank === 1 ? '①' : rank === 2 ? '②' : '③'}</span>
+          <span class="br-rank">#${rank}</span>
           <span class="br-label"><i>${r.ico}</i><b>${esc(r.label)}</b></span>
           <span class="br-score">${r.score}<small>SCORE</small></span>
         </div>
@@ -562,6 +582,68 @@
     renderBatch();
     const best = [...app.batch.runs].sort((a, b) => b.score - a.score)[0];
     showToast(`Benchmark listo: ${best.label} gana con ${best.score} pts · ${fmt(best.yield)} g · $${fmt(best.perGram)}/g.`);
+  }
+
+  function batchReplayMarkdown() {
+    const batch = currentBatch();
+    const runs = [...batch.runs].sort((a, b) => b.score - a.score);
+    const best = runs[0];
+    let txt = `# Verde — Replay de batch\n\n`;
+    txt += `- Corrida: ${batch.sample ? 'demo del sistema' : 'personalizada'}\n- Semilla: ${batch.seed}\n- Fecha de exportación: ${new Date().toISOString().slice(0, 10)}\n`;
+    txt += `- Duración: 75 días · 9 plantas · 15 m²\n- Score: rendimiento 35% · costo/g 25% · salud 25% · estabilidad 15%\n\n`;
+    txt += `## Ranking de estrategias\n\n| # | Estrategia | Score | Rendimiento | Costo/g | Salud | Estabilidad |\n|---|---|---:|---:|---:|---:|---:|\n`;
+    runs.forEach((r, i) => {
+      txt += `| ${i + 1} | ${r.label} | ${r.score} | ${fmt(r.yield)} g | $${fmt(r.perGram)} | ${r.healthy}/9 | ${r.stability}% |\n`;
+    });
+    txt += `\n## Eventos de la mejor corrida · ${best.label}\n\n`;
+    best.events.forEach(e => { txt += `- **D${e.day} · ${e.title}** — ${e.note}\n`; });
+    txt += `\n## Supuestos\n\n- Riego y nutrición simulados por umbrales de la estrategia.\n- Costos operativos acumulados durante 75 días.\n- Resultado determinista para la semilla ${batch.seed}; no es una predicción agronómica.\n`;
+    return txt;
+  }
+
+  function exportBatchReplay() {
+    downloadText(`verde-batch-${currentBatch().seed}.md`, batchReplayMarkdown());
+    showToast('Replay del batch exportado en Markdown.');
+  }
+
+  function exportBatchJson() {
+    const batch = currentBatch();
+    const payload = {
+      app: 'Verde', kind: 'batch-replay', version: 'v2.7',
+      exportedAt: new Date().toISOString(), seed: batch.seed, sample: !!batch.sample,
+      assumptions: { plants: 9, areaM2: 15, days: 75, score: { yield: .35, costPerGram: .25, health: .25, stability: .15 } },
+      runs: batch.runs
+    };
+    downloadText(`verde-batch-${batch.seed}.json`, JSON.stringify(payload, null, 2));
+    showToast('Replay del batch exportado en JSON.');
+  }
+
+  function exportWisdomIndex() {
+    const courses = window.DIPLOMAS.map(d => ({ ...d, ...courseStats(d.code), extras: extrasStats(d.code) }));
+    let txt = `# Verde — Índice de sabiduría\n\n`;
+    txt += `${allResources().length} PDFs · ${courses.length} cursos · ${libraryPct()}% de páginas digeridas\n\n`;
+    txt += `> Curso → módulo → recurso. Cada entrada conserva ruta original, Markdown, hash y estado de digestión.\n\n`;
+    courses.forEach(c => {
+      txt += `## ${c.name} · ${c.pct}% digerido\n\n`;
+      txt += `- ${c.list.length} PDFs · ${c.pages} páginas · ${c.md} en Markdown · extras ${c.extras.loaded}/${c.extras.total} (${c.extras.pct}%)\n\n`;
+      const modules = [...new Set(c.list.map(r => r.module))];
+      modules.forEach(m => {
+        const rs = c.list.filter(r => r.module === m);
+        const pages = rs.reduce((n, r) => n + (r.pages || 0), 0);
+        const loaded = rs.reduce((n, r) => n + (r.pages || 0) * resourceProgress(r) / 100, 0);
+        txt += `### ${m} · ${pages ? Math.round(loaded / pages * 100) : 0}%\n\n`;
+        rs.forEach(r => {
+          txt += `- [${libStateLabel(r.state)}] **${r.title}** — ${r.pages} pp · ${r.year}\n`;
+          txt += `  - Markdown: \`${mdPath(r)}\`\n  - Hash: \`${mdHash(r)}\` · origen: \`${r.path}\`\n`;
+          txt += `  - Etiquetas: ${(r.tags || []).join(', ') || 'sin etiquetas'}\n`;
+        });
+        txt += '\n';
+      });
+    });
+    txt += `## Vínculos que generan insights\n\n`;
+    (window.WISDOM_BRIDGES || []).forEach(b => { txt += `- **${b.tag}** — ${b.note}\n`; });
+    downloadText('verde-indice-sabiduria.md', txt);
+    showToast('Índice de sabiduría exportado en Markdown.');
   }
 
   let timelapseTimer = null;
@@ -1732,13 +1814,16 @@
     $('#roadmapProgressLabel').textContent = `${rp.done} de ${rp.total} hitos alcanzados`;
     $('#roadmapProgressPct').textContent = rp.pct + '%';
 
-    $('#roadmapMetrics').innerHTML = R.metrics.map(m => `
-      <div class="roadmap-metric">
+    $('#roadmapMetrics').innerHTML = R.metrics.map(m => {
+      const value = m.dynamic === 'roadmap' ? `${rp.done}/${rp.total}` : m.value;
+      const pct = m.dynamic === 'roadmap' ? rp.pct : m.pct;
+      return `<div class="roadmap-metric">
         <span>${esc(m.label)}</span>
-        <b>${esc(m.value)}</b>
-        <i><i style="width:${m.pct}%"></i></i>
+        <b>${esc(value)}</b>
+        <i><i style="width:${pct}%"></i></i>
         <small>meta · ${esc(m.target)}</small>
-      </div>`).join('');
+      </div>`;
+    }).join('');
 
     const itemsByHorizon = h => rp.items.filter(i => i.horizon === h);
     $('#roadmapHorizons').innerHTML = R.horizons.map((h, idx) => {
@@ -1753,27 +1838,82 @@
       </button>`;
     }).join('');
 
+    if (R.reverseEngineering) {
+      $('#roadmapReverseGrid').innerHTML = R.reverseEngineering.map(app => `
+        <article class="rr-card">
+          <div class="rr-card-top">
+            <span class="rr-avatar">${esc(app.name.split(' ').map(w => w[0]).join('').slice(0, 2))}</span>
+            <div class="rr-id"><b>${esc(app.name)}</b><small>${esc(app.category)} · ${esc(app.region)}</small></div>
+            <span class="rr-model">${esc(app.model)}</span>
+          </div>
+          <div class="rr-block"><span>QUÉ TOMAR</span><ul>${app.borrow.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+          <div class="rr-avoid"><span>QUÉ NO COPIAR</span><p>${esc(app.avoid)}</p></div>
+          <div class="rr-opps"><span>OPORTUNIDAD LIBRE</span><div>${app.opportunities.map(x => `<i>${esc(x)}</i>`).join('')}</div></div>
+          <p class="rr-signal">${esc(app.signal)}</p>
+        </article>`).join('');
+      const rev = $('#roadmapReverseCount'); if (rev) rev.textContent = `${R.reverseEngineering.length} apps`;
+    }
+    if (R.gaps) {
+      $('#roadmapGaps').innerHTML = R.gaps.map(g => `
+        <article class="rr-gap">
+          <div class="rr-gap-top"><b>${esc(g.area)}</b><span>${esc(ROAD_HORIZONS[g.horizon] || g.horizon)}</span></div>
+          <div class="rr-gap-row"><span>HOY</span><p>${esc(g.today)}</p></div>
+          <div class="rr-gap-row"><span>FALTA</span><p>${esc(g.missing)}</p></div>
+          <div class="rr-gap-row bet"><span>APUESTA</span><p>${esc(g.bet)}</p></div>
+        </article>`).join('');
+      const gap = $('#roadmapGapCount'); if (gap) gap.textContent = `${R.gaps.length} brechas`;
+    }
+    if (R.opportunityRadar) {
+      const streamById = Object.fromEntries(R.streams.map(s => [s.id, s]));
+      $('#roadmapRadar').innerHTML = R.opportunityRadar.map(o => {
+        const st = streamById[o.stream] || { title: o.stream, icon: '◇' };
+        return `<article class="radar-card impact-${norm(o.impact)}">
+          <div class="radar-top"><span class="radar-impact">${esc(o.impact)}</span><span class="radar-effort">${esc(o.effort)}</span><span class="radar-horizon">${esc(ROAD_HORIZONS[o.horizon] || o.horizon)}</span></div>
+          <b>${esc(o.title)}</b>
+          <p>${esc(o.why)}</p>
+          <div class="radar-foot"><span>${st.icon} ${esc(st.title)}</span><small>${esc(o.signal)}</small></div>
+        </article>`;
+      }).join('');
+      const radar = $('#roadmapRadarCount'); if (radar) radar.textContent = `${R.opportunityRadar.length} apuestas`;
+      const radar2 = $('#roadmapRadarCount2'); if (radar2) radar2.textContent = String(R.opportunityRadar.length);
+    }
+
     $('#roadmapFilters').innerHTML = `<button class="road-filter ${app.roadmapStream === 'all' ? 'active' : ''}" data-road-stream="all">Todos</button>` +
       R.streams.map(s => {
         const done = s.items.filter(i => i.status === 'done').length;
         return `<button class="road-filter ${app.roadmapStream === s.id ? 'active' : ''}" data-road-stream="${s.id}"><span>${s.icon}</span>${esc(s.title)}<em>${done}/${s.items.length}</em></button>`;
       }).join('');
 
-    const streams = R.streams.filter(s => app.roadmapStream === 'all' || s.id === app.roadmapStream);
-    $('#roadmapStreams').innerHTML = streams.map(s => {
-      let items = s.items;
-      if (app.roadmapHorizon !== 'all') items = items.filter(i => i.horizon === app.roadmapHorizon);
-      if (app.roadmapPending) items = items.filter(i => i.status !== 'done');
-      const done = s.items.filter(i => i.status === 'done').length;
-      const pct = s.items.length ? Math.round(done / s.items.length * 100) : 0;
-      return `<section class="road-stream" style="--tone:${s.accent}">
+    const searchEl = $('#roadmapSearch');
+    if (searchEl && searchEl.value !== (app.roadmapQuery || '') && document.activeElement !== searchEl) {
+      searchEl.value = app.roadmapQuery || '';
+    }
+    const query = norm(searchEl?.value || app.roadmapQuery || '');
+    const matches = (hay) => query.length <= 2
+      ? hay.split(/[^a-z0-9]+/).includes(query)
+      : hay.includes(query);
+    const visible = R.streams
+      .filter(s => app.roadmapStream === 'all' || s.id === app.roadmapStream)
+      .map(s => {
+        let items = s.items;
+        if (app.roadmapHorizon !== 'all') items = items.filter(i => i.horizon === app.roadmapHorizon);
+        if (app.roadmapPending) items = items.filter(i => i.status !== 'done');
+        if (query) items = items.filter(i => matches(norm(`${s.title} ${s.purpose} ${i.t} ${i.note} ${i.metric}`)));
+        const done = s.items.filter(i => i.status === 'done').length;
+        const pct = s.items.length ? Math.round(done / s.items.length * 100) : 0;
+        return { s, items, done, pct };
+      })
+      .filter(x => x.items.length || !query);
+
+    $('#roadmapStreams').innerHTML = visible.length ? visible.map(({ s, items, done, pct }) => `
+      <section class="road-stream" style="--tone:${s.accent}">
         <header class="road-stream-head">
           <span class="rs-icon">${s.icon}</span>
           <div class="rs-copy"><h3>${esc(s.title)}</h3><p>${esc(s.purpose)}</p></div>
           <div class="rs-progress"><b>${pct}%</b><small>${done}/${s.items.length}</small><i><i style="width:${pct}%"></i></i></div>
         </header>
         <div class="road-items">
-          ${items.length ? items.map(item => {
+          ${items.map(item => {
             const st = ROAD_STATUS[item.status] || ROAD_STATUS.later;
             return `<article class="road-item ${st.cls}">
               <div class="ri-status"><i></i>${st.label}</div>
@@ -1784,10 +1924,18 @@
                 <span class="ri-metric">${esc(item.metric)}</span>
               </div>
             </article>`;
-          }).join('') : '<div class="road-empty">Sin hitos con este filtro. Probá con “Todos”.</div>'}
+          }).join('')}
         </div>
-      </section>`;
-    }).join('');
+      </section>`).join('') : `<div class="road-empty road-empty-wide"><b>Sin hitos para “${esc(query)}”.</b><span>Probá con “riego”, “offline”, “sensores”, “IA” o limpiá la búsqueda.</span></div>`;
+
+    const hitCount = visible.reduce((n, x) => n + x.items.length, 0);
+    const hits = $('#roadmapHits');
+    if (hits) {
+      const filtered = query || app.roadmapPending || app.roadmapHorizon !== 'all' || app.roadmapStream !== 'all';
+      hits.textContent = filtered
+        ? `${hitCount} de ${rp.total} hitos${query ? ` para “${query}”` : ''}`
+        : `${rp.total} hitos · ${R.streams.length} frentes · ${R.reverseEngineering?.length || 0} apps analizadas`;
+    }
 
     $('#roadmapPrinciples').innerHTML = R.principles.map((p, i) => `<div><span>0${i + 1}</span><p>${esc(p)}</p></div>`).join('');
     $('#roadmapNonGoals').innerHTML = R.nonGoals.map(p => `<div><span>×</span><p>${esc(p)}</p></div>`).join('');
@@ -1808,25 +1956,162 @@
       $('#roadmapPendingToggle').classList.toggle('active', app.roadmapPending);
       renderRoadmap(); persist();
     });
+    $('#roadmapSearch')?.addEventListener('input', (e) => {
+      app.roadmapQuery = e.target.value;
+      renderRoadmap(); persist();
+    });
     $('#exportRoadmapBtn')?.addEventListener('click', () => {
       const R = window.ROADMAP;
-      let txt = `# Verde — Roadmap vivo\n\n${R.version}\n\n## North star\n${R.northStar}\n\n${R.statement}\n\n`;
-      txt += `## Métricas\n` + R.metrics.map(m => `- ${m.label}: ${m.value} → ${m.target}`).join('\n') + '\n\n';
+      const rp = roadmapProgress();
+      let txt = `# Verde — Roadmap vivo\n\n${R.version}\n\n${rp.done} de ${rp.total} hitos completados (${rp.pct}%)\n\n## North star\n${R.northStar}\n\n${R.statement}\n\n`;
+      txt += `## Métricas\n` + R.metrics.map(m => {
+        const value = m.dynamic === 'roadmap' ? `${rp.done}/${rp.total}` : m.value;
+        return `- ${m.label}: ${value} → ${m.target}`;
+      }).join('\n') + '\n\n';
+      txt += `## Ingeniería inversa · ${R.reverseEngineering.length} apps\n\n`;
+      R.reverseEngineering.forEach(a => {
+        txt += `### ${a.name} — ${a.category} (${a.region})\nModelo: ${a.model}\n\n`;
+        txt += `Tomar:\n` + a.borrow.map(x => `- ${x}`).join('\n') + '\n\n';
+        txt += `No copiar: ${a.avoid}\n\n`;
+        txt += `Oportunidad:\n` + a.opportunities.map(x => `- ${x}`).join('\n') + `\n\nSeñal: ${a.signal}\n\n`;
+      });
+      txt += `## Radar de oportunidades\n\n`;
+      R.opportunityRadar.forEach(o => { txt += `- **${o.title}** — ${o.impact} impacto · esfuerzo ${o.effort} · ${ROAD_HORIZONS[o.horizon]}\n  ${o.why}\n`; });
+      txt += `\n## Matriz de brechas\n\n`;
+      R.gaps.forEach(g => { txt += `- **${g.area}** (${ROAD_HORIZONS[g.horizon]})\n  Hoy: ${g.today}\n  Falta: ${g.missing}\n  Apuesta: ${g.bet}\n`; });
+      txt += `\n## Backlog por frente\n\n`;
       R.streams.forEach(s => {
-        txt += `## ${s.title} (${s.items.filter(i => i.status === 'done').length}/${s.items.length})\n${s.purpose}\n\n`;
+        const done = s.items.filter(i => i.status === 'done').length;
+        txt += `### ${s.title} (${done}/${s.items.length})\n${s.purpose}\n\n`;
         s.items.forEach(i => {
           txt += `- [${i.status === 'done' ? 'x' : ' '}] ${i.t} — ${ROAD_HORIZONS[i.horizon]} · esfuerzo ${i.effort} · ${i.metric}\n  ${i.note}\n`;
         });
         txt += '\n';
       });
-      txt += `## No objetivos\n` + R.nonGoals.map(x => `- ${x}`).join('\n') + '\n\n## Riesgos\n' + R.risks.map(r => `- ${r.title} (${r.level}): ${r.note}`).join('\n') + '\n';
+      txt += `## No objetivos\n` + R.nonGoals.map(x => `- ${x}`).join('\n') + '\n\n## Riesgos\n' + R.risks.map(r => `- ${r.title} (${r.level}): ${r.note}`).join('\n') + '\n\n## Principios\n' + R.principles.map(x => `- ${x}`).join('\n') + '\n';
       downloadText('verde-roadmap.md', txt);
-      showToast('Roadmap exportado en Markdown.');
+      showToast('Roadmap completo exportado en Markdown.');
     });
   }
 
   /* ---------- modals / shop / global bindings ---------- */
   function closeModal(id) { $('#' + id)?.classList.remove('open'); }
+
+  /* ---------- búsqueda global (⌘K) ---------- */
+  const COMMAND_TYPE = { view: 'SECTOR', course: 'CURSO', strain: 'CEPA', pdf: 'PDF', roadmap: 'ROADMAP', tag: 'TAG' };
+  const COMMAND_PRIORITY = { view: 0, course: 1, strain: 2, pdf: 3, roadmap: 4, tag: 5 };
+  let commandVisible = [];
+  let commandIndex = 0;
+
+  function commandEntries() {
+    const out = [];
+    Object.entries(VIEWS).forEach(([id, label]) => out.push({
+      type: 'view', label, meta: 'Sector de la app · abrir vista', keywords: 'ir navegar ' + id,
+      action: () => navigate(id)
+    }));
+    window.DIPLOMAS.forEach(d => {
+      const stats = courseStats(d.code);
+      out.push({
+        type: 'course', label: d.name, keywords: `${d.code} ${d.name}`,
+        meta: `${stats.list.length} PDFs · ${stats.pages} pp · ${stats.pct}% digerido`,
+        action: () => openCourseFiles(d.code)
+      });
+    });
+    window.STRAINS.forEach(st => out.push({
+      type: 'strain', label: st.name, keywords: [st.breeder, st.tags, st.effects, st.flavor, st.lineage].flat().join(' '),
+      meta: `Cepa · THC ${st.thc}% · dificultad ${st.difficulty}`,
+      action: () => { navigate('strains'); setTimeout(() => openStrainSheet(st.id), 100); }
+    }));
+    allResources().forEach(r => out.push({
+      type: 'pdf', label: r.title, keywords: [r.diploma, r.module, r.path, r.tags, r.summary].flat().join(' '),
+      meta: `${r.diploma} · ${r.module} · ${r.pages} pp`,
+      action: () => openLibraryResource(r.id)
+    }));
+    window.ROADMAP.streams.forEach(stream => stream.items.forEach(item => out.push({
+      type: 'roadmap', label: item.t, keywords: `${stream.title} ${item.note} ${item.metric}`,
+      meta: `${stream.title} · ${ROAD_HORIZONS[item.horizon] || item.horizon} · ${item.status}`,
+      action: () => {
+        app.roadmapStream = stream.id; app.roadmapHorizon = item.horizon; app.roadmapPending = false; app.roadmapQuery = '';
+        navigate('roadmap');
+        showToast(`Roadmap · ${stream.title}: ${item.t}`);
+      }
+    })));
+    tagIndex().slice(0, 36).forEach(t => out.push({
+      type: 'tag', label: '#' + t.tag, keywords: t.tag,
+      meta: `Etiqueta · ${t.ids.size} PDFs · ${t.courses.size} cursos`,
+      action: () => searchLibraryTag(t.tag)
+    }));
+    return out;
+  }
+
+  function commandScore(entry, q) {
+    if (!q) return 0;
+    const label = norm(entry.label);
+    const meta = norm(entry.meta || '');
+    const hay = norm(`${entry.label} ${entry.meta || ''} ${entry.keywords || ''}`);
+    const words = q.split(/\s+/).filter(Boolean);
+    if (!words.every(w => hay.includes(w))) return -1;
+    let score = COMMAND_PRIORITY[entry.type] === 0 ? 4 : 0;
+    if (label === q) score += 100;
+    else if (label.startsWith(q)) score += 55;
+    else if (label.includes(q)) score += 28;
+    words.forEach(w => { if (label.includes(w)) score += 9; if (meta.includes(w)) score += 4; });
+    return score;
+  }
+
+  function renderCommandResults() {
+    const q = norm($('#commandInput')?.value.trim() || '');
+    const scored = commandEntries()
+      .map((e, i) => ({ ...e, i, score: commandScore(e, q) }))
+      .filter(e => e.score >= 0)
+      .sort((a, b) => b.score - a.score || COMMAND_PRIORITY[a.type] - COMMAND_PRIORITY[b.type] || a.i - b.i);
+    const total = scored.length;
+    commandVisible = scored.slice(0, 24);
+    commandIndex = 0;
+    const box = $('#commandResults');
+    if (!box) return;
+    box.innerHTML = commandVisible.length ? commandVisible.map((e, i) => `
+      <button class="cmd-row ${i === 0 ? 'active' : ''}" data-cmd-index="${i}" role="option" aria-selected="${i === 0}">
+        <span class="cmd-type cmd-type-${e.type}">${COMMAND_TYPE[e.type]}</span>
+        <span class="cmd-copy"><b>${esc(e.label)}</b><small>${esc(e.meta || '')}</small></span>
+        <span class="cmd-go" aria-hidden="true">↵</span>
+      </button>`).join('') : `<div class="cmd-empty"><b>Sin resultados</b><span>Probá con “riego”, “floración”, “Gelato”, “roadmap” o “biblioteca”.</span></div>`;
+    const count = $('#commandCount');
+    if (count) count.textContent = total ? `${total} resultado${total === 1 ? '' : 's'}` : '';
+  }
+
+  function commandSetActive(index) {
+    if (!commandVisible.length) return;
+    commandIndex = Math.max(0, Math.min(commandVisible.length - 1, index));
+    $$('#commandResults .cmd-row').forEach((row, i) => {
+      const active = i === commandIndex;
+      row.classList.toggle('active', active);
+      row.setAttribute('aria-selected', String(active));
+      if (active) row.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
+  function commandRun(index) {
+    const entry = commandVisible[index];
+    if (!entry) return;
+    closeCommandPalette();
+    entry.action();
+  }
+
+  function openCommandPalette() {
+    const modal = $('#commandModal');
+    if (!modal) return;
+    modal.classList.add('open');
+    const input = $('#commandInput');
+    if (input) { input.value = ''; setTimeout(() => input.focus(), 60); }
+    renderCommandResults();
+  }
+
+  function closeCommandPalette() {
+    $('#commandModal')?.classList.remove('open');
+    const input = $('#commandInput');
+    if (input) input.value = '';
+  }
 
   function bindGlobal() {
     $$('[data-nav]').forEach(el => {
@@ -1847,6 +2132,18 @@
     $$('.modal-backdrop').forEach(bd => {
       bd.addEventListener('click', (e) => { if (e.target === bd) bd.classList.remove('open'); });
     });
+    $('#globalSearchBtn')?.addEventListener('click', openCommandPalette);
+    $('#commandInput')?.addEventListener('input', renderCommandResults);
+    $('#commandInput')?.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); commandSetActive(commandIndex + 1); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); commandSetActive(commandIndex - 1); }
+      else if (e.key === 'Enter') { e.preventDefault(); commandRun(commandIndex); }
+      else if (e.key === 'Escape') { e.preventDefault(); closeCommandPalette(); }
+    });
+    $('#commandResults')?.addEventListener('click', (e) => {
+      const row = e.target.closest('[data-cmd-index]');
+      if (row) commandRun(Number(row.dataset.cmdIndex));
+    });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         $$('.modal-backdrop.open').forEach(b => b.classList.remove('open'));
@@ -1854,8 +2151,8 @@
       }
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        navigate('strains');
-        setTimeout(() => $('#strainSearch')?.focus(), 120);
+        if ($('#commandModal')?.classList.contains('open')) closeCommandPalette();
+        else openCommandPalette();
       }
     });
 
@@ -1864,6 +2161,9 @@
     $('#quickSimBtn')?.addEventListener('click', () => $('#quickModal').classList.add('open'));
     $('#batchRunBtn')?.addEventListener('click', runBatchBenchmark);
     $('#timelapseBtn')?.addEventListener('click', toggleTimelapse);
+    $('#batchExportBtn')?.addEventListener('click', exportBatchReplay);
+    $('#batchExportJsonBtn')?.addEventListener('click', exportBatchJson);
+    $('#exportWisdomBtn')?.addEventListener('click', exportWisdomIndex);
     $('#idxRunBatch')?.addEventListener('click', () => { runBatchBenchmark(); navigate('sim'); });
     $('#resetSimBtn')?.addEventListener('click', () => {
       if (!window.confirm('¿Reiniciar la temporada desde el día 1?')) return;

@@ -69,7 +69,7 @@
           <div class="crumb"><span>VERDE</span><i>/</i><b id="crumbCurrent">INICIO</b></div>
         </div>
         <div class="topbar-actions">
-          <button class="search-pill" data-nav="strains"><span>⌕</span> Buscar cepas, temas, fuentes <kbd>⌘K</kbd></button>
+          <button class="search-pill" id="globalSearchBtn" type="button" aria-label="Buscar en toda la app"><span>⌕</span> Buscar cepas, temas, fuentes <kbd>⌘K</kbd></button>
           <span class="legal-pill"><span class="live-dot"></span>ARGENTINA · 2026</span>
           <button class="icon-btn" id="guideBtn" aria-label="Guía rápida" title="Guía rápida">?</button>
           <button class="icon-btn" id="soundBtn" aria-label="Activar sonido" title="Sonido">◖</button>
@@ -82,7 +82,7 @@
         <section class="view active" id="view-panel">
           <div class="index-head">
             <div class="index-head-copy">
-              <div class="eyebrow"><span class="live-dot"></span>VERDE <i>/</i> <span>ÍNDICE GENERAL · v2.6</span></div>
+              <div class="eyebrow"><span class="live-dot"></span>VERDE <i>/</i> <span>ÍNDICE GENERAL · v2.7</span></div>
               <h1>La app,<br><em>en un mapa.</em></h1>
               <p class="lead">Cada sector abre una parte de Verde y muestra su estado real. Esto no es un diario: es un laboratorio para recorrer un batch completo, digerir tus cursos y comparar estrategias como un benchmark.</p>
               <div class="index-hero-actions">
@@ -222,7 +222,7 @@
                 <p>Todo lo que queremos construir, ordenado por horizonte, impacto, esfuerzo y dependencia.</p>
                 <div class="idx-road-next"><span>PRÓXIMO</span><b id="idxRoadNext">Cargando roadmap…</b></div>
               </div>
-              <div class="idx-card-foot"><span class="idx-foot-meta">7 FRENTES · 4 HORIZONTES</span><button class="text-link" data-nav="roadmap">Ver roadmap <span>◇</span></button></div>
+              <div class="idx-card-foot"><span class="idx-foot-meta" id="idxRoadMeta">14 FRENTES · 200 HITOS · 20 APPS</span><button class="text-link" data-nav="roadmap">Ver roadmap <span>◇</span></button></div>
             </article>
           </div>
 
@@ -353,12 +353,12 @@
           <section class="batch-card">
             <div class="batch-head">
               <div>
-                <span class="section-kicker">BATCH BENCHMARK · 75 DÍAS</span>
+                <span class="section-kicker">BATCH BENCHMARK · 6 ESTRATEGIAS · 75 DÍAS</span>
                 <h2>La temporada completa, <em>como una corrida comparable.</em></h2>
               </div>
               <div class="batch-head-actions">
                 <button class="btn btn-ghost" id="timelapseBtn"><span class="tl-ico">▶</span> Timelapse</button>
-                <button class="btn btn-lime" id="batchRunBtn">Correr 3 estrategias <span>⚡</span></button>
+                <button class="btn btn-lime" id="batchRunBtn">Correr 6 estrategias <span>⚡</span></button>
               </div>
             </div>
             <div class="batch-grid" id="batchGrid"></div>
@@ -369,6 +369,7 @@
             <div class="batch-foot">
               <span>El benchmark corre simulaciones aisladas: no modifica tu partida hasta que elegís una.</span>
               <span>Score = rendimiento 35% · costo/g 25% · salud 25% · estabilidad 15%</span>
+              <span class="batch-export"><button class="text-link" id="batchExportBtn" type="button">Replay MD <span>↓</span></button><button class="text-link" id="batchExportJsonBtn" type="button">JSON</button></span>
             </div>
           </section>
 
@@ -452,6 +453,7 @@
                 <h2>Qué está cargado, <em>qué falta digerir.</em></h2>
                 <p>Cada curso declara su nombre real, sus PDFs, sus páginas y el porcentaje convertido a Markdown con metadata. Los extras muestran qué categorías del curso todavía no están completas.</p>
                 <div class="digest-quick" id="digestQuickStats"></div>
+                <button class="text-link digest-export" id="exportWisdomBtn" type="button">Exportar índice de sabiduría <span>↓</span></button>
               </div>
               <div class="digest-pipeline" id="libPipeline"></div>
             </div>
@@ -614,7 +616,7 @@
         <section class="view" id="view-roadmap">
           <div class="view-head roadmap-head">
             <div>
-              <div class="eyebrow"><span class="live-dot"></span>DESARROLLO <i>/</i> <span>ROADMAP VIVO · <span id="roadmapVersion">v2.6</span></span></div>
+              <div class="eyebrow"><span class="live-dot"></span>DESARROLLO <i>/</i> <span>ROADMAP VIVO · <span id="roadmapVersion">v2.7</span></span></div>
               <h1>El camino,<br><em>sin perderlo.</em></h1>
               <p class="lead">Todo lo que queremos construir, ordenado por horizonte, impacto y dependencia. No es una lista de deseos: es el contrato de largo plazo de Verde.</p>
             </div>
@@ -635,11 +637,41 @@
 
           <div class="roadmap-horizons" id="roadmapHorizons"></div>
 
+          <section class="roadmap-reverse">
+            <div class="rr-head">
+              <div>
+                <span class="section-kicker">INGENIERÍA INVERSA · 20 APPS DE CANNABIS</span>
+                <h2>Qué hacen bien, <em>qué no copiar.</em></h2>
+                <p>Mapa de productos reales —catálogos, diarios, marketplaces, sensores, knowledge tools y benchmarks— con lo que Verde puede aprender, lo que debe evitar y la oportunidad que queda libre.</p>
+              </div>
+              <div class="rr-head-stats"><span id="roadmapReverseCount">20 apps</span><span id="roadmapRadarCount">18 apuestas</span><span id="roadmapGapCount">12 brechas</span></div>
+            </div>
+            <div class="rr-grid" id="roadmapReverseGrid"></div>
+            <div class="rr-gap-head">
+              <div><span class="section-kicker">MATRIZ DE BRECHAS</span><h3>Lo que la app todavía no sabe hacer.</h3></div>
+              <p>Estado actual, ausencia concreta y apuesta de implementación. Esta tabla es el puente entre la visión y el próximo release.</p>
+            </div>
+            <div class="rr-gaps" id="roadmapGaps"></div>
+          </section>
+
+          <section class="roadmap-radar-wrap">
+            <div class="rr-head compact">
+              <div>
+                <span class="section-kicker">RADAR DE OPORTUNIDADES</span>
+                <h2>Apuestas ordenadas por impacto, esfuerzo y horizonte.</h2>
+              </div>
+              <span class="rr-count" id="roadmapRadarCount2">18</span>
+            </div>
+            <div class="roadmap-radar" id="roadmapRadar"></div>
+          </section>
+
           <div class="roadmap-toolbar">
+            <label class="roadmap-search"><span>⌕</span><input id="roadmapSearch" type="text" placeholder="Buscar en 200 hitos: riego, cepas, IA, offline…" autocomplete="off" /></label>
             <div class="roadmap-legend"><span><i class="rs-done"></i>En la app</span><span><i class="rs-now"></i>En construcción</span><span><i class="rs-next"></i>Próximo</span><span><i class="rs-later"></i>Visión</span></div>
             <div class="roadmap-filters" id="roadmapFilters"></div>
             <button class="toggle-btn" id="roadmapPendingToggle"><span class="toggle-dot"></span>Solo pendientes</button>
           </div>
+          <div class="roadmap-results-line"><span id="roadmapHits">200 hitos</span><span>Backlog eterno: vive en <b>roadmap.js</b>, se poda en cada release y se exporta en Markdown.</span></div>
 
           <div class="roadmap-layout">
             <div class="roadmap-streams" id="roadmapStreams"></div>
@@ -701,6 +733,24 @@
   <div class="modal-backdrop" id="addModal"><div class="modal add-modal"><button class="modal-close" data-close="addModal" aria-label="Cerrar">×</button><span class="section-kicker">APORTAR A LA BIBLIOTECA</span><h2>Sumá un PDF con su origen.</h2><p>El archivo queda pendiente de procesamiento. Guardamos la diplomatura y la carpeta para que nunca pierda contexto.</p><form id="addForm"><label class="dropzone" id="dropzone"><input type="file" id="fileInput" accept="application/pdf" /><span class="drop-ico">⇧</span><b id="dropTitle">Arrastrá un PDF o hacé clic</b><small id="dropSub">Máx. 40 MB · se indexa localmente</small></label><div class="control-row"><label class="field"><span>Diplomatura</span><select id="addDiploma"><option>Cultivo Interior</option><option>Agroecología Aplicada</option><option>Cannabis Medicinal</option><option>Extracción y Transformados</option><option>Gestión y Presupuesto</option></select></label><label class="field"><span>Módulo / clase</span><input id="addModule" placeholder="Ej. Módulo 4 · Riego" /></label></div><label class="field"><span>Carpeta de origen</span><input id="addPath" placeholder="Ej. 02_Diplomaturas/CultivoInterior/M4/riego.pdf" /></label><div class="quick-note"><span>ⓘ</span>Se guarda metadato y nombre de archivo en esta demo. El texto se procesará a Markdown en la próxima etapa.</div><button class="btn btn-lime full" type="submit">Añadir al índice <span>+</span></button></form></div></div>
 
   <div class="modal-backdrop" id="strainModal"><div class="strain-sheet" id="strainSheet"></div></div>
+
+  <div class="modal-backdrop command-backdrop" id="commandModal">
+    <div class="command-panel" role="dialog" aria-modal="true" aria-label="Buscar en toda la app">
+      <div class="command-input-wrap">
+        <span aria-hidden="true">⌕</span>
+        <input id="commandInput" type="text" placeholder="Buscar sectores, cepas, cursos, PDFs, roadmap…" autocomplete="off" spellcheck="false" aria-label="Buscar en toda la app" />
+        <kbd>ESC</kbd>
+      </div>
+      <div class="command-results" id="commandResults" role="listbox" aria-label="Resultados"></div>
+      <div class="command-foot">
+        <span><b>⌘K</b> abrir</span>
+        <span><b>↑ ↓</b> mover</span>
+        <span><b>↵</b> abrir</span>
+        <span><b>Esc</b> cerrar</span>
+        <span class="command-count" id="commandCount"></span>
+      </div>
+    </div>
+  </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="library.js"></script>
