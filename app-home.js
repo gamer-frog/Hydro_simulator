@@ -84,7 +84,7 @@ function renderHomeStats() {
   const loops = scopedLoops();
   const open = missions.filter(isOpen).length;
   const working = missions.filter(m => m.status === 'working').length;
-  const activeLoops = loops.filter(l => l.status === 'active').length;
+  const activeLoops = loops.filter(l => l.status === 'active');
   const el = $('#homeStats');
   if (!el) return;
   el.innerHTML = `
