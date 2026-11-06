@@ -97,9 +97,14 @@ function requestContextChoices(projects) {
     clients = clients.filter(client => clientIds.has(client.id));
     divisions = divisions.filter(division => divisionIds.has(division.id));
   } else if (scopeFilter.kind === 'repo') {
-    const visible = new Set(projects.map(project => project.id));
-    const clientIds = new Set(projects.map(project => project.clientId).filter(Boolean));
-    const divisionIds = new Set(projects.map(project => project.divisionId).filter(Boolean));
+    const clientIds = new Set([
+      ...projects.map(project => project.clientId).filter(Boolean),
+      ...state.clients.filter(client => (client.repos || []).some(repo => repoMatches(repo, scopeFilter.id))).map(client => client.id)
+    ]);
+    const divisionIds = new Set([
+      ...projects.map(project => project.divisionId).filter(Boolean),
+      ...state.clients.filter(client => clientIds.has(client.id)).map(client => client.divisionId)
+    ]);
     clients = clients.filter(client => clientIds.has(client.id));
     divisions = divisions.filter(division => divisionIds.has(division.id));
   }
@@ -132,8 +137,11 @@ function openRequest(projectId, prefill = {}) {
   const choices = requestContextChoices(projects);
   contextSelect.innerHTML = `<option value="">Elegí cliente o división</option>`
     + choices.map(choice => `<option value="${esc(choice.value)}">${esc(choice.label)}</option>`).join('');
+  const repoClients = scopeFilter.kind === 'repo'
+    ? state.clients.filter(client => (client.repos || []).some(repo => repoMatches(repo, scopeFilter.id))) : [];
   const scopedContext = scopeFilter.kind === 'client' ? `client:${scopeFilter.id}`
-    : scopeFilter.kind === 'division' ? `division:${scopeFilter.id}` : '';
+    : scopeFilter.kind === 'division' ? `division:${scopeFilter.id}`
+      : repoClients.length === 1 ? `client:${repoClients[0].id}` : '';
   contextSelect.value = prefill.context || scopedContext || '';
   updateRequestContextVisibility();
   form.title.value = prefill.title || '';
@@ -149,9 +157,12 @@ function openRequest(projectId, prefill = {}) {
 
 function requestContext(project, selected = '') {
   if (project) {
+    const client = state.clients.find(item => item.id === project.clientId)
+      || state.clients.find(item => (item.repos || []).some(repo => repoMatches(repo, project.repo)))
+      || null;
     return {
-      client: state.clients.find(item => item.id === project.clientId) || null,
-      division: state.divisions.find(item => item.id === project.divisionId) || null
+      client,
+      division: state.divisions.find(item => item.id === project.divisionId) || state.divisions.find(item => item.id === client?.divisionId) || null
     };
   }
   let client = null;

@@ -209,14 +209,17 @@ function normalizeScope(kind, id) {
   const exists = kind === 'division' ? state.divisions.some(item => item.id === id)
     : kind === 'client' ? state.clients.some(item => item.id === id)
       : kind === 'project' ? state.projects.some(item => item.id === id)
-        : kind === 'repo' ? state.projects.some(item => repoMatches(item.repo, id)) : false;
+        : kind === 'repo' ? state.projects.some(item => repoMatches(item.repo, id)) || state.clients.some(client => (client.repos || []).some(repo => repoMatches(repo, id))) : false;
   return exists ? { kind, id } : { kind: 'all', id: 'all' };
 }
 function scopedProjectIds() {
   const { kind, id } = scopeFilter || { kind: 'all', id: 'all' };
   if (!id || kind === 'all') return new Set(state.projects.map(project => project.id));
   if (kind === 'project') return new Set(state.projects.some(project => project.id === id) ? [id] : []);
-  if (kind === 'repo') return new Set(state.projects.filter(project => repoMatches(project.repo, id)).map(project => project.id));
+  if (kind === 'repo') {
+    const clientIds = new Set(state.clients.filter(client => (client.repos || []).some(repo => repoMatches(repo, id))).map(client => client.id));
+    return new Set(state.projects.filter(project => repoMatches(project.repo, id) || clientIds.has(project.clientId)).map(project => project.id));
+  }
   if (kind === 'client') return new Set(state.projects.filter(project => project.clientId === id).map(project => project.id));
   if (kind === 'division') {
     const clientIds = new Set(state.clients.filter(client => client.divisionId === id).map(client => client.id));
@@ -243,7 +246,9 @@ function scopeLabel() {
 }
 function renderBreadcrumb() {
   const crumb = $('#breadcrumb');
-  if (crumb) crumb.textContent = `${scopeLabel()} · ${VIEW_TITLES[currentView] || 'Vista'}`;
+  if (!crumb) return;
+  const parts = [scopeLabel(), VIEW_TITLES[currentView] || 'Vista'];
+  crumb.textContent = [...new Set(parts)].join(' · ');
 }
 function selectScope(kind = 'all', id = 'all', options = {}) {
   scopeFilter = normalizeScope(kind, id);
@@ -539,9 +544,10 @@ function renderSidebar() {
       const clientMarkup = division.clients.map(client => {
         const clientProjects = state.projects.filter(project => project.clientId === client.id);
         const clientActive = scopeFilter.kind === 'client' && scopeFilter.id === client.id;
-        const repoNames = [...new Set([...(client.repos || []), ...clientProjects.map(project => project.name)])];
+        const repoNames = [...new Map([...(client.repos || []), ...clientProjects.map(project => project.repo)]
+          .filter(Boolean).map(repo => [normalizedRepo(repo), repo])).values()];
         const repos = repoNames.length ? repoNames.map(repo => {
-          const repoActive = scopeFilter.kind === 'repo' && scopeFilter.id === repo;
+          const repoActive = scopeFilter.kind === 'repo' && repoMatches(scopeFilter.id, repo);
           return `<button class="client-repo ${repoActive ? 'active' : ''}" data-scope-kind="repo" data-scope-id="${esc(repo)}" aria-current="${repoActive ? 'page' : 'false'}">${esc(repo)}</button>`;
         }).join('') : '<span class="client-repo muted">Sin repo</span>';
         return `<div class="sidebar-client"><button class="client-name ${clientActive ? 'active' : ''}" data-scope-kind="client" data-scope-id="${esc(client.id)}" aria-current="${clientActive ? 'page' : 'false'}">${esc(client.name)}</button>${repos}${clientProjects.map(project => sidebarProjectMarkup(project, counts)).join('')}</div>`;

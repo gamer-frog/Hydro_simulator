@@ -148,7 +148,9 @@ function issueMatchesScope(item, visibleIds = scopedProjectIds()) {
   const labels = (item.labels || []).map(label => String(label).trim().toLowerCase());
   if (scopeFilter.kind === 'repo') {
     const selectedRepo = String(scopeFilter.id).trim().toLowerCase();
-    return repoMatches(item.repo, scopeFilter.id) || labels.some(label => label === `repo:${selectedRepo}` || label === `project:${selectedRepo}`);
+    const clientIds = state.clients.filter(client => (client.repos || []).some(repo => repoMatches(repo, scopeFilter.id))).map(client => client.id);
+    return repoMatches(item.repo, scopeFilter.id)
+      || labels.some(label => label === `repo:${selectedRepo}` || label === `project:${selectedRepo}` || clientIds.some(id => label === `client:${id}`));
   }
   if (scopeFilter.kind === 'client') {
     const client = state.clients.find(value => value.id === scopeFilter.id);
