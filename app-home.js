@@ -191,6 +191,42 @@ function agentFreshness(agent) {
   return { latest, seconds, status, threshold, label: seconds == null ? 'sin señal' : relativeAgo(seconds) };
 }
 
+function renderOpsAttention(freshness) {
+  const el = $('#opsAttention');
+  if (!el) return;
+  const items = [];
+  const warnings = Array.isArray(state.protocol?.warnings) ? state.protocol.warnings : [];
+  warnings.forEach(warning => items.push({ kind: 'warning', title: 'Protocolo', detail: warning, rank: 0 }));
+  state.missions.filter(m => m.claimStatus === 'conflict').forEach(mission => {
+    items.push({ kind: 'conflict', title: 'Claim en conflicto', detail: mission.title, missionId: mission.id, rank: 1 });
+  });
+  freshness.filter(item => item.status === 'stale' && item.agent.status !== 'idle').forEach(item => {
+    items.push({ kind: 'stale', title: 'Heartbeat vencido', detail: `${item.agent.name} · ${item.label}`, agentId: item.agent.id, rank: 2 });
+  });
+  state.missions.filter(mission => isOpen(mission) && isBlocked(mission)).forEach(mission => {
+    const blockers = missionBlockers(mission).map(dependency => dependency.title).join(', ');
+    items.push({ kind: 'blocked', title: 'En espera', detail: `${mission.title} · ${blockers}`, missionId: mission.id, rank: 3 });
+  });
+  items.sort((a, b) => a.rank - b.rank || a.title.localeCompare(b.title));
+  const count = $('#opsAttentionCount');
+  if (count) count.textContent = items.length;
+  if (!items.length) {
+    el.innerHTML = '<div class="attention-clear"><span aria-hidden="true">✓</span> Sin alertas operativas por ahora.</div>';
+    return;
+  }
+  const visible = items.slice(0, 5);
+  el.innerHTML = visible.map(item => {
+    const attrs = item.missionId ? `data-mission="${esc(item.missionId)}"` : item.agentId ? `data-agent="${esc(item.agentId)}"` : '';
+    const tag = attrs ? 'button' : 'div';
+    const type = attrs ? 'type="button"' : '';
+    return `<${tag} class="attention-item ${esc(item.kind)}" ${type} ${attrs}>
+      <span class="attention-mark" aria-hidden="true"></span>
+      <span class="attention-copy"><strong>${esc(item.title)}</strong><small>${esc(item.detail)}</small></span>
+      ${attrs ? '<span class="attention-arrow" aria-hidden="true">→</span>' : ''}
+    </${tag}>`;
+  }).join('') + (items.length > visible.length ? `<div class="attention-more">y ${items.length - visible.length} más</div>` : '');
+}
+
 function renderOpsHealth() {
   const el = $('#opsGrid');
   if (!el) return;
@@ -234,6 +270,7 @@ function renderOpsHealth() {
         <small>${esc(item.label)}</small>
       </button>`).join('');
   }
+  renderOpsAttention(freshness);
   const auto = $('#opsAutoLabel');
   if (auto) auto.textContent = syncMeta.refreshing ? 'actualizando…' : `auto · ${lastSyncLabel(syncMeta.snapshotAt)}`;
 }

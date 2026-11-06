@@ -263,6 +263,33 @@ svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width:
 .ops-agent small { font: 400 6.5px var(--mono); color: #a5afa6; }
 .ops-agent.stale { background: #f8f1e8; border-color: #eee2d2; }
 .ops-agent.stale small { color: #b0906d; }
+.attention-head {
+  display: flex; align-items: center; gap: 7px; margin-top: 13px; padding-top: 11px;
+  border-top: 1px solid #eef1eb; font: 600 6.5px var(--mono); letter-spacing: .4px;
+  text-transform: uppercase; color: #879489;
+}
+.attention-head > span:last-child {
+  display: grid; place-items: center; min-width: 16px; height: 16px; padding: 0 4px;
+  border-radius: 20px; background: #f0f3ed; color: #7e8d7f; font-size: 7px; letter-spacing: 0;
+}
+.attention-list { display: grid; gap: 5px; margin-top: 8px; min-width: 0; }
+.attention-item {
+  width: 100%; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 8px 9px;
+  border: 1px solid #ecefe9; border-radius: 9px; background: #fbfcf9; color: #657369;
+  text-align: left; font: inherit;
+}
+button.attention-item { cursor: pointer; }
+button.attention-item:hover { border-color: #d7e1d1; background: #f7faf4; }
+.attention-mark { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; background: #b49b72; }
+.attention-item.conflict .attention-mark, .attention-item.stale .attention-mark { background: #bf806d; }
+.attention-item.blocked .attention-mark { background: #c1a06e; }
+.attention-copy { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.attention-copy strong { font-size: 8px; font-weight: 650; color: #536257; }
+.attention-copy small { overflow: hidden; color: #929e93; font-size: 7.5px; line-height: 1.4; overflow-wrap: anywhere; }
+.attention-arrow { flex: 0 0 auto; color: #9bab98; font-size: 12px; }
+.attention-clear { display: flex; align-items: center; gap: 7px; padding: 9px; border-radius: 9px; background: #f5f8f2; color: #81917f; font-size: 8px; }
+.attention-clear span { color: #72926f; font-size: 11px; }
+.attention-more { padding: 2px 9px 0; color: #9aa59b; font-size: 7.5px; }
 
 /* ---------- Blocks / home grid ---------- */
 .home-grid { display: grid; gap: 12px; margin-top: 12px; }

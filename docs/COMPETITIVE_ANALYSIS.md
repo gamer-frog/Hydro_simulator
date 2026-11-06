@@ -68,8 +68,8 @@ atención de la comunidad, no una medida de adopción enterprise ni de calidad.
     hasta el primer flujo. Para Conductor: una galería de misiones/loops
     prearmados encaja mejor que un marketplace.
 11. **Alertas y notificaciones.** Airflow, Prefect, Dagster y n8n permiten enviar
-    fallos a Slack/email/webhook. Para Conductor: un issue es la alerta; falta un
-    resumen de “lo que necesita atención humana”.
+    fallos a Slack/email/webhook. Para Conductor: un issue es la alerta; la bandeja
+    “necesita atención” resume conflictos, warnings, bloqueos y heartbeats vencidos.
 12. **SDK, CLI y self-hosting.** Temporal, Prefect, Airflow, n8n y OpenHands
     ofrecen una vía programática además de la UI. Para Conductor: `coord.py` es la
     CLI; el siguiente paso es documentar un contrato estable para agentes.
@@ -90,7 +90,7 @@ atención de la comunidad, no una medida de adopción enterprise ni de calidad.
 | Agent registry | CrewAI, AutoGen, OpenAI SDK | Agent Agency con skills y tools | **Parcial** |
 | Handoffs | OpenAI SDK, CrewAI, MetaGPT | Transferencia explícita entre agentes | **Gap** |
 | Templates | n8n, Dify, Flowise, CrewAI | Galería de misiones y loops prearmados | **Gap** |
-| Alertas | Airflow, Prefect, Dagster, n8n | Bandeja “necesita atención” | **Gap** |
+| Alertas | Airflow, Prefect, Dagster, n8n | Bandeja “necesita atención” | **Implementado** |
 | RBAC / secrets | Airflow, Dify, n8n | Proxy de solo lectura para producción | **Gap** |
 | SDK / CLI | Temporal, Prefect, n8n, OpenHands | `coord.py` + contrato de eventos | **Tiene** |
 | Self-hosting | Flowise, n8n, Dify, OpenHands | Servidor estático + repo | **Tiene** |
@@ -213,7 +213,7 @@ al usuario final.
 
 ## Qué se implementó en esta iteración
 
-Estas cuatro features salieron del análisis y son compatibles con el modelo
+Estas cinco features salieron del análisis y son compatibles con el modelo
 read-only:
 
 1. **Command palette (`⌘K` / `Ctrl K`).** Búsqueda global de vistas, repos,
@@ -228,6 +228,9 @@ read-only:
 4. **Ops health + auto-refresh.** Panel con fuente, frescura de heartbeats, claims,
    conflictos, warnings y última sincronización. El snapshot se refresca cada 60 s
    y muestra “hace X” en la app. Inspirado en Dagster/Prefect/AgentOps.
+5. **Bandeja “necesita atención”.** Prioriza warnings de protocolo, claims en
+   conflicto, heartbeats vencidos de agentes ocupados y misiones bloqueadas; cada
+   elemento enlaza a su ficha cuando corresponde.
 
 ## Roadmap priorizado
 
@@ -237,7 +240,6 @@ read-only:
 | --- | --- | --- | --- |
 | Traza de misión | AgentOps, LangGraph | Ver claim → branch → commit → review → release en una sola línea de tiempo | M |
 | Intentos y reintentos | Temporal, Prefect | Mostrar intento actual, último error y próximo reintento | M |
-| Bandeja “necesita atención” | Prefect, Dagster, Airflow | Reunir conflictos, warnings, misiones bloqueadas y heartbeats vencidos | S |
 | Costo/tokens por misión | AgentOps, Dify | Dar contexto de eficiencia sin abrir otra herramienta | M |
 | Aprobación humana visible | LangGraph, n8n, Airflow | Mostrar “esperando aprobación” con link al issue/comentario | S |
 | Historial de loops | Airflow, Prefect | Última corrida, duración, resultado y próximo run | S |
