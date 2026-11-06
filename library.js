@@ -101,3 +101,35 @@ window.ORACLE_KB = [
   { key: 'suelo', match: ['suelo', 'orgánico', 'organico', 'compost', 'humus', 'microbios', 'microbiología', 'microbiologia'], title: 'Suelo vivo: pensar en el mediano plazo', answer: 'Un sustrato vivo depende de materia orgánica, aireación y humedad estable. El compost y los tés de humus aportan biología, pero <b>un té mal preparado puede introducir patógenos</b>. En interior, la clave es no saturar el sustrato y mantener una rutina simple; medí antes de enmiendar.', sources: [17, 18], tags: ['Suelo', 'Orgánico'] },
   { key: 'medicinal', match: ['medicinal', 'thc', 'cbd', 'terapia', 'dolor', 'dosis', 'aceite', 'cannabinoide'], title: 'Uso medicinal: evidencia y cautela', answer: 'THC y CBD no son intercambiables: sus efectos, interacciones y evidencia varían según la indicación. <b>La dosificación debe ser individualizada por un profesional de la salud.</b> La biblioteca distingue evidencia preclínica de clínica y no reemplaza una consulta. Si estás bajo tratamiento, revisá interacciones antes de cualquier preparación.', sources: [11, 12, 13], tags: ['Medicinal', 'Evidencia'] }
 ];
+
+/* Extras por curso: cada categoría declara cuántos objetos fueron cargados y cuántos
+   ya quedaron digeridos (texto + metadata + links). El denominador es el plan del curso. */
+window.LIBRARY_EXTRAS = {
+  CI: { md: 5, mdTotal: 5, fichas: 14, fichasTotal: 20, audio: 3, audioTotal: 10, papers: 2, papersTotal: 6 },
+  CA: { md: 4, mdTotal: 6, fichas: 11, fichasTotal: 18, audio: 4, audioTotal: 8, papers: 3, papersTotal: 9 },
+  CM: { md: 2, mdTotal: 4, fichas: 9, fichasTotal: 16, audio: 2, audioTotal: 12, papers: 5, papersTotal: 11 },
+  ET: { md: 1, mdTotal: 3, fichas: 6, fichasTotal: 14, audio: 1, audioTotal: 6, papers: 1, papersTotal: 5 },
+  AA: { md: 2, mdTotal: 4, fichas: 7, fichasTotal: 12, audio: 2, audioTotal: 6, papers: 2, papersTotal: 8 },
+  GP: { md: 4, mdTotal: 6, fichas: 8, fichasTotal: 15, audio: 1, audioTotal: 5, papers: 2, papersTotal: 7 }
+};
+
+/* Pipeline de digestión documental. Cada etapa tiene un peso y un % real del dataset demo. */
+window.LIBRARY_PIPELINE = [
+  { id: 'ingest', name: 'Ingesta PDF', note: 'Archivo + checksum + ruta original', pct: 100, weight: 18 },
+  { id: 'ocr', name: 'OCR / texto', note: 'Capa de texto y control de calidad', pct: 96, weight: 16 },
+  { id: 'meta', name: 'Metadata', note: 'Curso, módulo, año, idioma, tags', pct: 88, weight: 16 },
+  { id: 'markdown', name: 'Markdown ordenado', note: 'H1/H2, tablas, fórmulas, bloques', pct: 64, weight: 20 },
+  { id: 'embed', name: 'Embeddings', note: 'Chunks semánticos por sección', pct: 47, weight: 14 },
+  { id: 'graph', name: 'Grafo de vínculos', note: 'Conceptos ↔ fuentes ↔ módulos', pct: 31, weight: 10 },
+  { id: 'insight', name: 'Insights', note: 'Contradicciones, acuerdos, huecos', pct: 18, weight: 6 }
+];
+
+/* Vínculos demo que el índice de sabiduría usa para proponer lecturas cruzadas. */
+window.WISDOM_BRIDGES = [
+  { tag: 'riego', label: 'Riego y sustrato', courses: ['CI', 'CA', 'AA'], note: 'Tres cursos describen el mismo fenómeno con enfoques distintos: rutina, pH/EC y bajo insumo.' },
+  { tag: 'autoflorecientes', label: 'Autoflorecientes', courses: ['CI', 'CA'], note: 'El ciclo corto aparece como genética y como restricción operativa. Conviene leer ambos antes de planificar.' },
+  { tag: 'cosecha', label: 'Cosecha y curado', courses: ['CA', 'CM'], note: 'Postcosecha se repite entre avanzado y medicinal: tricomas, humedad y prevención de moho.' },
+  { tag: 'legal', label: 'Marco legal', courses: ['GP'], note: 'REPROCANN y registros provinciales son la misma familia normativa con distinto alcance.' },
+  { tag: 'plagas', label: 'Sanidad', courses: ['CI', 'AA'], note: 'Manejo integrado y control biológico se complementan: uno define umbrales, el otro enemigos naturales.' },
+  { tag: 'presupuesto', label: 'Costos', courses: ['GP', 'CA'], note: 'Energía y amortización conectan el curso de gestión con iluminación.' }
+];

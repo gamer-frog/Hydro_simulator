@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="views.css" />
   <link rel="stylesheet" href="panels.css" />
+  <link rel="stylesheet" href="verde-v3.css" />
 </head>
 <body>
   <div class="app">
@@ -43,6 +44,7 @@
         <nav class="side-nav" aria-label="Planificar">
           <button class="nav-item" data-nav="budget"><span class="nav-ico">◫</span><span>Costos</span></button>
           <button class="nav-item" data-nav="process"><span class="nav-ico">◷</span><span>Proceso</span></button>
+          <button class="nav-item" data-nav="roadmap"><span class="nav-ico">◇</span><span>Roadmap</span><em id="navRoad">0%</em></button>
         </nav>
       </div>
 
@@ -76,127 +78,166 @@
       </header>
 
       <main class="views">
-        <!-- ============================================================ INICIO -->
+        <!-- ============================================================ INICIO · ÍNDICE -->
         <section class="view active" id="view-panel">
-          <div class="dash-hero">
-            <div class="dash-hero-media">
-              <img src="assets/hero-bud.jpg" alt="Cogollo de cannabis iluminado en interior" />
-              <div class="dash-hero-shade"></div>
-              <div class="dash-hero-copy">
-                <div class="hero-eyebrow"><span class="live-dot"></span>TEMPORADA 2026 <i>/</i> 9 AUTOS · 15 M²</div>
-                <h1>Cultivá con<br><em>criterio.</em></h1>
-                <p>Del primer riego al último frasco: simulá, registrá y entendé cada decisión. Con la biblioteca de tus diplomaturas siempre a mano.</p>
-                <div class="hero-actions">
-                  <button class="btn btn-lime" data-nav="sim">Continuar el día <span id="heroCtaDay">01</span> <i>→</i></button>
-                  <button class="btn btn-glass" data-nav="strains">Explorar cepas</button>
-                </div>
-                <div class="hero-meta">
-                  <span><b id="heroHealth">91%</b> salud media</span>
-                  <span><b id="heroDays">74</b> días restantes</span>
-                  <span><b id="heroHarvest">0</b> cosechas</span>
-                </div>
+          <div class="index-head">
+            <div class="index-head-copy">
+              <div class="eyebrow"><span class="live-dot"></span>VERDE <i>/</i> <span>ÍNDICE GENERAL · v2.6</span></div>
+              <h1>La app,<br><em>en un mapa.</em></h1>
+              <p class="lead">Cada sector abre una parte de Verde y muestra su estado real. Esto no es un diario: es un laboratorio para recorrer un batch completo, digerir tus cursos y comparar estrategias como un benchmark.</p>
+              <div class="index-hero-actions">
+                <button class="btn btn-lime" data-nav="sim">Abrir simulador batch <span>→</span></button>
+                <button class="btn btn-ghost" id="idxRunBatch">Correr benchmark <span>⚡</span></button>
+                <button class="btn btn-ghost" data-nav="roadmap">Roadmap <span>◇</span></button>
               </div>
-              <div class="hero-credit">IMAGEN · UNSPLASH</div>
             </div>
-
-            <aside class="season-card">
-              <div class="season-card-head">
-                <span class="section-kicker">TEMPORADA EN CURSO</span>
-                <span class="phase-pill" id="panelPhase">PLÁNTULA</span>
-              </div>
-              <div class="season-day">
-                <span class="season-day-label">DÍA</span>
-                <b id="heroDay">01</b>
-                <span class="season-day-total">/ 75</span>
-                <div class="season-ring" aria-hidden="true"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="19"></circle><circle class="ring-fill" id="heroRing" cx="22" cy="22" r="19"></circle></svg></div>
-              </div>
-              <div class="season-phase-line"><b id="heroPhase">Plántula</b><span id="panelMilestone">Próximo: día 12 · Crecimiento</span></div>
-              <div class="season-progress"><i id="heroProgress"></i></div>
-              <div class="mini-greenhouse">
-                <div class="mini-lamp"></div>
-                <div class="mini-grid" id="miniPlants"></div>
-                <div class="mini-caption"><span>INVERNADERO 3 × 5</span><span><i></i> ESTABLE</span></div>
-              </div>
-              <p class="season-insight" id="heroInsight">Nueve plantas, 15 m² y una rutina por construir. Hoy conviene observar el sustrato y no regar de más.</p>
-              <button class="btn btn-soft full" data-nav="sim">Abrir la jornada <span>→</span></button>
+            <aside class="index-north">
+              <div class="north-glow"></div>
+              <span class="section-kicker">NORTH STAR</span>
+              <b>Entender el batch completo</b>
+              <p>Semilla a frasco. 75 días, 6 fases y 9 plantas en un timelapse con eventos. Una corrida se entiende entera, no día por día.</p>
+              <div class="north-progress"><i id="idxNorthBar"></i></div>
+              <div class="north-foot"><span id="idxNorthLabel">Día 1 de 75 · listo para simular</span><span id="idxNorthPct">1%</span></div>
             </aside>
           </div>
 
-          <div class="stat-strip">
-            <div class="stat">
-              <span class="stat-ico green">✳</span>
-              <div><span class="stat-label">PLANTAS ACTIVAS</span><b><span id="statPlants">9</span><small>/ 9 legales</small></b></div>
-              <div class="stat-bar"><i style="width:100%"></i></div>
-            </div>
-            <div class="stat">
-              <span class="stat-ico">▦</span>
-              <div><span class="stat-label">BIBLIOTECA</span><b><span id="statDocs">28</span><small>recursos</small></b></div>
-              <span class="stat-trend">6 DIPLOMATURAS</span>
-            </div>
-            <div class="stat">
-              <span class="stat-ico">◫</span>
-              <div><span class="stat-label">COSTO DE TEMPORADA</span><b>$<span id="statBudget">406.890</span><small>ARS</small></b></div>
-              <span class="stat-trend" id="statPerGram">$822 / g</span>
-            </div>
-            <div class="stat">
-              <span class="stat-ico">◈</span>
-              <div><span class="stat-label">CONSULTAS AL ORÁCULO</span><b><span id="statQueries">0</span><small>registradas</small></b></div>
-              <span class="stat-trend">LOCAL</span>
-            </div>
+          <div class="index-status">
+            <div class="is-cell"><span>BATCH ACTUAL</span><b><span id="idxSimDay">01</span><small>/ 75 días</small></b><i class="is-bar"><i id="idxSimProgress"></i></i></div>
+            <div class="is-cell"><span>PLANTAS ACTIVAS</span><b><span id="statPlants">9</span><small>/ 9 legales</small></b><span class="is-tag">15 m²</span></div>
+            <div class="is-cell"><span>SALUD MEDIA</span><b id="idxHealth">91%</b><span class="is-tag" id="idxHealthTag">ESTABLE</span></div>
+            <div class="is-cell"><span>BIBLIOTECA</span><b><span id="statDocs">28</span><small>PDFs</small></b><span class="is-tag">6 cursos</span></div>
+            <div class="is-cell"><span>PÁGINAS DIGERIDAS</span><b id="idxLibPct">67%</b><i class="is-bar"><i id="idxLibBar"></i></i></div>
+            <div class="is-cell"><span>COSTO DE TEMPORADA</span><b>$<span id="statBudget">406.890</span></b><span class="is-tag" id="statPerGram">$822 / g</span></div>
+            <div class="is-cell"><span>CONSULTAS AL ORÁCULO</span><b id="statQueries">0</b><span class="is-tag">LOCAL</span></div>
+            <div class="is-cell"><span>ROADMAP</span><b id="idxRoadmapDone">0/0</b><span class="is-tag">VIVO</span></div>
           </div>
 
-          <div class="section-row">
-            <div>
-              <span class="section-kicker">COLECCIÓN</span>
-              <h2>Tu genética, <em>en foco.</em></h2>
-            </div>
-            <button class="text-link" data-nav="strains">Ver las 14 cepas <span>→</span></button>
+          <div class="index-grid">
+            <article class="idx-card idx-card-sim idx-span-3">
+              <div class="idx-card-top">
+                <span class="idx-num">01</span>
+                <span class="idx-kicker">SIMULADOR · BATCH COMPLETO</span>
+                <span class="phase-pill" id="idxPhasePill">PLÁNTULA</span>
+              </div>
+              <div class="idx-card-body">
+                <h2>Un batch,<br><em>en timelapse.</em></h2>
+                <p>Corré los 75 días de una vez o mirá el replay con eventos. Compará estrategias por rendimiento, costo por gramo y salud, con un score explicado.</p>
+                <div class="idx-timelapse" id="idxTimelapse">
+                  <div class="idx-tl-seg" style="--pct:14.7"><span>Plántula</span><i></i></div>
+                  <div class="idx-tl-seg" style="--pct:20"><span>Crecimiento</span><i></i></div>
+                  <div class="idx-tl-seg" style="--pct:13.3"><span>Prefloración</span><i></i></div>
+                  <div class="idx-tl-seg" style="--pct:26.7"><span>Floración</span><i></i></div>
+                  <div class="idx-tl-seg" style="--pct:13.3"><span>Maduración</span><i></i></div>
+                  <div class="idx-tl-seg" style="--pct:12"><span>Curado</span><i></i></div>
+                  <div class="idx-tl-playhead" id="idxPlayhead"></div>
+                </div>
+                <div class="idx-batch-readout">
+                  <div><span>DÍA</span><b id="idxBatchDay">01</b></div>
+                  <div><span>FASE</span><b id="idxBatchPhase">Plántula</b></div>
+                  <div><span>PRÓXIMO HITO</span><b id="idxMilestone">Día 12 · Crecimiento</b></div>
+                  <div><span>COSECHAS</span><b id="idxHarvest">0</b></div>
+                </div>
+                <div class="idx-mini-herd"><div class="idx-mini-lamp"></div><div class="idx-mini-plants" id="idxMiniPlants"></div></div>
+                <div class="idx-event-list" id="idxBatchEvents"></div>
+              </div>
+              <div class="idx-card-foot">
+                <div class="idx-foot-meta"><span class="live-dot"></span><span id="idxBatchState">LISTO PARA CORRER</span><span>·</span><span>3 ESTRATEGIAS</span></div>
+                <div class="idx-actions"><button class="text-link" data-nav="journal">Abrir diario <span>→</span></button><button class="btn btn-soft" data-nav="sim">Entrar al batch <span>→</span></button></div>
+              </div>
+            </article>
+
+            <article class="idx-card idx-card-library idx-span-3">
+              <div class="idx-card-top">
+                <span class="idx-num">02</span>
+                <span class="idx-kicker">BIBLIOTECA · ÍNDICE DE SABIDURÍA</span>
+                <span class="idx-mini-pill" id="idxLibMd">12 MD</span>
+              </div>
+              <div class="idx-card-body">
+                <h2>Tus cursos,<br><em>digeridos.</em></h2>
+                <p>Cada curso muestra su nombre y el % de PDFs ya convertidos a Markdown con metadata. Los extras declaran qué falta cargar y los tags cruzan información entre cursos.</p>
+                <div class="idx-course-list" id="idxCourseList"></div>
+                <div class="idx-extras" id="idxExtras"></div>
+              </div>
+              <div class="idx-card-foot">
+                <div class="idx-foot-meta"><span class="live-dot"></span><span>PIPELINE ACTIVO</span><span>·</span><span>METADATA + LINKS</span></div>
+                <div class="idx-actions"><button class="text-link" data-nav="library">Abrir biblioteca <span>→</span></button><button class="btn btn-soft" data-nav="library" data-libmode="digest">Ver índice <span>◈</span></button></div>
+              </div>
+            </article>
+
+            <article class="idx-card idx-span-2">
+              <div class="idx-card-top"><span class="idx-num">03</span><span class="idx-kicker">CEPAS</span><span class="idx-mini-pill">14 AUTOS</span></div>
+              <div class="idx-card-body compact">
+                <h2>Genética,<br><em>en foco.</em></h2>
+                <p>14 autoflorecientes con THC, ciclo, rendimiento, terpenos y notas de cultivo.</p>
+                <div class="idx-tags" id="idxStrainPicks"></div>
+              </div>
+              <div class="idx-card-foot"><span class="idx-foot-meta">CATÁLOGO CURADO</span><button class="text-link" data-nav="strains">Explorar <span>→</span></button></div>
+            </article>
+
+            <article class="idx-card idx-span-2">
+              <div class="idx-card-top"><span class="idx-num">04</span><span class="idx-kicker">DIARIO</span><span class="idx-mini-pill" id="idxWeekPill">S1</span></div>
+              <div class="idx-card-body compact">
+                <h2>El batch,<br><em>semana a semana.</em></h2>
+                <p>Ambiente, tareas, fotos y resultado. El contexto que convierte una corrida en aprendizaje.</p>
+                <div class="idx-week-rail" id="idxJournalWeeks"></div>
+              </div>
+              <div class="idx-card-foot"><span class="idx-foot-meta">11 SEMANAS · EXPORT MD</span><button class="text-link" data-nav="journal">Abrir <span>→</span></button></div>
+            </article>
+
+            <article class="idx-card idx-span-2 idx-card-oracle">
+              <div class="idx-card-top"><span class="idx-num">05</span><span class="idx-kicker">ORÁCULO IA</span><span class="idx-mini-pill lime">LOCAL</span></div>
+              <div class="idx-card-body compact">
+                <h2>Preguntá.<br><em>La biblioteca responde.</em></h2>
+                <p><b id="idxOracleQueries">0</b> consultas registradas. Cada respuesta cita curso, módulo y recurso.</p>
+                <div class="idx-ask"><span>“¿Cuándo cosechar una auto?”</span><button data-ask="¿Cuándo conviene cosechar una autofloreciente?" aria-label="Preguntar">→</button></div>
+              </div>
+              <div class="idx-card-foot"><span class="idx-foot-meta">6 DIPLOMATURAS</span><button class="text-link" data-nav="oracle">Consultar <span>→</span></button></div>
+            </article>
+
+            <article class="idx-card idx-span-2">
+              <div class="idx-card-top"><span class="idx-num">06</span><span class="idx-kicker">COSTOS</span><span class="idx-mini-pill">ARS 2026</span></div>
+              <div class="idx-card-body compact">
+                <h2>El costo real,<br><em>por gramo.</em></h2>
+                <p>Energía, insumos, amortización y escala. Editá supuestos y mirá el impacto.</p>
+                <div class="idx-kpi"><b id="idxCostGram">$822</b><span>por gramo</span><b id="idxCostTotal">$406.890</b><span>temporada</span></div>
+              </div>
+              <div class="idx-card-foot"><span class="idx-foot-meta">9 PLANTAS · 15 M²</span><button class="text-link" data-nav="budget">Ajustar <span>→</span></button></div>
+            </article>
+
+            <article class="idx-card idx-span-2">
+              <div class="idx-card-top"><span class="idx-num">07</span><span class="idx-kicker">PROCESO</span><span class="idx-mini-pill" id="idxProcessPill">0/24</span></div>
+              <div class="idx-card-body compact">
+                <h2>Las 6 fases,<br><em>sin saltos.</em></h2>
+                <p>Checklist operativa, foco de cada etapa y marco legal argentino.</p>
+                <div class="idx-phase-mini"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                <div class="idx-progress-line"><i id="idxProcessBar"></i></div>
+              </div>
+              <div class="idx-card-foot"><span class="idx-foot-meta">REPROCANN · 2026</span><button class="text-link" data-nav="process">Revisar <span>→</span></button></div>
+            </article>
+
+            <article class="idx-card idx-span-2 idx-card-roadmap">
+              <div class="idx-card-top"><span class="idx-num">08</span><span class="idx-kicker">ROADMAP VIVO</span><span class="idx-mini-pill lime" id="idxRoadPct">0%</span></div>
+              <div class="idx-card-body compact">
+                <h2>El camino<br><em>a seguir.</em></h2>
+                <p>Todo lo que queremos construir, ordenado por horizonte, impacto, esfuerzo y dependencia.</p>
+                <div class="idx-road-next"><span>PRÓXIMO</span><b id="idxRoadNext">Cargando roadmap…</b></div>
+              </div>
+              <div class="idx-card-foot"><span class="idx-foot-meta">7 FRENTES · 4 HORIZONTES</span><button class="text-link" data-nav="roadmap">Ver roadmap <span>◇</span></button></div>
+            </article>
           </div>
-          <div class="strain-rail" id="strainRail"></div>
 
-          <div class="dash-columns">
-            <section class="card journal-preview">
-              <div class="card-head">
-                <div><span class="section-kicker">DIARIO DE CULTIVO</span><h2>La temporada, semana a semana</h2></div>
-                <button class="text-link" data-nav="journal">Abrir diario <span>→</span></button>
-              </div>
-              <div class="week-rail" id="dashWeeks"></div>
-              <div class="season-track" id="seasonTrack"></div>
-              <div class="focus-list" id="focusList"></div>
-              <button class="btn btn-soft full" data-nav="sim">Registrar el día <span>→</span></button>
+          <div class="index-foot-grid">
+            <section class="idx-card idx-span-2">
+              <div class="idx-card-top"><span class="idx-kicker">INSIGHTS DE LA BIBLIOTECA</span><span class="idx-mini-pill">AUTO</span></div>
+              <div class="idx-card-body compact"><div class="idx-insights" id="idxInsights"></div></div>
             </section>
-
-            <section class="oracle-card">
-              <div class="oracle-glow"></div>
-              <div class="oracle-card-head">
-                <span class="oracle-orb">◈</span>
-                <span><span class="section-kicker">ORÁCULO VERDE</span><b>Preguntale a tu biblioteca.</b></span>
-                <i class="beta">IA</i>
-              </div>
-              <p>Respuestas trazables, extraídas de tus diplomaturas. Sin inventar fuentes.</p>
-              <div class="oracle-suggestion">
-                <span>“¿Cuándo conviene cosechar una autofloreciente?”</span>
-                <button data-ask="¿Cuándo conviene cosechar una autofloreciente?" aria-label="Preguntar">→</button>
-              </div>
-              <div class="oracle-chips">
-                <button data-ask="Riego y pH en autoflorecientes">Riego y pH</button>
-                <button data-ask="¿Cómo presupuesto mi temporada?">Presupuesto</button>
-                <button data-ask="Marco legal Argentina 2026">Marco legal</button>
-              </div>
-              <button class="oracle-link" data-nav="oracle">Abrir el oráculo <span>↗</span></button>
+            <section class="idx-card idx-span-2">
+              <div class="idx-card-top"><span class="idx-kicker">RECIÉN DIGERIDO</span><span class="idx-mini-pill" id="idxRecentCount">3</span></div>
+              <div class="idx-card-body compact"><div class="idx-recent" id="idxRecent"></div></div>
             </section>
-          </div>
-
-          <div class="dash-columns dash-columns-wide">
-            <section class="card">
-              <div class="card-head"><div><span class="section-kicker">RECIÉN INDEXADO</span><h2>De tus diplomaturas</h2></div><button class="text-link" data-nav="library">Ver todo →</button></div>
-              <div class="recent-list" id="recentList"></div>
-            </section>
-            <section class="card insight-card">
-              <div class="card-head"><div><span class="section-kicker">INSIGHT AUTOMÁTICO</span><h2>Lo que se repite</h2></div><span class="insight-count" id="insightCount">5</span></div>
-              <p class="insight-copy">Hay <b id="dupCount">12</b> recursos duplicados entre diplomaturas. Verde los vincula sin borrar el original: sabés de dónde viene cada versión.</p>
-              <div class="insight-pair" id="insightPair"></div>
-              <button class="text-link" data-nav="library" data-filter-dup="1">Revisar duplicados →</button>
+            <section class="idx-card idx-span-2">
+              <div class="idx-card-top"><span class="idx-kicker">ATAJOS DE NAVEGACIÓN</span><span class="idx-mini-pill">⌘K</span></div>
+              <div class="idx-card-body compact"><div class="idx-shortcuts" id="idxShortcuts"></div></div>
             </section>
           </div>
         </section>
@@ -289,9 +330,9 @@
         <section class="view" id="view-sim">
           <div class="view-head sim-head">
             <div>
-              <div class="eyebrow"><span class="live-dot"></span>SIMULADOR <i>/</i> <span>15 M² · 9 AUTOS</span></div>
-              <h1>Tu pequeño<br><em>ecosistema.</em></h1>
-              <p class="lead">Una rutina diaria, un presupuesto real y decisiones que dejan huella. Avanzá rápido cuando ya sepas qué hacer.</p>
+              <div class="eyebrow"><span class="live-dot"></span>SIMULADOR <i>/</i> <span>BATCH COMPLETO · 15 M² · 9 AUTOS</span></div>
+              <h1>El batch completo,<br><em>como una corrida.</em></h1>
+              <p class="lead">No es un diario: es un timelapse de 75 días con eventos. Corré el batch entero, compará estrategias y entendé qué movió el resultado.</p>
             </div>
             <div class="head-actions">
               <button class="btn btn-ghost icon-only" id="resetSimBtn" aria-label="Reiniciar temporada" title="Reiniciar temporada">↺</button>
@@ -308,6 +349,28 @@
             <div class="sim-status-item"><span class="section-kicker">GASTO ACUMULADO</span><b id="spentLabel">$0</b></div>
             <div class="sim-status-item wide"><span class="section-kicker">PRÓXIMO HITO</span><b id="milestoneLabel">Día 12 · Crecimiento</b></div>
           </div>
+
+          <section class="batch-card">
+            <div class="batch-head">
+              <div>
+                <span class="section-kicker">BATCH BENCHMARK · 75 DÍAS</span>
+                <h2>La temporada completa, <em>como una corrida comparable.</em></h2>
+              </div>
+              <div class="batch-head-actions">
+                <button class="btn btn-ghost" id="timelapseBtn"><span class="tl-ico">▶</span> Timelapse</button>
+                <button class="btn btn-lime" id="batchRunBtn">Correr 3 estrategias <span>⚡</span></button>
+              </div>
+            </div>
+            <div class="batch-grid" id="batchGrid"></div>
+            <div class="timelapse-band">
+              <div class="timelapse-track" id="timelapseTrack"></div>
+              <div class="timelapse-events" id="timelapseEvents"></div>
+            </div>
+            <div class="batch-foot">
+              <span>El benchmark corre simulaciones aisladas: no modifica tu partida hasta que elegís una.</span>
+              <span>Score = rendimiento 35% · costo/g 25% · salud 25% · estabilidad 15%</span>
+            </div>
+          </section>
 
           <div class="sim-grid">
             <div class="sim-main">
@@ -373,26 +436,72 @@
           </div>
 
           <div class="library-stats">
-            <div><span>RECURSOS INDEXADOS</span><b id="libTotal">28</b></div><div><span>DIPLOMATURAS</span><b>6</b></div><div><span>PROCESADOS A MARKDOWN</span><b id="libProcessed">12</b></div><div><span>GRUPOS DUPLICADOS</span><b id="libDuplicates">5</b></div><div class="lib-storage"><span>ÍNDICE COMPARTIDO</span><b>v0.8</b><small><span id="libVerified">28</span> de <span id="libVerifiedTotal">28</span> ubicaciones verificadas</small></div>
+            <div><span>RECURSOS INDEXADOS</span><b id="libTotal">28</b></div><div><span>CURSOS / DIPLOMATURAS</span><b>6</b></div><div><span>MARKDOWN · PÁGINAS</span><b id="libProcessed">12</b><small id="libProcessedPct">MD · 67%</small></div><div><span>GRUPOS DUPLICADOS</span><b id="libDuplicates">5</b></div><div class="lib-storage"><span>PIPELINE DOCUMENTAL</span><b>v0.9</b><small><span id="libVerified">28</span> de <span id="libVerifiedTotal">28</span> ubicaciones verificadas · metadata + links en curso</small></div>
           </div>
 
-          <div class="library-toolbar">
-            <label class="search-field"><span>⌕</span><input id="libSearch" type="search" placeholder="Buscar por tema, título, etiqueta o diplomatura…" /><kbd>⌘ K</kbd></label>
-            <select id="libDiploma" class="select"><option value="all">Todas las diplomaturas</option></select>
-            <select id="libState" class="select"><option value="all">Todos los estados</option><option value="markdown">Markdown listo</option><option value="procesado">Procesado</option><option value="pendiente">Pendiente</option></select>
-            <select id="libSort" class="select"><option value="recent">Más reciente</option><option value="diploma">Por diplomatura</option><option value="title">Título A–Z</option><option value="pages">Más páginas</option></select>
-            <button class="toggle-btn" id="dupToggle"><span class="toggle-dot"></span>Solo duplicados</button>
+          <div class="lib-mode-tabs" id="libModeTabs">
+            <button class="lib-mode active" data-libmode="digest"><span class="lm-ico">◈</span><span><b>Vista digerida</b><small>Índice de sabiduría · cursos, % cargado, metadata y vínculos</small></span></button>
+            <button class="lib-mode" data-libmode="files"><span class="lm-ico">▦</span><span><b>Archivos PDF</b><small>28 recursos · búsqueda, filtros y duplicados</small></span></button>
+            <button class="lib-mode-ask" data-nav="oracle"><span>◈</span> Preguntar al índice</button>
           </div>
 
-          <div class="dup-banner" id="dupBanner"><span class="dup-banner-icon">⧉</span><div><b>Contenido repetido, contexto distinto.</b><p id="dupBannerText">12 recursos aparecen en más de una diplomatura. Verde los vincula sin borrar el original: sabés de dónde viene cada versión y dónde está guardada.</p></div><button id="showDupBtn">Ver grupos →</button></div>
-
-          <div class="library-layout">
-            <div class="library-list-card">
-              <div class="list-head"><span id="libResultCount">28 recursos</span><span class="list-head-legend"><i></i> Origen verificado</span></div>
-              <div class="lib-list" id="libList"></div>
-              <div class="lib-empty" id="libEmpty" hidden><b>Sin resultados.</b><p>Probá con otra búsqueda o quitá los filtros.</p><button class="text-link" id="clearFilters">Limpiar filtros</button></div>
+          <div id="libDigest">
+            <div class="digest-top">
+              <div class="digest-copy">
+                <span class="section-kicker">CURSO POR CURSO</span>
+                <h2>Qué está cargado, <em>qué falta digerir.</em></h2>
+                <p>Cada curso declara su nombre real, sus PDFs, sus páginas y el porcentaje convertido a Markdown con metadata. Los extras muestran qué categorías del curso todavía no están completas.</p>
+                <div class="digest-quick" id="digestQuickStats"></div>
+              </div>
+              <div class="digest-pipeline" id="libPipeline"></div>
             </div>
-            <aside class="resource-detail" id="resourceDetail"></aside>
+
+            <div class="lib-course-grid" id="libCourseGrid"></div>
+
+            <div class="wisdom-layout">
+              <section class="wisdom-card">
+                <div class="wisdom-head">
+                  <div><span class="section-kicker">ÍNDICE DE SABIDURÍA</span><h2>El libro completo, <em>en orden.</em></h2><p>Curso → módulo → recurso. Cada entrada conserva su ruta original, su Markdown y su porcentaje de digestión.</p></div>
+                  <div class="wisdom-head-side"><span id="wisdomCount">0 entradas</span><span class="idx-mini-pill lime" id="wisdomPct">0%</span></div>
+                </div>
+                <div class="wisdom-index" id="wisdomIndex"></div>
+              </section>
+              <aside class="wisdom-side">
+                <section class="card wisdom-panel">
+                  <div class="wisdom-panel-head"><div><span class="section-kicker">CONCEPTOS QUE CONECTAN</span><h3>Tag graph</h3></div><span class="idx-mini-pill" id="wisdomTagCount">0</span></div>
+                  <div class="wisdom-links" id="wisdomLinks"></div>
+                </section>
+                <section class="card wisdom-panel">
+                  <div class="wisdom-panel-head"><div><span class="section-kicker">INSIGHTS AUTOMÁTICOS</span><h3>Lo que emerge</h3></div><span class="idx-mini-pill lime">NUEVO</span></div>
+                  <div class="wisdom-insights" id="wisdomInsights"></div>
+                </section>
+                <section class="card wisdom-panel">
+                  <div class="wisdom-panel-head"><div><span class="section-kicker">METADATA + MARKDOWN</span><h3>Orden de archivos</h3></div><span class="idx-mini-pill">MD</span></div>
+                  <div class="wisdom-meta" id="wisdomMeta"></div>
+                </section>
+              </aside>
+            </div>
+          </div>
+
+          <div id="libFiles" hidden>
+            <div class="library-toolbar">
+              <label class="search-field"><span>⌕</span><input id="libSearch" type="search" placeholder="Buscar por tema, título, etiqueta o diplomatura…" /><kbd>⌘ K</kbd></label>
+              <select id="libDiploma" class="select"><option value="all">Todas las diplomaturas</option></select>
+              <select id="libState" class="select"><option value="all">Todos los estados</option><option value="markdown">Markdown listo</option><option value="procesado">Procesado</option><option value="pendiente">Pendiente</option></select>
+              <select id="libSort" class="select"><option value="recent">Más reciente</option><option value="diploma">Por diplomatura</option><option value="title">Título A–Z</option><option value="pages">Más páginas</option></select>
+              <button class="toggle-btn" id="dupToggle"><span class="toggle-dot"></span>Solo duplicados</button>
+            </div>
+
+            <div class="dup-banner" id="dupBanner"><span class="dup-banner-icon">⧉</span><div><b>Contenido repetido, contexto distinto.</b><p id="dupBannerText">12 recursos aparecen en más de una diplomatura. Verde los vincula sin borrar el original: sabés de dónde viene cada versión y dónde está guardada.</p></div><button id="showDupBtn">Ver grupos →</button></div>
+
+            <div class="library-layout">
+              <div class="library-list-card">
+                <div class="list-head"><span id="libResultCount">28 recursos</span><span class="list-head-legend"><i></i> Origen verificado</span></div>
+                <div class="lib-list" id="libList"></div>
+                <div class="lib-empty" id="libEmpty" hidden><b>Sin resultados.</b><p>Probá con otra búsqueda o quitá los filtros.</p><button class="text-link" id="clearFilters">Limpiar filtros</button></div>
+              </div>
+              <aside class="resource-detail" id="resourceDetail"></aside>
+            </div>
           </div>
         </section>
 
@@ -500,6 +609,61 @@
             </aside>
           </div>
         </section>
+
+        <!-- ============================================================ ROADMAP -->
+        <section class="view" id="view-roadmap">
+          <div class="view-head roadmap-head">
+            <div>
+              <div class="eyebrow"><span class="live-dot"></span>DESARROLLO <i>/</i> <span>ROADMAP VIVO · <span id="roadmapVersion">v2.6</span></span></div>
+              <h1>El camino,<br><em>sin perderlo.</em></h1>
+              <p class="lead">Todo lo que queremos construir, ordenado por horizonte, impacto y dependencia. No es una lista de deseos: es el contrato de largo plazo de Verde.</p>
+            </div>
+            <div class="head-actions"><button class="btn btn-ghost" id="exportRoadmapBtn">Exportar roadmap <span>↓</span></button><button class="btn btn-lime" data-nav="panel">Volver al índice <span>→</span></button></div>
+          </div>
+
+          <div class="roadmap-hero">
+            <div class="roadmap-north-card">
+              <div class="north-glow"></div>
+              <span class="section-kicker">NORTH STAR</span>
+              <h2 id="roadmapNorth">Entender un batch completo.</h2>
+              <p id="roadmapStatement"></p>
+              <div class="roadmap-progress"><i id="roadmapProgressBar"></i></div>
+              <div class="roadmap-progress-foot"><span id="roadmapProgressLabel">0 de 0 hitos</span><b id="roadmapProgressPct">0%</b></div>
+            </div>
+            <div class="roadmap-metrics" id="roadmapMetrics"></div>
+          </div>
+
+          <div class="roadmap-horizons" id="roadmapHorizons"></div>
+
+          <div class="roadmap-toolbar">
+            <div class="roadmap-legend"><span><i class="rs-done"></i>En la app</span><span><i class="rs-now"></i>En construcción</span><span><i class="rs-next"></i>Próximo</span><span><i class="rs-later"></i>Visión</span></div>
+            <div class="roadmap-filters" id="roadmapFilters"></div>
+            <button class="toggle-btn" id="roadmapPendingToggle"><span class="toggle-dot"></span>Solo pendientes</button>
+          </div>
+
+          <div class="roadmap-layout">
+            <div class="roadmap-streams" id="roadmapStreams"></div>
+            <aside class="roadmap-side">
+              <section class="card roadmap-panel">
+                <div class="roadmap-panel-head"><span class="section-kicker">CÓMO LEERLO</span><h3>Reglas del camino</h3></div>
+                <div class="roadmap-principles" id="roadmapPrinciples"></div>
+              </section>
+              <section class="card roadmap-panel">
+                <div class="roadmap-panel-head"><span class="section-kicker">LO QUE NO VAMOS A HACER</span><h3>No objetivos</h3></div>
+                <div class="roadmap-nongoals" id="roadmapNonGoals"></div>
+              </section>
+              <section class="card roadmap-panel">
+                <div class="roadmap-panel-head"><span class="section-kicker">RIESGOS ABIERTOS</span><h3>Qué vigilar</h3></div>
+                <div class="roadmap-risks" id="roadmapRisks"></div>
+              </section>
+              <section class="card roadmap-panel roadmap-next-panel">
+                <div class="roadmap-panel-head"><span class="section-kicker">SIGUIENTE MOVIMIENTO</span><h3>Ahora mismo</h3></div>
+                <div id="roadmapNext"></div>
+                <button class="btn btn-soft full" data-nav="library">Abrir la biblioteca <span>→</span></button>
+              </section>
+            </aside>
+          </div>
+        </section>
       </main>
     </div>
   </div>
@@ -520,6 +684,7 @@
       <button data-nav="oracle"><span>◈</span><b>Oráculo</b><small>Con fuentes</small></button>
       <button data-nav="budget"><span>◫</span><b>Costos</b><small>ARS 2026</small></button>
       <button data-nav="process"><span>◷</span><b>Proceso</b><small>75 días</small></button>
+      <button data-nav="roadmap"><span>◇</span><b>Roadmap</b><small>El camino</small></button>
     </div>
     <div class="sheet-legal"><span class="live-dot"></span>Autocultivo registrado · 15 m² · 9 plantas · Argentina 2026</div>
   </div>
@@ -540,6 +705,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="library.js"></script>
   <script src="strains.js"></script>
+  <script src="roadmap.js"></script>
   <script src="game.js"></script>
 </body>
 </html>

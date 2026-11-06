@@ -31,7 +31,8 @@
   const defaultApp = () => ({
     view: 'panel', budget: initialBudget(), tasks: {}, legal: {}, userResources: [],
     selectedResource: null, queries: 0, chat: [], chatSources: [], dupOnly: false,
-    journalWeek: null, journalTasks: {}, selectedStrain: null, grows: []
+    journalWeek: null, journalTasks: {}, selectedStrain: null, grows: [],
+    libMode: 'digest', batch: null, roadmapStream: 'all', roadmapPending: false, roadmapHorizon: 'all'
   });
 
   let game, app;
@@ -63,6 +64,56 @@
   };
   const stageForDay = (d) => [...STAGES].reverse().find(s => d >= s.from) || STAGES[0];
   const nextStage = (d) => STAGES.find(s => s.from > d);
+
+  /* ---------- biblioteca derivada ---------- */
+  // 100 = markdown listo · 62 = texto procesado sin estructura final · 0 = pendiente
+  const resourceProgress = (r) => r.state === 'markdown' ? 100 : r.state === 'procesado' ? 62 : 0;
+  const slug = (s) => norm(s).replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 42);
+  const mdPath = (r) => `md/${String(r.code || 'AP').toLowerCase()}/${slug(r.module || 'modulo')}/${String(r.id).padStart(3, '0')}_${slug(r.title)}.md`;
+  const mdHash = (r) => {
+    let h = 0;
+    for (const ch of String(r.path)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return h.toString(16).padStart(8, '0').toUpperCase();
+  };
+  const courseOf = (r) => window.DIPLOMAS.find(d => d.code === r.code) || { name: r.diploma, code: r.code || 'AP', color: '#6d8a5a' };
+  const resourcesOf = (code) => allResources().filter(r => r.code === code || r.diploma === (window.DIPLOMAS.find(d => d.code === code) || {}).name);
+  function courseStats(code) {
+    const d = window.DIPLOMAS.find(x => x.code === code) || { code, name: code };
+    const list = resourcesOf(code);
+    const pages = list.reduce((n, r) => n + (r.pages || 0), 0);
+    const md = list.filter(r => r.state === 'markdown').length;
+    const loadedPages = list.reduce((n, r) => n + (r.pages || 0) * resourceProgress(r) / 100, 0);
+    const pct = pages ? Math.round(loadedPages / pages * 100) : 0;
+    return { ...d, list, pages, md, pct, modules: [...new Set(list.map(r => r.module))].length };
+  }
+  function extrasStats(code) {
+    const x = window.LIBRARY_EXTRAS[code] || {};
+    const cats = [
+      { id: 'md', label: 'Markdown', loaded: x.md || 0, total: x.mdTotal || 0 },
+      { id: 'fichas', label: 'Fichas', loaded: x.fichas || 0, total: x.fichasTotal || 0 },
+      { id: 'audio', label: 'Audio', loaded: x.audio || 0, total: x.audioTotal || 0 },
+      { id: 'papers', label: 'Papers', loaded: x.papers || 0, total: x.papersTotal || 0 }
+    ];
+    const loaded = cats.reduce((n, c) => n + c.loaded, 0);
+    const total = cats.reduce((n, c) => n + c.total, 0);
+    return { cats, loaded, total, pct: total ? Math.round(loaded / total * 100) : 0 };
+  }
+  const libraryPct = () => {
+    const all = allResources();
+    const pages = all.reduce((n, r) => n + (r.pages || 1), 0);
+    const loaded = all.reduce((n, r) => n + (r.pages || 1) * resourceProgress(r) / 100, 0);
+    return pages ? Math.round(loaded / pages * 100) : 0;
+  };
+  const tagIndex = () => {
+    const map = new Map();
+    allResources().forEach(r => (r.tags || []).forEach(t => {
+      const key = norm(t);
+      if (!map.has(key)) map.set(key, { tag: t, ids: new Set(), courses: new Set() });
+      map.get(key).ids.add(r.id);
+      map.get(key).courses.add(r.code);
+    }));
+    return [...map.values()].sort((a, b) => b.ids.size - a.ids.size || a.tag.localeCompare(b.tag, 'es'));
+  };
 
   function costsFor(b) {
     const energy = (b.watts / 1000) * b.hours * b.days * b.kwh;
@@ -104,7 +155,7 @@
   const view = (name) => getComputedStyle($('#view-' + name)).display !== 'none';
 
   /* ---------- navigation ---------- */
-  const VIEWS = { panel: 'INICIO', strains: 'CEPAS', journal: 'DIARIO', sim: 'SIMULADOR', library: 'BIBLIOTECA', oracle: 'ORÁCULO IA', budget: 'COSTOS', process: 'PROCESO' };
+  const VIEWS = { panel: 'INICIO', strains: 'CEPAS', journal: 'DIARIO', sim: 'SIMULADOR', library: 'BIBLIOTECA', oracle: 'ORÁCULO IA', budget: 'COSTOS', process: 'PROCESO', roadmap: 'ROADMAP' };
   function navigate(target, opts = {}) {
     if (!VIEWS[target]) target = 'panel';
     app.view = target;
@@ -118,6 +169,8 @@
     if (opts.journalWeek) app.journalWeek = opts.journalWeek;
     if (target === 'library') {
       if (!opts.resourceId) app.selectedResource = null;
+      if (opts.libMode) app.libMode = opts.libMode;
+      if (opts.resourceId) app.libMode = 'files';
       renderLibrary(opts.resourceId);
     }
     if (target === 'oracle') { renderChat(); if (opts.question) askOracle(opts.question); else setTimeout(() => $('#chatInput')?.focus(), 250); }
@@ -125,8 +178,9 @@
     if (target === 'process') renderProcess();
     if (target === 'panel') renderPanel();
     if (target === 'sim') renderSim();
-    if (target === 'strains') renderStrains();
+    if (target === 'strains') { renderStrains(); if (opts.strainId) setTimeout(() => openStrainSheet(Number(opts.strainId)), 90); }
     if (target === 'journal') renderJournal();
+    if (target === 'roadmap') renderRoadmap();
     persist();
     history.replaceState(null, '', `#${target}`);
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -142,75 +196,180 @@
     $('#statQueries').textContent = app.queries;
     $('#statBudget').textContent = fmt(budget().total);
     $('#statPerGram').textContent = '$' + fmt(budget().perGram) + ' / g';
+    const rp = roadmapProgress();
+    if ($('#navRoad')) $('#navRoad').textContent = rp.pct + '%';
   }
 
-  /* ---------- dashboard ---------- */
+  /* ---------- inicio · índice de la aplicación ---------- */
   function renderPanel() {
     renderNav();
-    const phase = stageForDay(game.day);
-    const pct = Math.min(1, game.day / 75);
-    const circ = 2 * Math.PI * 19;
-    $('#panelPhase').textContent = phase.pill;
-    $('#heroDay').textContent = String(game.day).padStart(2, '0');
-    $('#heroCtaDay').textContent = String(game.day).padStart(2, '0');
-    $('#heroPhase').textContent = phase.name;
-    $('#heroHealth').textContent = avgHealth() + '%';
-    $('#heroDays').textContent = Math.max(0, 75 - game.day);
-    $('#heroHarvest').textContent = game.harvested;
-    $('#heroRing').style.strokeDasharray = circ;
-    $('#heroRing').style.strokeDashoffset = circ * (1 - pct);
-    $('#heroProgress').style.width = (pct * 100) + '%';
+    const phase = dayPhase(game.day);
+    const stage = stageForDay(game.day);
+    const pct = Math.min(100, Math.round(game.day / 75 * 100));
+    const dayLabel = String(game.day).padStart(2, '0');
+
+    $('#idxSimDay').textContent = dayLabel;
+    $('#idxNorthPct').textContent = pct + '%';
+    $('#idxNorthBar').style.width = pct + '%';
+    $('#idxSimProgress').style.width = pct + '%';
+    $('#idxNorthLabel').textContent = game.finished ? `Batch cerrado · ${game.harvested} cosechas` : `Día ${game.day} de 75 · ${phase.name.toLowerCase()}`;
+    $('#idxPlayhead').style.left = pct + '%';
+    $('#idxBatchDay').textContent = dayLabel;
+    $('#idxBatchPhase').textContent = phase.name;
+    $('#idxPhasePill').textContent = stage.pill;
+    $('#idxHarvest').textContent = game.harvested;
+    $('#idxHealth').textContent = avgHealth() + '%';
+    $('#idxHealthTag').textContent = avgHealth() >= 80 ? 'ESTABLE' : avgHealth() >= 55 ? 'OBSERVAR' : 'ALERTA';
+    $('#idxHealthTag').classList.toggle('warn', avgHealth() < 80);
+    $('#idxBatchState').textContent = game.finished ? 'BATCH CERRADO' : game.day > 1 ? 'BATCH EN CURSO' : 'LISTO PARA CORRER';
     const nxt = nextStage(game.day);
-    $('#panelMilestone').textContent = nxt ? `Próximo: día ${nxt.from} · ${nxt.name}` : 'Cierre de temporada';
-    const p = dayPhase(game.day);
-    $('#heroInsight').textContent = game.finished
-      ? `Temporada completada: ${fmt(game.harvestYield)} g registrados y ${game.harvested} cosechas. Revisá el resultado o iniciá una nueva temporada.`
-      : phaseMessage();
+    $('#idxMilestone').textContent = nxt ? `Día ${nxt.from} · ${nxt.name}` : 'Cierre de temporada';
 
-    $('#miniPlants').innerHTML = game.plants.map(p => {
+    const bounds = [1, 12, 27, 37, 57, 67, 76];
+    $$('#idxTimelapse .idx-tl-seg').forEach((el, i) => {
+      el.classList.toggle('done', game.day >= bounds[i + 1]);
+      el.classList.toggle('current', game.day >= bounds[i] && game.day < bounds[i + 1]);
+    });
+
+    $('#idxMiniPlants').innerHTML = game.plants.map(p => {
       const st = statusOf(p);
-      const h = 20 + Math.min(26, p.age * .42);
-      return `<div class="mini-pot ${st}" title="Planta ${p.id}"><span class="mini-plant" style="--h:${h}px"></span></div>`;
+      return `<span class="idx-pot ${st}" title="Planta ${p.id}"><i style="--h:${20 + Math.min(26, p.age * .42)}px"></i></span>`;
     }).join('');
 
-    const milestones = [
-      { name: 'Plántula', from: 1 }, { name: 'Crecimiento', from: 12 }, { name: 'Floración', from: 27 },
-      { name: 'Maduración', from: 57 }, { name: 'Cosecha', from: 67 }
+    const idxEvents = [
+      { day: 1, kind: 'start', title: 'Siembra', note: '9 autos' },
+      { day: 12, kind: 'phase', title: 'Crecimiento', note: 'Raíces listas' },
+      { day: 27, kind: 'phase', title: 'Prefloración', note: 'Cambio de fórmula' },
+      { day: 37, kind: 'phase', title: 'Floración', note: 'Cogollos' },
+      { day: 57, kind: 'phase', title: 'Maduración', note: 'Tricomas' },
+      { day: 67, kind: 'phase', title: 'Corte', note: 'Ventana' }
     ];
-    let current = 0;
-    milestones.forEach((m, i) => { if (game.day >= m.from) current = i; });
-    $('#seasonTrack').innerHTML = milestones.map((m, i) => {
-      const next = milestones[i + 1];
-      const cls = game.day >= (next ? next.from : 76) ? 'done' : i === current ? 'current' : '';
-      return `<div class="season-node ${cls}"><span class="season-dot"></span><span class="sn-name">${m.name}</span><span class="sn-days">DÍA ${m.from}</span></div>`;
+    $('#idxBatchEvents').innerHTML = idxEvents.slice(0, 4).map(e => `
+      <div class="idx-event-row ${game.day >= e.day ? 'passed' : ''} ${game.day >= e.day && game.day < e.day + 12 ? 'current' : ''}">
+        <span class="ie-day">D${String(e.day).padStart(2, '0')}</span>
+        <b>${e.title}</b>
+        <small>${e.note}</small>
+      </div>`).join('');
+
+    // biblioteca: nombres de cursos + % cargado + extras
+    const courses = window.DIPLOMAS.map(d => courseStats(d.code));
+    const totalMd = allResources().filter(r => r.state === 'markdown').length;
+    $('#idxLibMd').textContent = totalMd + ' MD';
+    const libPct = libraryPct();
+    $('#idxLibPct').textContent = libPct + '%';
+    $('#idxLibBar').style.width = libPct + '%';
+    $('#idxCourseList').innerHTML = courses.map(c => `
+      <button class="idx-course-row" data-idx-course="${c.code}">
+        <span class="idx-course-dot" style="background:${c.color}"></span>
+        <span class="idx-course-copy"><b>${esc(c.name)}</b><small>${c.list.length} PDFs · ${c.pages} pp · ${c.md} MD</small></span>
+        <span class="idx-course-bar"><i style="width:${c.pct}%"></i></span>
+        <span class="idx-course-pct">${c.pct}%</span>
+      </button>`).join('');
+
+    const extras = ['Markdown', 'Fichas', 'Audio', 'Papers'].map((label, idx) => {
+      const key = ['md', 'fichas', 'audio', 'papers'][idx];
+      let loaded = 0, total = 0;
+      window.DIPLOMAS.forEach(d => {
+        const x = window.LIBRARY_EXTRAS[d.code] || {};
+        loaded += x[key] || 0; total += x[key + 'Total'] || 0;
+      });
+      return { label, loaded, total, pct: total ? Math.round(loaded / total * 100) : 0 };
+    });
+    extras.unshift({ label: 'PDFs', loaded: allResources().length, total: allResources().length, pct: 100 });
+    $('#idxExtras').innerHTML = extras.map(x => `
+      <div class="idx-extra ${x.pct >= 80 ? 'good' : x.pct >= 40 ? 'mid' : 'low'}">
+        <span>${x.label}</span><b>${x.pct}%</b><i><i style="width:${x.pct}%"></i></i><small>${x.loaded}/${x.total}</small>
+      </div>`).join('');
+    $$('#idxCourseList [data-idx-course]').forEach(el => el.addEventListener('click', () => {
+      app.libMode = 'files';
+      libFiltersReady = false;
+      navigate('library');
+      setTimeout(() => {
+        const sel = $('#libDiploma');
+        const code = el.dataset.idxCourse;
+        const name = (window.DIPLOMAS.find(d => d.code === code) || {}).name;
+        if (sel && name) { sel.value = name; app.selectedResource = null; renderLibrary(); persist(); }
+      }, 60);
+    }));
+
+    // cepas
+    $('#idxStrainPicks').innerHTML = [window.STRAINS[0], window.STRAINS[3], window.STRAINS[7], window.STRAINS[10]]
+      .map(s => `<button data-idx-strain="${s.id}">${esc(s.name.replace(' Auto', ''))}<small>${s.thc}%</small></button>`).join('');
+    $$('#idxStrainPicks [data-idx-strain]').forEach(el => el.addEventListener('click', () => navigate('strains', { strainId: el.dataset.idxStrain })));
+
+    // diario
+    $('#idxWeekPill').textContent = 'S' + currentWeek();
+    $('#idxJournalWeeks').innerHTML = journalWeeks().map(w => {
+      const cls = w.n < currentWeek() ? 'done' : w.n === currentWeek() ? 'current' : '';
+      return `<button class="idx-week ${cls}" data-idx-week="${w.n}" title="Semana ${w.n} · ${esc(w.title)}"><span>${w.n}</span></button>`;
     }).join('');
+    $$('#idxJournalWeeks [data-idx-week]').forEach(el => el.addEventListener('click', () => navigate('journal', { journalWeek: Number(el.dataset.idxWeek) })));
 
-    $('#focusList').innerHTML = (game.finished
-      ? ['Cosecha registrada. Compará el costo real con tu presupuesto.', 'Guardá aprendizajes en la bitácora de la próxima temporada.', 'Revisá los recursos de secado y curado.']
-      : p.tasks.slice(0, 3).map(t => t.text)
-    ).map(t => `<div class="focus-item"><span>◆</span>${esc(t)}</div>`).join('');
+    // oráculo / costos / proceso
+    $('#idxOracleQueries').textContent = app.queries;
+    $('#idxCostGram').textContent = '$' + fmt(budget().perGram);
+    $('#idxCostTotal').textContent = '$' + fmt(budget().total);
+    const allTasks = window.PHASES.reduce((n, p) => n + p.tasks.length, 0);
+    const doneTasks = window.PHASES.reduce((n, p) => n + p.tasks.filter(t => app.tasks[t.id]).length, 0);
+    $('#idxProcessPill').textContent = `${doneTasks}/${allTasks}`;
+    $('#idxProcessBar').style.width = (allTasks ? doneTasks / allTasks * 100 : 0) + '%';
 
-    $('#recentList').innerHTML = allResources().slice(-3).reverse().map(r => `<div class="recent-item" data-resource="${r.id}"><span class="recent-icon">PDF</span><span class="recent-info"><span class="recent-title">${esc(r.title)}</span><span class="recent-meta">${esc(r.diploma)} · ${r.module}</span></span><span class="recent-tag">${r.pages} pp.</span></div>`).join('');
-    $$('#recentList .recent-item').forEach(el => el.addEventListener('click', () => navigate('library', { resourceId: Number(el.dataset.resource) })));
+    // roadmap
+    const rp = roadmapProgress();
+    $('#idxRoadmapDone').textContent = `${rp.done}/${rp.total}`;
+    $('#idxRoadPct').textContent = rp.pct + '%';
+    const nextItem = rp.items.find(i => i.status === 'now') || rp.items.find(i => i.status === 'next');
+    $('#idxRoadNext').textContent = nextItem ? nextItem.t : 'Roadmap completo';
+    if ($('#roadmapProgressBar')) {
+      $('#roadmapProgressBar').style.width = rp.pct + '%';
+      $('#roadmapProgressLabel').textContent = `${rp.done} de ${rp.total} hitos alcanzados`;
+      $('#roadmapProgressPct').textContent = rp.pct + '%';
+    }
 
-    const dups = window.LIBRARY.filter(r => r.dup);
-    const groups = [...new Set(dups.map(r => r.dup))];
-    $('#dupCount').textContent = dups.length;
-    $('#insightCount').textContent = groups.length;
-    const pair = window.LIBRARY.filter(r => r.dup === 'riego').slice(0, 2);
-    $('#insightPair').innerHTML = pair.map((r, i) => `<span class="pair-dot"></span><b>${esc(r.title)}</b>${i === 0 ? '<span style="font-size:7px;color:#5d6752">↔</span>' : ''}`).join('');
+    // insights + recién digerido
+    const bridges = window.WISDOM_BRIDGES.slice(0, 3);
+    $('#idxInsights').innerHTML = bridges.map(b => `
+      <button class="idx-insight-row" data-idx-tag="${b.tag}">
+        <span class="idx-insight-tag">${esc(b.label)}</span>
+        <span>${b.courses.map(c => `<i style="background:${(window.DIPLOMAS.find(d => d.code === c) || {}).color || '#5f7a4b'}"></i>`).join('')}</span>
+        <b>${b.courses.length} cursos</b>
+      </button>`).join('') + `<button class="idx-insight-more" data-nav="library">Ver todos los vínculos <span>→</span></button>`;
+    $$('#idxInsights [data-idx-tag]').forEach(el => el.addEventListener('click', () => {
+      app.libMode = 'files';
+      navigate('library');
+      setTimeout(() => {
+        if ($('#libSearch')) $('#libSearch').value = el.dataset.idxTag;
+        renderLibrary(); persist();
+      }, 60);
+    }));
 
-    // strain rail
-    const picks = [window.STRAINS[0], window.STRAINS[3], window.STRAINS[7], window.STRAINS[10]];
-    $('#strainRail').innerHTML = picks.map(strainCardHTML).join('');
-    bindStrainCards('#strainRail');
+    const recent = allResources().slice(-4).reverse();
+    $('#idxRecentCount').textContent = recent.length;
+    $('#idxRecent').innerHTML = recent.map(r => `
+      <button class="idx-recent-row" data-idx-resource="${r.id}">
+        <span class="idx-recent-icon">PDF</span>
+        <span><b>${esc(r.title)}</b><small>${esc(r.diploma)} · ${esc(r.module)}</small></span>
+        <em class="state-${r.state}">${libStateLabel(r.state)}</em>
+      </button>`).join('');
+    $$('#idxRecent [data-idx-resource]').forEach(el => el.addEventListener('click', () => navigate('library', { resourceId: Number(el.dataset.idxResource) })));
 
-    // dashboard week chips
-    $('#dashWeeks').innerHTML = journalWeeks().map(w => {
-      const st = w.n < currentWeek() ? 'done' : w.n === currentWeek() ? 'current' : '';
-      return `<button class="week-chip ${st}" data-journal-week="${w.n}"><b>S${w.n}</b><span>${esc(w.title)}</span></button>`;
-    }).join('');
-    $$('#dashWeeks [data-journal-week]').forEach(el => el.addEventListener('click', () => navigate('journal', { journalWeek: Number(el.dataset.journalWeek) })));
+    const shortcuts = [
+      ['sim', 'Simulador batch', 'S'], ['library', 'Biblioteca', 'B'], ['strains', 'Cepas', 'C'],
+      ['oracle', 'Oráculo', 'O'], ['journal', 'Diario', 'D'], ['budget', 'Costos', '$'],
+      ['process', 'Proceso', 'P'], ['roadmap', 'Roadmap', 'R']
+    ];
+    $('#idxShortcuts').innerHTML = shortcuts.map(([view, label, key]) =>
+      `<button data-nav="${view}"><span>${label}</span><em>⌘${key}</em></button>`).join('');
+    $$('#idxShortcuts [data-nav]').forEach(el => el.addEventListener('click', () => navigate(el.dataset.nav)));
+  }
+
+  function roadmapItems() {
+    return (window.ROADMAP?.streams || []).flatMap(stream => stream.items.map(item => ({ ...item, stream })));
+  }
+  function roadmapProgress() {
+    const items = roadmapItems();
+    const done = items.filter(i => i.status === 'done').length;
+    return { items, done, total: items.length, pct: items.length ? Math.round(done / items.length * 100) : 0 };
   }
 
   function phaseMessage() {
@@ -219,6 +378,214 @@
     if (selected.moisture < 24) return 'El sustrato de la planta seleccionada está seco. Regá con moderación y volvé a observar el drenaje.';
     if (selected.moisture > 82) return 'La maceta todavía está húmeda. Esperá antes de regar: el exceso de agua también estresa.';
     return dayPhase(game.day).focus[0];
+  }
+
+  /* ---------- simulador · benchmark batch ---------- */
+  const BATCH_STRATEGIES = [
+    { id: 'balanced', label: 'Equilibrada', ico: '◎', tone: 'lime', desc: 'Riego y nutrición por necesidad. Ventila cuando el ambiente lo pide.', waterAt: 32, feedAt: 30, premium: 0, stable: .9 },
+    { id: 'minimal', label: 'Mínima', ico: '−', tone: 'stone', desc: 'Bajo insumo. Ahorra costo operativo y asume más estrés biológico.', waterAt: 20, feedAt: 14, premium: -.16, stable: 1.7 },
+    { id: 'intensive', label: 'Intensiva', ico: '＋', tone: 'amber', desc: 'Correcciones frecuentes. Busca el techo biológico pagando más costo.', waterAt: 48, feedAt: 48, premium: .18, stable: .6 }
+  ];
+
+  function seededRandom(seed) {
+    let a = seed >>> 0;
+    return () => {
+      a = (a + 0x6D2B79F5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function simulateBatch(strategy, seed = 7) {
+    const cfg = BATCH_STRATEGIES.find(s => s.id === strategy) || BATCH_STRATEGIES[0];
+    const rand = seededRandom(seed * 977 + cfg.id.length * 131);
+    const plants = Array.from({ length: 9 }, (_, i) => ({
+      id: i + 1, age: 1 + (i % 3), health: 88 + (i % 4) * 3,
+      moisture: 46 + (i * 11) % 31, nutrition: 48 + (i * 7) % 28, alive: true
+    }));
+    let temp = 24, humidity = 58, spent = 0, water = 15, nutrients = 7, energy = 88;
+    let stressDays = 0, vpdAlerts = 0, harvests = 0, yieldG = 0;
+    const events = [
+      { day: 1, kind: 'start', title: 'Siembra · 9 autos', note: 'Sustrato hidratado, luz 18/6 y sensores en cero.' }
+    ];
+
+    for (let day = 1; day <= 75; day++) {
+      temp = Math.max(18, Math.min(31, temp + (rand() < .38 ? (rand() < .5 ? -1 : 1) : 0)));
+      humidity = Math.max(35, Math.min(78, humidity + (rand() < .5 ? -3 : 3)));
+      energy = Math.max(0, energy - 2);
+      spent += 4200 + Math.round(rand() * 600) + (cfg.premium > 0 ? 1600 : cfg.premium < 0 ? -250 : 650);
+      const svp = 0.6108 * Math.exp(17.27 * temp / (temp + 237.3));
+      const vpd = svp * (1 - humidity / 100);
+      if (vpd > 1.8 || vpd < 0.6) vpdAlerts++;
+
+      plants.forEach(p => {
+        if (!p.alive) return;
+        p.age++;
+        p.moisture = Math.max(0, p.moisture - 10 - rand() * 6);
+        p.nutrition = Math.max(0, p.nutrition - 2.2);
+        if (p.moisture < cfg.waterAt) { p.moisture = Math.min(88, p.moisture + 40); spent += 150; water = Math.max(0, water - 1); }
+        if (p.nutrition < cfg.feedAt) { p.nutrition = Math.min(88, p.nutrition + 42); spent += 850; nutrients = Math.max(0, nutrients - 1); }
+        let stress = 0;
+        if (p.moisture < 16 || p.moisture > 93) stress += 6;
+        if (p.nutrition < 10) stress += 4;
+        if (temp > 29 || temp < 19) stress += 4;
+        if (cfg.id === 'minimal') stress += 1;
+        p.health = Math.max(0, Math.min(100, p.health + (stress ? -stress : 1)));
+        if (p.health <= 0) p.alive = false;
+      });
+
+      if (energy < 10) energy = 80;
+      if ((temp > 27 || humidity > 69) && cfg.id !== 'minimal' && energy > 0 && rand() < .55) {
+        temp -= 2; humidity -= 5; energy--; spent += 120;
+      }
+      if (day % 7 === 0) {
+        const healthy = plants.filter(p => p.alive && p.health >= 50).length;
+        if (healthy < 7) stressDays++;
+      }
+
+      if (day === 12) events.push({ day, kind: 'phase', title: 'Crecimiento', note: 'Raíces establecidas. Primer riego medido por peso de maceta.' });
+      if (day === 18) events.push({ day, kind: 'event', title: 'Primer LST', note: 'Apertura suave de la canopia; se registra la respuesta a 48 h.' });
+      if (day === 27) events.push({ day, kind: 'phase', title: 'Prefloración', note: 'La fórmula cambia a floración y la humedad baja hacia 58%.' });
+      if (day === 34 && vpdAlerts > 3) events.push({ day, kind: 'alert', title: 'VPD fuera de rango', note: 'Tres lecturas seguidas por encima de 1,8 kPa. Se intensifica la ventilación.' });
+      if (day === 37) events.push({ day, kind: 'phase', title: 'Floración', note: 'Cogollos visibles. Se prioriza estabilidad y prevención de botritis.' });
+      if (day === 44 && cfg.id === 'intensive') events.push({ day, kind: 'event', title: 'Defoliación selectiva', note: 'Solo hojas que bloquean luz. La estrategia intensiva paga más insumos.' });
+      if (day === 52) events.push({ day, kind: 'event', title: 'Pico de demanda', note: 'Consumo de agua máximo del batch. La reserva se repone a tiempo.' });
+      if (day === 57) events.push({ day, kind: 'phase', title: 'Maduración', note: 'Tricomas lechosos. Se reduce riego y nutrición.' });
+      if (day === 63) events.push({ day, kind: 'alert', title: 'Riesgo de botritis', note: 'Humedad alta en el interior de cogollos: sube la ventilación.' });
+      if (day === 67) events.push({ day, kind: 'phase', title: 'Ventana de corte', note: 'Empieza la ventana de cosecha. Se revisa tricoma por planta.' });
+    }
+
+    const harvestDay = cfg.id === 'intensive' ? 69 : cfg.id === 'balanced' ? 71 : 75;
+    plants.forEach(p => {
+      if (!p.alive) return;
+      harvests++;
+      const q = Math.max(.4, Math.min(1.1, p.health / 88));
+      yieldG += Math.round(55 * q * (1 + Math.min(.06, (p.age - 67) * .002)));
+    });
+    // La cosecha se registra en el día de corte; el costo acumulado ya incluye el ciclo completo.
+    events.push({ day: harvestDay, kind: 'harvest', title: `Cosecha · ${yieldG} g`, note: `${harvests} plantas cerraron el batch y se registró el peso por lote.` });
+    events.push({ day: 75, kind: 'end', title: 'Cierre del batch', note: 'Se calcula costo por gramo, se archiva la corrida y se guardan aprendizajes.' });
+    events.sort((a, b) => a.day - b.day);
+
+    const alive = plants.filter(p => p.alive);
+    const healthy = alive.filter(p => p.health >= 50).length;
+    const avgH = alive.length ? Math.round(alive.reduce((n, p) => n + p.health, 0) / alive.length) : 0;
+    const perGram = yieldG ? spent / yieldG : spent;
+    const yieldScore = Math.min(100, Math.round(yieldG / (9 * 55) * 100));
+    const costScore = Math.max(0, Math.min(100, Math.round((1800 - perGram) / 14)));
+    const healthScore = Math.round(healthy / 9 * 100);
+    const stability = Math.max(0, Math.min(100, Math.round(100 - stressDays / 75 * 100 - vpdAlerts * 2)));
+    const score = Math.round(yieldScore * .35 + costScore * .25 + healthScore * .25 + stability * .15);
+    return {
+      id: cfg.id, label: cfg.label, ico: cfg.ico, tone: cfg.tone, desc: cfg.desc,
+      yield: yieldG, spent, perGram, healthy, harvests, alive: alive.length,
+      avgHealth: avgH, score, yieldScore, costScore, healthScore, stability,
+      stressDays, vpdAlerts, events, harvestDay,
+      days: 75
+    };
+  }
+
+  let batchCache = null;
+  function currentBatch() {
+    if (app.batch && Array.isArray(app.batch.runs)) return app.batch;
+    if (!batchCache) {
+      batchCache = { seed: 7, runs: BATCH_STRATEGIES.map(s => simulateBatch(s.id, 7)), sample: true };
+    }
+    return batchCache;
+  }
+
+  function renderBatch() {
+    const batch = currentBatch();
+    const runs = batch.runs;
+    const best = [...runs].sort((a, b) => b.score - a.score)[0];
+    $('#batchGrid').innerHTML = runs.map((r, i) => {
+      const rank = [...runs].sort((a, b) => b.score - a.score).findIndex(x => x.id === r.id) + 1;
+      return `<article class="batch-run ${r.id === best.id ? 'best' : ''}" style="--tone:${r.tone}">
+        <div class="br-top">
+          <span class="br-rank">${rank === 1 ? '①' : rank === 2 ? '②' : '③'}</span>
+          <span class="br-label"><i>${r.ico}</i><b>${esc(r.label)}</b></span>
+          <span class="br-score">${r.score}<small>SCORE</small></span>
+        </div>
+        <div class="br-bars">
+          <div><span>Rendimiento</span><i><i style="width:${r.yieldScore}%"></i></i><b>${fmt(r.yield)} g</b></div>
+          <div><span>Costo / g</span><i><i style="width:${r.costScore}%"></i></i><b>$${fmt(r.perGram)}</b></div>
+          <div><span>Salud</span><i><i style="width:${r.healthScore}%"></i></i><b>${r.healthy}/9</b></div>
+          <div><span>Estabilidad</span><i><i style="width:${r.stability}%"></i></i><b>${r.stability}%</b></div>
+        </div>
+        <div class="br-stats"><span><b>$${fmt(r.spent)}</b> costo</span><span><b>${r.harvests}</b> cosechas</span><span><b>${r.stressDays}</b> sem. estrés</span></div>
+        <p class="br-desc">${esc(r.desc)}</p>
+        <button class="br-use" data-use-strategy="${r.id}">Probar esta estrategia <span>→</span></button>
+      </article>`;
+    }).join('');
+
+    const phases = [
+      { name: 'Plántula', from: 1, to: 11 }, { name: 'Crecimiento', from: 12, to: 26 },
+      { name: 'Prefloración', from: 27, to: 36 }, { name: 'Floración', from: 37, to: 56 },
+      { name: 'Maduración', from: 57, to: 66 }, { name: 'Curado', from: 67, to: 75 }
+    ];
+    $('#timelapseTrack').innerHTML = `
+      <div class="tl-phases">${phases.map(p => `<div class="tl-phase" style="--w:${(p.to - p.from + 1) / 75 * 100}%"><span>${p.name}</span><small>D${p.from}</small><i></i></div>`).join('')}</div>
+      <div class="tl-markers">${best.events.map(e => `<button class="tl-marker ${e.kind}" style="left:${(e.day - 1) / 74 * 100}%" data-tl-event="${e.day}" title="Día ${e.day} · ${esc(e.title)}"><i></i><span>D${e.day}</span></button>`).join('')}</div>
+      <div class="tl-playhead" id="tlPlayhead"></div>`;
+    $('#timelapseEvents').innerHTML = best.events.map(e => `
+      <button class="tl-event ${e.kind}" data-tl-event="${e.day}">
+        <span class="tl-event-day">D${String(e.day).padStart(2, '0')}</span>
+        <span class="tl-event-copy"><b>${esc(e.title)}</b><small>${esc(e.note)}</small></span>
+      </button>`).join('');
+    $$('[data-tl-event]').forEach(el => el.addEventListener('click', () => {
+      const ev = best.events.find(e => String(e.day) === el.dataset.tlEvent);
+      if (ev) showToast(`D${ev.day} · ${ev.title}: ${ev.note}`);
+    }));
+    $$('#batchGrid [data-use-strategy]').forEach(el => el.addEventListener('click', () => {
+      quickStrategy = el.dataset.useStrategy;
+      $$('#strategyList [data-strategy]').forEach(b => b.classList.toggle('active', b.dataset.strategy === quickStrategy));
+      $('#quickModal')?.classList.add('open');
+      showToast(`Estrategia ${BATCH_STRATEGIES.find(s => s.id === quickStrategy).label} cargada. Corré los 75 días para aplicarla.`);
+    }));
+    updateTimelapseProgress();
+  }
+
+  function updateTimelapseProgress() {
+    const pct = Math.max(0, Math.min(100, (game.day - 1) / 74 * 100));
+    const ph = $('#tlPlayhead');
+    if (ph) ph.style.left = pct + '%';
+    if ($('#timelapseTrack')) $('#timelapseTrack').style.setProperty('--day', pct + '%');
+  }
+
+  function runBatchBenchmark() {
+    const seed = Math.floor(Math.random() * 90000) + 1000;
+    app.batch = { seed, runs: BATCH_STRATEGIES.map(s => simulateBatch(s.id, seed)), sample: false, at: Date.now() };
+    batchCache = app.batch;
+    persist();
+    renderBatch();
+    const best = [...app.batch.runs].sort((a, b) => b.score - a.score)[0];
+    showToast(`Benchmark listo: ${best.label} gana con ${best.score} pts · ${fmt(best.yield)} g · $${fmt(best.perGram)}/g.`);
+  }
+
+  let timelapseTimer = null;
+  function toggleTimelapse() {
+    const btn = $('#timelapseBtn');
+    if (timelapseTimer) {
+      clearInterval(timelapseTimer); timelapseTimer = null;
+      if (btn) { btn.classList.remove('playing'); btn.innerHTML = '<span class="tl-ico">▶</span> Timelapse'; }
+      showToast('Timelapse pausado.');
+      return;
+    }
+    if (game.finished || game.day >= 75) { showToast('El batch ya está cerrado. Reiniciá la temporada para verlo de nuevo.'); return; }
+    if (btn) { btn.classList.add('playing'); btn.innerHTML = '<span class="tl-ico">❚❚</span> Pausar'; }
+    showToast('Timelapse en marcha · 75 días en ~8 s.');
+    timelapseTimer = setInterval(() => {
+      if (game.finished || game.day >= 75) {
+        clearInterval(timelapseTimer); timelapseTimer = null;
+        if (btn) { btn.classList.remove('playing'); btn.innerHTML = '<span class="tl-ico">▶</span> Timelapse'; }
+        showToast('Batch completo. Revisá el resultado y compará estrategias.');
+        return;
+      }
+      advance(true);
+      renderBatch();
+    }, 105);
   }
 
   /* ---------- simulator ---------- */
@@ -293,6 +660,7 @@
       : selected.moisture > 78 ? 'El sustrato sigue húmedo; esperá antes de volver a regar.'
       : selected.age >= 67 ? 'Esta planta alcanzó la madurez. Podés cosecharla.'
       : 'Revisá el sustrato antes de regar. Un exceso de agua también estresa.';
+    renderBatch();
   }
 
   function saveAndRefresh() { persist(); renderSim(); renderPanel(); }
@@ -341,9 +709,9 @@
     game.logs = game.logs.slice(0, 8);
   }
 
-  function advance() {
-    if (game.finished) { showToast('La temporada terminó. Podés reiniciar desde el resumen.'); return; }
-    if (game.day >= 75) { game.finished = true; showToast('Día 75: temporada cerrada. Revisá tu cosecha.'); saveAndRefresh(); return; }
+  function advance(silent = false) {
+    if (game.finished) { if (!silent) showToast('La temporada terminó. Podés reiniciar desde el resumen.'); return; }
+    if (game.day >= 75) { game.finished = true; if (!silent) showToast('Día 75: temporada cerrada. Revisá tu cosecha.'); saveAndRefresh(); return; }
     game.day++; game.vented = false;
     game.temp = Math.max(18, Math.min(31, game.temp + (Math.random() < .32 ? (Math.random() < .5 ? -1 : 1) : 0)));
     game.humidity = Math.max(35, Math.min(78, game.humidity + (Math.random() < .5 ? -3 : 3)));
@@ -366,7 +734,7 @@
     if (game.day >= 75) { game.finished = true; log(`<b>Temporada cerrada.</b> ${game.harvested} cosechas y ${fmt(game.harvestYield)} g registrados.`, 'success'); }
     if (game.finished) archiveSeason();
     saveAndRefresh();
-    showToast(`Día ${game.day}: ${game.day >= 67 ? 'revisá la madurez de tus plantas.' : 'el cultivo ha crecido.'}`);
+    if (!silent) showToast(`Día ${game.day}: ${game.day >= 67 ? 'revisá la madurez de tus plantas.' : 'el cultivo ha crecido.'}`);
   }
 
   /* ---------- quick sim ---------- */
@@ -797,17 +1165,175 @@
     return state === 'markdown' ? 'MARKDOWN' : state === 'procesado' ? 'PROCESADO' : 'PENDIENTE';
   }
 
+  /* ---------- biblioteca · vista digerida ---------- */
+  function renderLibraryDigest() {
+    const courses = window.DIPLOMAS.map(d => ({ ...d, ...courseStats(d.code), extras: extrasStats(d.code) }));
+    const totalPct = libraryPct();
+    $('#libProcessedPct').textContent = 'MD · ' + totalPct + '%';
+    const mdCount0 = allResources().filter(r => r.state === 'markdown').length;
+    const metaCount0 = allResources().filter(r => r.module && r.year && (r.tags || []).length).length;
+    $('#digestQuickStats').innerHTML = `
+      <span><b>${allResources().length}</b> PDFs</span>
+      <span><b>${window.DIPLOMAS.length}</b> cursos</span>
+      <span><b>${mdCount0}</b> MD listos</span>
+      <span><b>${allResources().length - mdCount0}</b> pendientes</span>
+      <span><b>${metaCount0}/${allResources().length}</b> metadata</span>
+      <span><b>${window.WISDOM_BRIDGES.length}</b> vínculos</span>`;
+
+    $('#libPipeline').innerHTML = `
+      <div class="pipeline-head"><span class="section-kicker">PIPELINE DOCUMENTAL</span><b>${totalPct}% <small>digerido</small></b></div>
+      ${window.LIBRARY_PIPELINE.map(st => `
+        <div class="pipeline-row">
+          <span class="pr-name">${esc(st.name)}<small>${esc(st.note)}</small></span>
+          <i class="pr-bar"><i style="width:${st.pct}%"></i></i>
+          <b>${st.pct}%</b>
+        </div>`).join('')}`;
+
+    $('#libCourseGrid').innerHTML = courses.map(c => `
+      <article class="lib-course-card" style="--cc:${c.color}">
+        <div class="lcc-top">
+          <span class="lcc-code">${esc(c.code)}</span>
+          <span class="lcc-state">${c.pct >= 60 ? 'DIGERIDO' : c.pct >= 30 ? 'EN PROCESO' : 'PENDIENTE'}</span>
+        </div>
+        <h3>${esc(c.name)}</h3>
+        <p class="lcc-meta">${c.list.length} PDFs · ${c.modules} módulos · ${c.pages} pp · ${c.md} MD</p>
+        <div class="lcc-progress"><i style="width:${c.pct}%"></i></div>
+        <div class="lcc-progress-label"><span>${c.pct}% de páginas digeridas</span><b>${c.md}/${c.list.length} MD</b></div>
+        <div class="lcc-extras">
+          ${c.extras.cats.map(x => `<span class="${x.loaded >= x.total ? 'full' : x.loaded ? 'part' : ''}" title="${x.label}: ${x.loaded}/${x.total}"><i>${x.label}</i><b>${x.total ? Math.round(x.loaded / x.total * 100) : 0}%</b></span>`).join('')}
+        </div>
+        <div class="lcc-foot"><span>Extras ${c.extras.loaded}/${c.extras.total} · ${c.extras.pct}%</span><button data-course="${c.code}">Abrir PDFs <span>→</span></button></div>
+      </article>`).join('');
+
+    // índice de sabiduría: curso → módulo → recurso
+    let entries = 0;
+    $('#wisdomIndex').innerHTML = courses.map(c => {
+      const modules = [];
+      c.list.forEach(r => {
+        let m = modules.find(x => x.name === r.module);
+        if (!m) { m = { name: r.module, list: [] }; modules.push(m); }
+        m.list.push(r);
+      });
+      const moduleHTML = modules.map(m => {
+        const pct = m.list.length ? Math.round(m.list.reduce((n, r) => n + resourceProgress(r), 0) / m.list.length) : 0;
+        const rows = m.list.slice().sort((a, b) => a.id - b.id).map(r => {
+          entries++;
+          return `<button class="wisdom-entry" data-resource="${r.id}" title="${esc(r.title)} · ${esc(mdPath(r))}">
+            <span class="we-dot state-${r.state}"></span>
+            <span class="we-copy"><b>${esc(r.title)}</b><small>#${String(r.id).padStart(3, '0')} · ${r.year} · ${r.pages} pp · ${libStateLabel(r.state)} · ${mdPath(r)}</small></span>
+            <span class="we-pct ${r.state}">${resourceProgress(r)}%</span>
+          </button>`;
+        }).join('');
+        return `<div class="wisdom-module">
+          <div class="wm-head"><span>${esc(m.name)}</span><em>${m.list.length} ${m.list.length === 1 ? 'recurso' : 'recursos'} · ${pct}%</em></div>
+          ${rows}
+        </div>`;
+      }).join('');
+      return `<section class="wisdom-course" style="--cc:${c.color}">
+        <header class="wc-head">
+          <span class="wc-code">${esc(c.code)}</span>
+          <div><h3>${esc(c.name)}</h3><small>${c.list.length} PDFs · ${c.modules} módulos · ${c.pages} páginas</small></div>
+          <b>${c.pct}%</b>
+        </header>
+        <div class="wc-bar"><i style="width:${c.pct}%"></i></div>
+        ${moduleHTML}
+      </section>`;
+    }).join('');
+    $('#wisdomCount').textContent = `${entries} entradas`;
+    $('#wisdomPct').textContent = totalPct + '%';
+
+    const tags = tagIndex();
+    const topTags = tags.slice(0, 12);
+    $('#wisdomTagCount').textContent = tags.length;
+    $('#wisdomLinks').innerHTML = topTags.map(t => {
+      const courseNames = [...t.courses].map(code => (window.DIPLOMAS.find(d => d.code === code) || {}).name).filter(Boolean);
+      return `<button class="wisdom-tag" data-tag="${esc(t.tag)}">
+        <span>${esc(t.tag)}<small>${courseNames.length ? esc(courseNames.join(' · ')) : 'Aporte propio'}</small></span>
+        <b>${t.ids.size}</b>
+      </button>`;
+    }).join('');
+
+    $('#wisdomInsights').innerHTML = window.WISDOM_BRIDGES.map(b => {
+      const names = b.courses.map(code => (window.DIPLOMAS.find(d => d.code === code) || {}).name).filter(Boolean);
+      return `<button class="wisdom-insight" data-tag="${esc(b.tag)}">
+        <div class="wi-top"><span>${esc(b.label)}</span><em>${b.courses.length} cursos</em></div>
+        <p>${esc(b.note)}</p>
+        <div class="wi-courses">${b.courses.map(code => `<i style="--cc:${(window.DIPLOMAS.find(d => d.code === code) || {}).color || '#6d8a5a'}">${esc(code)}</i>`).join('')}<span>${esc(names.join(' · '))}</span></div>
+      </button>`;
+    }).join('');
+
+    const mdCount = allResources().filter(r => r.state === 'markdown').length;
+    const metaCount = allResources().filter(r => r.module && r.year && (r.tags || []).length).length;
+    const sample = allResources().find(r => r.state === 'markdown') || allResources()[0];
+    $('#wisdomMeta').innerHTML = `
+      <div class="wm-stat"><span>Markdown ordenado</span><b>${mdCount}/${allResources().length}</b></div>
+      <div class="wm-stat"><span>Metadata completa</span><b>${metaCount}/${allResources().length}</b></div>
+      <div class="wm-stat"><span>Hashes de origen</span><b>${allResources().length}/${allResources().length}</b></div>
+      <div class="wm-stat"><span>Idioma detectado</span><b>es-AR</b></div>
+      <div class="wm-meta-code"><span>EJEMPLO DE RUTA</span><code>${esc(mdPath(sample))}</code><small>hash ${mdHash(sample)} · ${sample.pages} pp · ${esc(sample.code)}</small></div>
+      <div class="wm-note"><span>ⓘ</span>El PDF original nunca se mueve ni se sobrescribe. Markdown y metadata son una capa derivada y reversible.</div>`;
+
+    $$('#libCourseGrid [data-course]').forEach(el => el.addEventListener('click', () => openCourseFiles(el.dataset.course)));
+    $$('#wisdomIndex [data-resource]').forEach(el => el.addEventListener('click', () => openLibraryResource(Number(el.dataset.resource))));
+    $$('#wisdomLinks [data-tag], #wisdomInsights [data-tag]').forEach(el => el.addEventListener('click', () => searchLibraryTag(el.dataset.tag)));
+  }
+
+  function openCourseFiles(code) {
+    const name = (window.DIPLOMAS.find(d => d.code === code) || {}).name;
+    app.libMode = 'files';
+    app.selectedResource = null;
+    navigate('library');
+    setTimeout(() => {
+      if ($('#libDiploma') && name) $('#libDiploma').value = name;
+      renderLibrary(); persist();
+    }, 40);
+  }
+
+  function openLibraryResource(id) {
+    app.libMode = 'files';
+    app.selectedResource = id;
+    navigate('library', { resourceId: id });
+  }
+
+  function searchLibraryTag(tag) {
+    app.libMode = 'files';
+    app.selectedResource = null;
+    navigate('library');
+    setTimeout(() => {
+      if ($('#libSearch')) $('#libSearch').value = tag;
+      if ($('#libDiploma')) $('#libDiploma').value = 'all';
+      renderLibrary(); persist();
+    }, 40);
+  }
+
+  function setLibMode(mode) {
+    app.libMode = mode === 'files' ? 'files' : 'digest';
+    $('#libDigest').hidden = app.libMode !== 'digest';
+    $('#libFiles').hidden = app.libMode !== 'files';
+    $$('.lib-mode').forEach(b => b.classList.toggle('active', b.dataset.libmode === app.libMode));
+    persist();
+  }
+
   function renderLibrary(resourceId) {
     renderNav();
-    const q = norm($('#libSearch')?.value || '');
-    const diploma = $('#libDiploma')?.value || 'all';
-    const state = $('#libState')?.value || 'all';
-    const sort = $('#libSort')?.value || 'recent';
+    renderLibraryDigest();
+    setLibMode(app.libMode || 'digest');
     if (!libFiltersReady) {
       const diplomas = [...new Set([...window.DIPLOMAS.map(d => d.name), ...app.userResources.map(r => r.diploma)])];
       $('#libDiploma').innerHTML = '<option value="all">Todas las diplomaturas</option>' + diplomas.map(d => `<option>${esc(d)}</option>`).join('');
       libFiltersReady = true;
     }
+    // Deep links open the resource even if the last-used filters hid it.
+    if (resourceId) {
+      if ($('#libSearch')) $('#libSearch').value = '';
+      if ($('#libDiploma')) $('#libDiploma').value = 'all';
+      if ($('#libState')) $('#libState').value = 'all';
+      app.dupOnly = false;
+    }
+    const q = norm($('#libSearch')?.value || '');
+    const diploma = $('#libDiploma')?.value || 'all';
+    const state = $('#libState')?.value || 'all';
+    const sort = $('#libSort')?.value || 'recent';
     let list = allResources().filter(r => {
       const hay = norm([r.title, r.summary, r.diploma, r.module, r.path, (r.tags || []).join(' ')].join(' '));
       return (!q || hay.includes(q)) && (diploma === 'all' || r.diploma === diploma) && (state === 'all' || r.state === state) && (!app.dupOnly || r.dup);
@@ -855,7 +1381,9 @@
     });
 
     if (resourceId) app.selectedResource = Number(resourceId);
-    if (app.selectedResource && !all.some(r => r.id === app.selectedResource)) app.selectedResource = null;
+    // Keep the detail panel in sync with the active filter: if the selected
+    // resource is filtered out, clear it so the first visible result opens.
+    if (app.selectedResource && !list.some(r => r.id === app.selectedResource)) app.selectedResource = null;
     if (!app.selectedResource && list.length && window.innerWidth > 960) app.selectedResource = list[0].id;
     renderResourceDetail();
   }
@@ -876,10 +1404,21 @@
       <div class="rd-facts">
         <div class="rd-fact"><span>ID</span><b>#${String(r.id).padStart(3, '0')}</b></div>
         <div class="rd-fact"><span>PÁGINAS</span><b>${r.pages}</b></div>
-        <div class="rd-fact"><span>ACTUALIZADO</span><b>${esc(r.updated)}</b></div>
+        <div class="rd-fact"><span>DIGERIDO</span><b>${resourceProgress(r)}%</b></div>
+        <div class="rd-fact"><span>IDIOMA</span><b>es-AR</b></div>
+        <div class="rd-fact"><span>AÑO</span><b>${r.year}</b></div>
+        <div class="rd-fact"><span>HASH</span><b>${mdHash(r)}</b></div>
         <div class="rd-fact"><span>CÓDIGO</span><b>${esc(r.code || '—')}</b></div>
+        <div class="rd-fact"><span>ESTADO</span><b>${libStateLabel(r.state)}</b></div>
       </div>
-      <div class="rd-path"><b>UBICACIÓN FÍSICA</b>${esc(r.path)}</div>
+      <div class="rd-path"><b>UBICACIÓN FÍSICA · PDF ORIGINAL</b>${esc(r.path)}</div>
+      <div class="rd-path rd-md"><b>MARKDOWN DERIVADO · ${resourceProgress(r)}%</b>${esc(mdPath(r))}</div>
+      <div class="rd-meta-strip">
+        <span>CURSO <b>${esc(r.diploma)}</b></span>
+        <span>MÓDULO <b>${esc(r.module)}</b></span>
+        <span>TAGS <b>${(r.tags || []).length}</b></span>
+        <span>LINKS <b>${r.dup ? 'DUPLICADO' : '—'}</b></span>
+      </div>
       <div class="rd-tags">${(r.tags || []).map(t => `<span>${esc(t)}</span>`).join('')}</div>
       ${dups.length ? `<div class="rd-dup"><b>También aparece en ${dups.length} ubicación${dups.length > 1 ? 'es' : ''}</b><p>${dups.map(d => `${esc(d.diploma)} · ${esc(d.path)}`).join('<br>')}</p></div>` : ''}
       <button class="rd-close" id="closeResourceDetail" aria-label="Cerrar detalle">×</button>
@@ -899,6 +1438,10 @@
   }
 
   function bindLibrary() {
+    $$('.lib-mode').forEach(btn => btn.addEventListener('click', () => {
+      setLibMode(btn.dataset.libmode);
+      if (app.libMode === 'files' && !$('#libFiles').hidden) renderLibrary();
+    }));
     ['libSearch', 'libDiploma', 'libState', 'libSort'].forEach(id => {
       const el = $('#' + id);
       if (!el) return;
@@ -1168,6 +1711,120 @@
     });
   }
 
+  /* ---------- roadmap vivo ---------- */
+  const ROAD_STATUS = {
+    done: { label: 'EN LA APP', cls: 'done' },
+    now: { label: 'EN CONSTRUCCIÓN', cls: 'now' },
+    next: { label: 'PRÓXIMO', cls: 'next' },
+    later: { label: 'VISIÓN', cls: 'later' }
+  };
+  const ROAD_HORIZONS = { h0: 'Ahora', h1: 'Próximo', h2: 'Después', h3: 'Visión' };
+
+  function renderRoadmap() {
+    renderNav();
+    const R = window.ROADMAP;
+    if (!R) return;
+    const rp = roadmapProgress();
+    $('#roadmapVersion').textContent = R.version;
+    $('#roadmapNorth').textContent = R.northStar;
+    $('#roadmapStatement').textContent = R.statement;
+    $('#roadmapProgressBar').style.width = rp.pct + '%';
+    $('#roadmapProgressLabel').textContent = `${rp.done} de ${rp.total} hitos alcanzados`;
+    $('#roadmapProgressPct').textContent = rp.pct + '%';
+
+    $('#roadmapMetrics').innerHTML = R.metrics.map(m => `
+      <div class="roadmap-metric">
+        <span>${esc(m.label)}</span>
+        <b>${esc(m.value)}</b>
+        <i><i style="width:${m.pct}%"></i></i>
+        <small>meta · ${esc(m.target)}</small>
+      </div>`).join('');
+
+    const itemsByHorizon = h => rp.items.filter(i => i.horizon === h);
+    $('#roadmapHorizons').innerHTML = R.horizons.map((h, idx) => {
+      const items = itemsByHorizon(h.id);
+      const done = items.filter(i => i.status === 'done').length;
+      const pct = items.length ? Math.round(done / items.length * 100) : 0;
+      return `<button class="roadmap-horizon ${app.roadmapHorizon === h.id ? 'active' : ''}" data-road-horizon="${h.id}">
+        <span class="rh-index">0${idx + 1}</span>
+        <span class="rh-copy"><b>${esc(h.label)}</b><small>${esc(h.window)} · ${done}/${items.length} hitos</small><em>${esc(h.note)}</em></span>
+        <span class="rh-pct">${pct}%</span>
+        <i class="rh-bar"><i style="width:${pct}%"></i></i>
+      </button>`;
+    }).join('');
+
+    $('#roadmapFilters').innerHTML = `<button class="road-filter ${app.roadmapStream === 'all' ? 'active' : ''}" data-road-stream="all">Todos</button>` +
+      R.streams.map(s => {
+        const done = s.items.filter(i => i.status === 'done').length;
+        return `<button class="road-filter ${app.roadmapStream === s.id ? 'active' : ''}" data-road-stream="${s.id}"><span>${s.icon}</span>${esc(s.title)}<em>${done}/${s.items.length}</em></button>`;
+      }).join('');
+
+    const streams = R.streams.filter(s => app.roadmapStream === 'all' || s.id === app.roadmapStream);
+    $('#roadmapStreams').innerHTML = streams.map(s => {
+      let items = s.items;
+      if (app.roadmapHorizon !== 'all') items = items.filter(i => i.horizon === app.roadmapHorizon);
+      if (app.roadmapPending) items = items.filter(i => i.status !== 'done');
+      const done = s.items.filter(i => i.status === 'done').length;
+      const pct = s.items.length ? Math.round(done / s.items.length * 100) : 0;
+      return `<section class="road-stream" style="--tone:${s.accent}">
+        <header class="road-stream-head">
+          <span class="rs-icon">${s.icon}</span>
+          <div class="rs-copy"><h3>${esc(s.title)}</h3><p>${esc(s.purpose)}</p></div>
+          <div class="rs-progress"><b>${pct}%</b><small>${done}/${s.items.length}</small><i><i style="width:${pct}%"></i></i></div>
+        </header>
+        <div class="road-items">
+          ${items.length ? items.map(item => {
+            const st = ROAD_STATUS[item.status] || ROAD_STATUS.later;
+            return `<article class="road-item ${st.cls}">
+              <div class="ri-status"><i></i>${st.label}</div>
+              <div class="ri-copy"><b>${esc(item.t)}</b><p>${esc(item.note)}</p></div>
+              <div class="ri-meta">
+                <span class="ri-horizon">${esc(ROAD_HORIZONS[item.horizon] || item.horizon)}</span>
+                <span class="ri-effort">${esc(item.effort)}</span>
+                <span class="ri-metric">${esc(item.metric)}</span>
+              </div>
+            </article>`;
+          }).join('') : '<div class="road-empty">Sin hitos con este filtro. Probá con “Todos”.</div>'}
+        </div>
+      </section>`;
+    }).join('');
+
+    $('#roadmapPrinciples').innerHTML = R.principles.map((p, i) => `<div><span>0${i + 1}</span><p>${esc(p)}</p></div>`).join('');
+    $('#roadmapNonGoals').innerHTML = R.nonGoals.map(p => `<div><span>×</span><p>${esc(p)}</p></div>`).join('');
+    $('#roadmapRisks').innerHTML = R.risks.map(r => `<div class="road-risk"><div><b>${esc(r.title)}</b><em class="risk-${norm(r.level)}">${esc(r.level)}</em></div><p>${esc(r.note)}</p></div>`).join('');
+    const nowItems = R.streams.flatMap(s => s.items.filter(i => i.status === 'now').map(i => ({ ...i, stream: s })));
+    $('#roadmapNext').innerHTML = nowItems.slice(0, 4).map(i => `<div class="road-next-row"><span>${i.stream.icon}</span><div><b>${esc(i.t)}</b><small>${esc(i.stream.title)} · ${esc(i.metric)}</small></div></div>`).join('');
+
+    $$('#roadmapFilters [data-road-stream]').forEach(el => el.addEventListener('click', () => { app.roadmapStream = el.dataset.roadStream; renderRoadmap(); persist(); }));
+    $$('#roadmapHorizons [data-road-horizon]').forEach(el => el.addEventListener('click', () => {
+      app.roadmapHorizon = app.roadmapHorizon === el.dataset.roadHorizon ? 'all' : el.dataset.roadHorizon;
+      renderRoadmap(); persist();
+    }));
+  }
+
+  function bindRoadmap() {
+    $('#roadmapPendingToggle')?.addEventListener('click', () => {
+      app.roadmapPending = !app.roadmapPending;
+      $('#roadmapPendingToggle').classList.toggle('active', app.roadmapPending);
+      renderRoadmap(); persist();
+    });
+    $('#exportRoadmapBtn')?.addEventListener('click', () => {
+      const R = window.ROADMAP;
+      let txt = `# Verde — Roadmap vivo\n\n${R.version}\n\n## North star\n${R.northStar}\n\n${R.statement}\n\n`;
+      txt += `## Métricas\n` + R.metrics.map(m => `- ${m.label}: ${m.value} → ${m.target}`).join('\n') + '\n\n';
+      R.streams.forEach(s => {
+        txt += `## ${s.title} (${s.items.filter(i => i.status === 'done').length}/${s.items.length})\n${s.purpose}\n\n`;
+        s.items.forEach(i => {
+          txt += `- [${i.status === 'done' ? 'x' : ' '}] ${i.t} — ${ROAD_HORIZONS[i.horizon]} · esfuerzo ${i.effort} · ${i.metric}\n  ${i.note}\n`;
+        });
+        txt += '\n';
+      });
+      txt += `## No objetivos\n` + R.nonGoals.map(x => `- ${x}`).join('\n') + '\n\n## Riesgos\n' + R.risks.map(r => `- ${r.title} (${r.level}): ${r.note}`).join('\n') + '\n';
+      downloadText('verde-roadmap.md', txt);
+      showToast('Roadmap exportado en Markdown.');
+    });
+  }
+
   /* ---------- modals / shop / global bindings ---------- */
   function closeModal(id) { $('#' + id)?.classList.remove('open'); }
 
@@ -1175,7 +1832,7 @@
     $$('[data-nav]').forEach(el => {
       if (el.dataset.navBound) return;
       el.dataset.navBound = '1';
-      el.addEventListener('click', (e) => { e.preventDefault(); navigate(el.dataset.nav); });
+      el.addEventListener('click', (e) => { e.preventDefault(); navigate(el.dataset.nav, { libMode: el.dataset.libmode }); });
     });
     $$('[data-ask]').forEach(el => {
       if (el.dataset.askBound) return;
@@ -1202,9 +1859,12 @@
       }
     });
 
-    $('#advanceBtn')?.addEventListener('click', advance);
-    $('#advanceBtn2')?.addEventListener('click', advance);
+    $('#advanceBtn')?.addEventListener('click', () => advance());
+    $('#advanceBtn2')?.addEventListener('click', () => advance());
     $('#quickSimBtn')?.addEventListener('click', () => $('#quickModal').classList.add('open'));
+    $('#batchRunBtn')?.addEventListener('click', runBatchBenchmark);
+    $('#timelapseBtn')?.addEventListener('click', toggleTimelapse);
+    $('#idxRunBatch')?.addEventListener('click', () => { runBatchBenchmark(); navigate('sim'); });
     $('#resetSimBtn')?.addEventListener('click', () => {
       if (!window.confirm('¿Reiniciar la temporada desde el día 1?')) return;
       archiveSeason();
@@ -1262,6 +1922,8 @@
     bindLibrary();
     bindOracle();
     bindBudget();
+    bindRoadmap();
+    $('#roadmapPendingToggle')?.classList.toggle('active', !!app.roadmapPending);
     const initialView = (location.hash || '').replace('#', '');
     const target = VIEWS[initialView] ? initialView : 'panel';
     renderNav();
@@ -1273,6 +1935,7 @@
     renderChat();
     renderBudget();
     renderProcess();
+    renderRoadmap();
     navigate(target);
   }
 
