@@ -33,12 +33,12 @@
         <div class="heading-actions"><button class="text-action" id="soundToggle" aria-label="Alternar sonido"><span id="soundIcon">♫</span> <span id="soundLabel">SONIDO ON</span></button><button class="help-button" id="helpBtn">? <span>CONTROLES</span></button></div>
       </section>
 
-      <section class="arena-layout">
+      <section class="arena-layout" id="arenaLayout">
         <div class="battle-column">
           <div class="match-strip">
             <div class="match-mode"><span class="mode-icon">⚔</span><div><b>ESCARAMUZA</b><small>4 JUGADORES · TODOS CONTRA TODOS</small></div></div>
             <div class="match-meta"><span class="map-pin">⌖</span> ROBLEDAL DE UMBRÍA <span class="meta-sep">·</span> <span class="match-state"><i></i> EN CURSO</span></div>
-            <button class="restart-button" id="restartBtn" title="Reiniciar partida">↻ <span>NUEVA PARTIDA</span></button>
+            <div class="match-actions"><button class="scoreboard-toggle" id="scoreboardToggle" type="button" aria-controls="sidePanel" aria-expanded="false">☷ <span>COMBATIENTES</span></button><button class="restart-button" id="restartBtn" title="Reiniciar partida">↻ <span>NUEVA PARTIDA</span></button></div>
           </div>
 
           <div class="game-frame" id="gameFrame">
@@ -53,7 +53,7 @@
             <div class="match-result hidden" id="resultPanel"><div class="result-kicker">FIN DE LA PARTIDA</div><div class="result-title" id="resultTitle">VICTORIA</div><div class="result-sub" id="resultSub">El Robledal recuerda tu nombre.</div><button id="playAgain">VOLVER A LUCHAR <span>↻</span></button></div>
             <div class="mobile-joystick" id="joystick"><div class="joy-ring"><div class="joy-knob" id="joyKnob"></div></div></div>
             <div class="mobile-cast-hint">MOVER · ATACAR ABAJO</div>
-            <div class="canvas-tip" id="canvasTip"><span>FLECHAS / WASD</span> MOVER <span class="tip-dot">·</span> <span>CLICK / TAB</span> ELEGIR <span class="tip-dot">·</span> <span>F</span> ATACAR</div>
+            <div class="canvas-tip" id="canvasTip"><span>FLECHAS / WASD</span> MOVER <span class="tip-dot">·</span> <span>CLICK</span> ELEGIR / LANZAR <span class="tip-dot">·</span> <span>F</span> ATACAR</div>
           </div>
 
           <div class="combat-hud">
@@ -62,7 +62,7 @@
             <div class="target-card"><div class="target-copy"><small>OBJETIVO</small><strong id="targetName">Luna de Plata</strong><span id="targetStatus">100% · FUERA DE ALCANCE</span></div><button class="attack-button" id="attackBtn" type="button" title="Ataque cuerpo a cuerpo (F / Enter)"><span>⚔</span><b>ATACAR</b><kbd>F</kbd></button></div>
             <div class="hud-right"><div class="hud-kills"><small>BAJAS</small><strong id="playerKills">0 <i>/ 5</i></strong></div><div class="hud-divider"></div><button class="hud-menu" id="menuBtn" aria-label="Pausar o reanudar">☰</button></div>
           </div>
-          <div class="spell-loadout" aria-label="Habilidades del personaje"><span class="spell-heading">HABILIDADES</span><button class="spell-slot" data-skill="0" type="button"><kbd>1</kbd><b class="spell-icon"></b><span class="spell-name"></span><small class="spell-cost"></small></button><button class="spell-slot" data-skill="1" type="button"><kbd>2</kbd><b class="spell-icon"></b><span class="spell-name"></span><small class="spell-cost"></small></button><button class="spell-slot" data-skill="2" type="button"><kbd>3</kbd><b class="spell-icon"></b><span class="spell-name"></span><small class="spell-cost"></small></button><span class="spell-hint">Seleccioná un objetivo · 1 / 2 / 3</span></div>
+          <div class="spell-loadout" aria-label="Habilidades del personaje"><span class="spell-heading">HECHIZOS</span><button class="spell-slot" data-skill="0" type="button" aria-pressed="false"><kbd>1</kbd><b class="spell-icon"></b><span class="spell-name"></span><small class="spell-cost"></small></button><button class="spell-slot" data-skill="1" type="button" aria-pressed="false"><kbd>2</kbd><b class="spell-icon"></b><span class="spell-name"></span><small class="spell-cost"></small></button><button class="spell-slot" data-skill="2" type="button" aria-pressed="false"><kbd>3</kbd><b class="spell-icon"></b><span class="spell-name"></span><small class="spell-cost"></small></button><span class="spell-hint" id="spellHint">Elegí un hechizo y hacé clic en un rival</span></div>
           <div class="under-hud"><span><i class="tiny-online"></i> <b>4</b> COMBATIENTES EN ARENA</span><span>BOTÍN DE ENTRENAMIENTO <b>·</b> SIN PENALIDAD</span></div>
           <section class="project-roadmap" id="roadmap" aria-labelledby="roadmapTitle">
             <div class="roadmap-heading"><div><div class="eyebrow"><span class="eyebrow-line"></span> DESARROLLO ABIERTO · MVP POR MVP</div><h2 id="roadmapTitle">Hoja de ruta <em>de Reinos</em></h2></div><span class="roadmap-version">ESTADO · PROTOTIPO WEB</span></div>
@@ -78,7 +78,7 @@
           </section>
         </div>
 
-        <aside class="side-panel">
+        <aside class="side-panel hidden" id="sidePanel" aria-label="Tabla de combatientes">
           <div class="side-section roster-section"><div class="side-heading"><span>COMBATIENTES</span><span class="roster-count">04 / 04</span></div><div id="roster" class="roster">
             <div class="roster-row self-row" data-fighter="player"><div class="roster-avatar avatar-you">♞<i></i></div><div class="roster-copy"><b>Viajero del Sur</b><small>TÚ · <span id="playerClassLabel">GUERRERO</span></small></div><div class="roster-score"><b id="rosterPlayerKills">0</b><small>BAJAS</small></div></div>
             <button type="button" class="roster-row" data-fighter="luna" aria-label="Seleccionar a Luna de Plata"><span class="roster-avatar avatar-mage">✧<i></i></span><span class="roster-copy"><b>Luna de Plata</b><small>MAGA · NIVEL 8</small></span><span class="roster-score"><b id="score-luna">0</b><small>BAJAS</small></span></button>
@@ -94,7 +94,7 @@
     </main>
   </div>
   <div class="toast" id="toast"></div>
-  <div class="modal hidden" id="helpModal"><div class="modal-card"><button class="modal-close" id="closeHelp">×</button><div class="eyebrow">GUÍA DEL VIAJERO</div><h2>Controles de combate</h2><div class="control-list"><p><kbd>FLECHAS / WASD</kbd><span>Moverse por el mapa, un tile por paso</span></p><p><kbd>CLICK / TAB</kbd><span>Seleccionar un combatiente</span></p><p><kbd>F / ENTER</kbd><span>Golpe cuerpo a cuerpo al objetivo adyacente</span></p><p><kbd>ESC / ☰</kbd><span>Pausar o reanudar la partida</span></p></div><div class="modal-note">En móvil, usá el pad para moverte. Seleccioná un rival y acercate a un tile para habilitar ATACAR.</div></div></div>
+  <div class="modal hidden" id="helpModal"><div class="modal-card"><button class="modal-close" id="closeHelp">×</button><div class="eyebrow">GUÍA DEL VIAJERO</div><h2>Controles de combate</h2><div class="control-list"><p><kbd>FLECHAS / WASD</kbd><span>Moverse por el mapa, un tile por paso</span></p><p><kbd>CLICK / TAB</kbd><span>Elegir un rival; con hechizo seleccionado, lanzarlo</span></p><p><kbd>1 / 2 / 3</kbd><span>Seleccionar o cancelar un hechizo; luego clic en el rival</span></p><p><kbd>F / ENTER</kbd><span>Golpe cuerpo a cuerpo al objetivo adyacente</span></p><p><kbd>☷ / ESC</kbd><span>Abrir combatientes; Esc cierra el panel</span></p></div><div class="modal-note">En móvil, usá el pad para moverte. Seleccioná un rival y acercate a un tile para habilitar ATACAR.</div></div></div>
   <script src="game.js"></script>
 </body>
 </html>

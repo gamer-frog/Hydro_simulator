@@ -25,8 +25,10 @@ Prototipo web de combate inspirado en Argentum Online: renderiza el mapa y perso
 
 - **Flechas o WASD:** moverse por el mapa.
 - **Clic sobre un personaje o en la lista / Tab:** seleccionar objetivo.
+- **Clic en un hechizo o teclas 1–3:** seleccionar/cancelar; luego clic sobre un rival en el campo para lanzarlo. Elegir un rival desde la lista solo lo selecciona.
 - **F o Enter:** atacar al objetivo cuando esté en un tile adyacente.
-- **Esc o ☰:** pausar o reanudar.
+- **Botón Combatientes:** mostrar/ocultar el marcador; **Esc** cierra el panel (o la guía si está abierta).
+- **☰:** pausar o reanudar.
 - En pantallas táctiles, usá el pad en pantalla para moverte y el botón **ATACAR** para golpear.
 
 Para probarlo, serví esta carpeta desde un servidor HTTP local (por ejemplo, `python3 -m http.server`) y abrí la dirección local en el navegador. Los recursos se cargan como JSON e imágenes, así que no abras `index.html` directamente como archivo.

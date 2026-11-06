@@ -47,7 +47,7 @@
   let mapData, grhs, characters;
   let W = 800, H = 480, dpr = 1, tilePx = 32;
   let elapsed = 0, remaining = 180, gameOver = false, paused = false;
-  let selected = 'luna', kills = 0, currentClass = 'warrior';
+  let selected = 'luna', selectedSkill = null, kills = 0, currentClass = 'warrior';
   const floatingTexts = [], spellEffects = [];
   let audioOn = true, audioReady = false, audioCtx;
   const keys = new Set();
@@ -250,9 +250,25 @@
       if (actor.aim.remaining <= 0) resolveNpcAim(actor);
     }
   }
-  function castSkill(index) {
+  function selectSkill(index) {
     if (gameOver || paused || !player.alive) return;
-    const skill = CLASS_PROFILES[currentClass].skills[index], target = byId[selected];
+    const skill = CLASS_PROFILES[currentClass].skills[index];
+    if (!skill) return;
+    selectedSkill = selectedSkill === index ? null : index;
+    refreshSkillSelection();
+    toast(selectedSkill === null ? 'Selección de hechizo cancelada.' : `${skill.name} seleccionado · elegí un rival en el campo.`);
+  }
+  function refreshSkillSelection() {
+    document.querySelectorAll('.spell-slot').forEach((button, slot) => {
+      button.classList.toggle('active-spell', slot === selectedSkill);
+      button.setAttribute('aria-pressed', String(slot === selectedSkill));
+    });
+    const skill = selectedSkill === null ? null : CLASS_PROFILES[currentClass].skills[selectedSkill];
+    $('spellHint').textContent = skill ? `${skill.name} listo · hacé clic en un rival` : 'Elegí un hechizo y hacé clic en un rival';
+  }
+  function castSkill(index, targetOverride = null) {
+    if (gameOver || paused || !player.alive) return;
+    const skill = CLASS_PROFILES[currentClass].skills[index], target = targetOverride || byId[selected];
     if (!skill || !target || !target.alive || target === player) { toast('Elegí un rival como objetivo.'); return; }
     if (player.skillCooldowns[index] > 0) { toast('Esa habilidad todavía se está recuperando.'); return; }
     if (player.mana < skill.cost) { toast('No tenés maná suficiente.'); return; }
@@ -274,6 +290,7 @@
       toast(`${skill.name} · ${damage} de daño a ${target.name}.`); tone(currentClass === 'mage' ? 620 : 340, .13);
       if (target.hp <= 0) kill(target, player);
     }
+    selectedSkill = null; refreshSkillSelection();
     refreshHud();
   }
   function applyClass(className) {
@@ -282,10 +299,10 @@
     player.body = profile.body; player.head = profile.head;
     player.maxHp = profile.hp; player.hp = profile.hp;
     player.maxMana = profile.mana; player.mana = profile.mana;
-    player.skillCooldowns = [0, 0, 0];
+    player.skillCooldowns = [0, 0, 0]; selectedSkill = null;
     $('heroClass').textContent = profile.label;
     $('playerClassLabel').textContent = profile.label;
-    renderSkills(); refreshHud();
+    renderSkills(); refreshSkillSelection(); refreshHud();
     toast(`Clase ${profile.label.toLowerCase()} seleccionada.`);
   }
   function renderSkills() {
@@ -320,7 +337,24 @@
   function selectTarget(actor) {
     if (!actor || actor === player || !actor.alive) return;
     selected = actor.id; refreshHud();
-    toast(`${actor.name} seleccionado · acercate y atacá con F.`);
+    toast(selectedSkill === null ? `${actor.name} seleccionado · acercate y atacá con F.` : `${actor.name} seleccionado · ${CLASS_PROFILES[currentClass].skills[selectedSkill].name} listo para lanzar desde el campo.`);
+  }
+  function toggleScoreboard(force) {
+    const panel = $('sidePanel'), button = $('scoreboardToggle');
+    const open = typeof force === 'boolean' ? force : panel.classList.contains('hidden');
+    panel.classList.toggle('hidden', !open);
+    $('arenaLayout').classList.toggle('scoreboard-open', open);
+    button.setAttribute('aria-expanded', String(open));
+    button.setAttribute('aria-label', `${open ? 'Ocultar' : 'Mostrar'} combatientes`);
+  }
+  function handleCanvasTarget(target) {
+    if (!target) return;
+    if (selectedSkill === null) {
+      selectTarget(target);
+      return;
+    }
+    selected = target.id;
+    castSkill(selectedSkill, target);
   }
   function clearJoystick() {
     if (joystickKey) keys.delete(joystickKey);
@@ -428,10 +462,10 @@
     }
     drawGrh(bodyId, sx, sy, now, true);
     drawGrh(headId, sx + (body.HeadOffsetX || 0) * tilePx / 32, sy + (body.HeadOffsetY || 0) * tilePx / 32, now, false);
-    const spriteH = tilePx * 1.55, labelY = sy + tilePx - spriteH - 5;
-    ctx.save(); ctx.textAlign = 'center'; ctx.font = `600 ${Math.max(9, tilePx * .28)}px DM Sans, sans-serif`;
+    const labelY = sy + tilePx + 12, label = actor === player ? 'Viajero del Sur' : actor.name;
+    ctx.save(); ctx.textAlign = 'center'; ctx.font = `600 ${Math.max(8, tilePx * .25)}px DM Sans, sans-serif`;
     ctx.fillStyle = actor === player ? '#f5dc9d' : '#f1ead3'; ctx.shadowColor = '#10130e'; ctx.shadowBlur = 4;
-    ctx.fillText(actor === player ? 'Viajero del Sur' : actor.name.split(' ')[0], sx + tilePx / 2, labelY);
+    ctx.fillText(label, sx + tilePx / 2, labelY, tilePx * 2.8);
     ctx.shadowBlur = 0; ctx.fillStyle = 'rgba(13,16,12,.82)'; ctx.fillRect(sx + tilePx * .14, labelY + 3, tilePx * .72, 3);
     ctx.fillStyle = actor.hp > 35 ? '#8bb46c' : '#c96152'; ctx.fillRect(sx + tilePx * .14, labelY + 3, tilePx * .72 * actor.hp / actor.maxHp, 3);
     if (actor.flash > 0) { ctx.globalCompositeOperation = 'screen'; ctx.fillStyle = `rgba(255,235,180,${actor.flash * 1.5})`; ctx.fillRect(sx, sy - tilePx, tilePx, tilePx * 2); }
@@ -516,7 +550,8 @@
     $('manaValue').textContent = `${Math.floor(player.mana)} / ${player.maxMana}`;
     document.querySelectorAll('.spell-slot').forEach((button, index) => {
       const skill = CLASS_PROFILES[currentClass].skills[index], cooldown = player.skillCooldowns[index];
-      button.disabled = !player.alive || player.mana < skill.cost || cooldown > 0;
+      button.disabled = !player.alive;
+      button.classList.toggle('unavailable', player.mana < skill.cost);
       button.classList.toggle('cooling', cooldown > 0);
       button.querySelector('.spell-cost').textContent = cooldown > 0 ? `${cooldown.toFixed(1)}s` : `${skill.cost} maná`;
     });
@@ -541,7 +576,8 @@
   function resetGame() {
     for (const actor of fighters) Object.assign(actor, { x: actor.homeX, y: actor.homeY, hp: actor === player ? player.maxHp : 100, mana: actor === player ? player.maxMana : 0, alive: true, kills: 0, step: null, stepTime: 0, respawn: 0, flash: 0, attackCd: rand(.2, .8), aiTimer: rand(.2, 1), aim: null, skillCooldowns: [0, 0, 0] });
     floatingTexts.length = 0; spellEffects.length = 0;
-    selected = 'luna'; kills = 0; remaining = 180; elapsed = 0; gameOver = false; paused = false; keys.clear();
+    selected = 'luna'; selectedSkill = null; kills = 0; remaining = 180; elapsed = 0; gameOver = false; paused = false; keys.clear();
+    refreshSkillSelection();
     $('resultPanel').classList.add('hidden'); $('battleLog').innerHTML = '<div class="empty-log">Las hazañas de la arena aparecerán aquí.</div>';
     $('killFeed').innerHTML = '<div class="feed-line"><span class="feed-gold">✦</span> <b>La arena te espera</b><span>—</span> buena suerte, viajero.</div>';
     refreshHud(); toast('Nueva ronda · elegí un objetivo y luchá.');
@@ -562,9 +598,14 @@
   window.addEventListener('keydown', event => {
     audioReady = true; const key = event.key.toLowerCase();
     if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(key)) event.preventDefault();
-    if (key === 'escape') { togglePause(); return; }
+    if (key === 'escape') {
+      if (!$('helpModal').classList.contains('hidden')) $('helpModal').classList.add('hidden');
+      else if (!$('sidePanel').classList.contains('hidden')) toggleScoreboard(false);
+      else togglePause();
+      return;
+    }
     if (key === 'enter' || key === 'f') { event.preventDefault(); attack(); return; }
-    if (['1', '2', '3'].includes(key)) { castSkill(Number(key) - 1); return; }
+    if (['1', '2', '3'].includes(key)) { selectSkill(Number(key) - 1); return; }
     if (key === 'tab') { event.preventDefault(); const next = fighters.filter(f => f !== player && f.alive); if (next.length) selectTarget(next[(next.findIndex(f => f.id === selected) + 1) % next.length]); return; }
     keys.add(key);
   });
@@ -572,12 +613,13 @@
   window.addEventListener('blur', () => { keys.clear(); clearJoystick(); });
   canvas.addEventListener('pointerdown', event => {
     const rect = canvas.getBoundingClientRect(), target = actorAtPointer(event.clientX - rect.left, event.clientY - rect.top);
-    if (target) selectTarget(target);
+    if (target) handleCanvasTarget(target);
   });
   canvas.addEventListener('contextmenu', event => event.preventDefault());
   $('attackBtn').addEventListener('click', () => attack());
   $('classSelect').addEventListener('change', event => applyClass(event.target.value));
-  document.querySelectorAll('.spell-slot').forEach(button => button.addEventListener('click', () => castSkill(Number(button.dataset.skill))));
+  document.querySelectorAll('.spell-slot').forEach(button => button.addEventListener('click', () => selectSkill(Number(button.dataset.skill))));
+  $('scoreboardToggle').addEventListener('click', () => toggleScoreboard());
   document.querySelectorAll('.roster-row[data-fighter]').forEach(row => {
     if (row.dataset.fighter !== 'player') row.addEventListener('click', () => selectTarget(byId[row.dataset.fighter]));
   });
