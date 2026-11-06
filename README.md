@@ -17,9 +17,16 @@
 - 🌍 [Create with OMGithub](https://go.ondev.store/).
 <!-- omgithub:readme:end -->
 
-## Referencias y alcance del prototipo
+## Combate de prueba
 
-- El [manual de Imperium Classic: controles](https://manual.imperiumclassic.com/doku.php?id=test7) indica que el clic izquierdo selecciona objetivos, lanza hechizos e inspecciona el tile; el derecho interactúa con el mundo y recoge objetos. Esto respalda el esquema de selección de habilidad y clic sobre un rival usado aquí.
-- Las páginas de [Magia](https://manual.imperiumclassic.com/doku.php?id=magia), [Clérigo](https://manual.imperiumclassic.com/doku.php?id=clerigo), [Paladín](https://manual.imperiumclassic.com/doku.php?id=paladin) y [Nigromante](https://manual.imperiumclassic.com/doku.php?id=nigromante) muestran hechizos dependientes de clase y requisitos de skill; por eso las cuatro habilidades actuales son valores de prototipo, no una reproducción fiel de balance o progresión.
-- El cliente público [ao-libre/ao-cliente](https://github.com/ao-libre/ao-cliente) sirve como referencia técnica para el movimiento sobre mapa de tiles. Su código declara AGPL-3.0; eso no confirma por sí solo los permisos de sus sprites, mapas, sonidos u otros recursos.
-- La arena y los personajes actuales se dibujan con Canvas y formas originales provisionales. No se copiaron recursos visuales de AO. El manual consultado es de Imperium Classic y puede no describir exactamente todas las reglas de otras versiones de Imperium/AO.
+Prototipo web de combate inspirado en Argentum Online: renderiza el mapa y personajes con el subconjunto de recursos extraído en `assets/ao/`, permite desplazarse por tiles y enfrentar bots con ataques cuerpo a cuerpo.
+
+### Controles
+
+- **Flechas o WASD:** moverse por el mapa.
+- **Clic sobre un personaje o en la lista / Tab:** seleccionar objetivo.
+- **F o Enter:** atacar al objetivo cuando esté en un tile adyacente.
+- **Esc o ☰:** pausar o reanudar.
+- En pantallas táctiles, usá el pad en pantalla para moverte y el botón **ATACAR** para golpear.
+
+Para probarlo, serví esta carpeta desde un servidor HTTP local (por ejemplo, `python3 -m http.server`) y abrí la dirección local en el navegador. Los recursos se cargan como JSON e imágenes, así que no abras `index.html` directamente como archivo.
