@@ -9,7 +9,7 @@
   const rand = (lo, hi) => lo + Math.random() * (hi - lo);
   const MAP_URL = 'assets/ao/';
   const ACTORS = [
-    { id: 'player', name: 'Viajero del Sur', team: 'sacred', body: 1, head: 1, x: 43, y: 46 },
+    { id: 'player', name: 'Viajero del Sur', team: 'sacred', className: 'warrior', body: 1, head: 1, x: 43, y: 46 },
     { id: 'sacredMage', name: 'Luna de Plata', team: 'sacred', className: 'mage', body: 2, head: 2, x: 43, y: 43 },
     { id: 'sacredCleric', name: 'Iria del Alba', team: 'sacred', className: 'cleric', body: 3, head: 3, x: 43, y: 49 },
     { id: 'sacredPaladin', name: 'Darian Luzfirme', team: 'sacred', className: 'paladin', body: 1, head: 4, x: 46, y: 46 },
@@ -47,7 +47,7 @@
     ] },
     ranger: { label: 'CAZADOR', body: 3, head: 3, hp: 105, mana: 95, skills: [
       { name: 'Flecha certera', icon: '➶', type: 'damage', cost: 16, damage: [22, 32], range: 6, color: '#c9e177' },
-      { name: 'Hierbas', icon: '✚', type: 'heal', cost: 20, heal: 30, color: '#8ee2a3' },
+      { name: 'Hierbas', icon: '✚', type: 'healAlly', cost: 20, heal: 30, color: '#8ee2a3' },
       { name: 'Flecha venenosa', icon: '☠', type: 'damage', cost: 27, damage: [32, 43], range: 7, color: '#b895ff' }
     ] }
   };
@@ -60,6 +60,9 @@
   let mapData, grhs, characters;
   let W = 800, H = 480, dpr = 1, tilePx = 32;
   let elapsed = 0, remaining = 180, gameOver = false, paused = false;
+  const teamScores = { sacred: 0, chaotic: 0 };
+  const TEAM_LABELS = { sacred: 'LEGIÓN SAGRADA', chaotic: 'LEGIÓN CAÓTICA' };
+  const TEAM_COLORS = { sacred: '#69a9ff', chaotic: '#ff776d' };
   let selected = 'chaoticWarrior', selectedSkill = null, kills = 0, currentClass = 'warrior';
   let placingNpc = false, placementTile = null, pointerCanvas = null;
   const floatingTexts = [], spellEffects = [];
@@ -117,7 +120,7 @@
       for (const [id, image] of loaded) if (image) images.set(id, image);
       const missing = ids.length - images.size;
       if (missing) toast(`${missing} láminas de mapa no cargaron; el resto del mundo sigue disponible.`);
-      const positions = [[48, 43], [52, 43], [50, 48], [44, 46]];
+      const positions = [[43, 46], [44, 43], [43, 49], [46, 46], [57, 46], [56, 43], [57, 49], [54, 46]];
       fighters.forEach((actor, i) => { [actor.x, actor.y] = findOpen(positions[i][0], positions[i][1]); actor.homeX = actor.x; actor.homeY = actor.y; });
       refreshHud();
     } catch (error) {
@@ -192,8 +195,15 @@
     const t = clamp(actor.stepTime / STEP_DURATION, 0, 1), [x0, y0] = actor.step.from, [x1, y1] = actor.step.to;
     return [x0 + (x1 - x0) * t, y0 + (y1 - y0) * t];
   }
+  function isAlly(a, b) { return Boolean(a && b && a.team === b.team); }
+  function isEnemy(a, b) { return Boolean(a && b && a.team !== b.team); }
   function nearestEnemy(actor) {
-    return fighters.filter(other => other !== actor && other.alive)
+    return fighters.filter(other => isEnemy(actor, other) && other.alive)
+      .sort((a, b) => distance(actor, a) - distance(actor, b))[0] || null;
+  }
+  function nearestAllyNeedingHelp(actor, needsRemo = false) {
+    return fighters.filter(other => isAlly(actor, other) && other.alive && other !== actor &&
+      (needsRemo ? other.immobilized > 0 : other.hp < other.maxHp * .72))
       .sort((a, b) => distance(actor, a) - distance(actor, b))[0] || null;
   }
   function nextPathStep(actor, target) {
