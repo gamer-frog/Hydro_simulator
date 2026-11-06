@@ -1275,3 +1275,132 @@ dialog::backdrop { background: rgba(16, 32, 22, .42); backdrop-filter: blur(3px)
 @media (min-width: 640px) {
   .ops-grid { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* ---------- Consistent compact spacing ---------- */
+.page { padding-top: 16px; }
+.appbar { height: 58px; }
+.greeting { padding-bottom: 17px; }
+.greeting h1, .section-top h1 { margin-top: 9px; }
+.lede { margin-top: 10px; }
+.avatar-cluster { margin-top: 14px; }
+.live-card { border-radius: 19px; padding: 16px 16px 14px; }
+.live-summary { margin-top: 17px; }
+.pulse-graph { height: 72px; }
+.replay-row { padding-top: 11px; margin-top: 7px; }
+.stat-grid { gap: 7px; margin-top: 9px; }
+.stat-card { padding: 11px 10px; }
+.stat-card strong { margin-top: 7px; }
+.ops-block { margin-top: 9px; }
+.ops-grid { gap: 6px; margin-top: 10px; }
+.ops-card { padding: 8px 9px; }
+.ops-agents-head, .attention-head { margin-top: 10px; padding-top: 8px; }
+.ops-agents { padding: 6px 0 1px; }
+.attention-list { gap: 4px; margin-top: 6px; }
+.attention-item { padding: 7px 8px; }
+.attention-clear { padding: 7px 8px; }
+.home-grid, .home-col { gap: 10px; }
+.home-grid { margin-top: 10px; }
+.block { padding: 14px 13px; border-radius: 16px; }
+.block-head { gap: 9px; }
+.block-head h2 { margin-top: 3px; }
+.block-sub { margin-top: 3px; }
+.now-list, .mini-plan, .mini-loops { margin-top: 8px; }
+.now-row { padding: 9px 0; }
+.studio-preview { margin-top: 11px; padding: 13px; }
+.mini-plan-row, .mini-loop { padding: 7px 0; }
+.issue-row { padding: 8px 0; }
+.block-link { margin-top: 6px; padding-top: 9px; }
+.machine-preview { margin-top: 10px; }
+.section-top { padding-bottom: 17px; }
+.section-top .lede { margin-top: 8px; }
+.world-layout, .world-side { gap: 10px; }
+.world-card-head { padding: 13px 13px 8px; }
+.world-stage { margin-top: 3px; }
+.world-console { padding: 9px 10px; }
+.world-footer { padding: 10px 13px 12px; }
+.side-card { padding: 13px; border-radius: 15px; }
+.signal-row { padding: 7px 0; }
+.room-list-row { padding: 6px 0; }
+.mission-toolbar { margin-bottom: 10px; }
+.source-banner { padding: 8px 10px; margin-bottom: 9px; }
+.mission-list { gap: 7px; }
+.mission-card { padding: 11px 12px 10px; }
+.mission-title { margin-top: 6px; }
+.mission-meta { margin-top: 7px; }
+.mission-bottom { margin-top: 8px; padding-top: 7px; }
+.board-block, .github-issues-block { margin-top: 12px; }
+.trello-board { padding-top: 10px; }
+.trello-actions { margin-top: 7px; }
+.issue-list.large .issue-row { padding: 9px 0; }
+.agency-banner { padding: 12px; margin-bottom: 11px; gap: 10px; }
+.agent-toolbar { margin-bottom: 8px; }
+.agent-grid { gap: 7px; }
+.agent-card { padding: 9px; }
+.agent-portrait { width: 48px; height: 48px; border-radius: 13px; }
+.agent-card h3 { margin-top: 7px; }
+.agent-repo { margin-top: 5px; }
+.agent-last { margin-top: 4px; }
+.agent-hb { padding-top: 6px; margin-top: 6px; }
+.onboarding-block { margin-top: 11px; }
+.steps { gap: 5px; margin-top: 10px; }
+.step-card { padding: 8px 0; }
+.protocol-note { padding: 8px; margin-top: 8px; }
+.plan-summary { gap: 6px; margin-bottom: 10px; }
+.plan-summary-card { padding: 10px; }
+.plan-summary-card strong { margin-top: 5px; }
+.gantt { margin-top: 11px; }
+.gantt-head { height: 25px; }
+.gantt-row { height: 33px; }
+.gantt-bar { height: 16px; }
+.plan-grid { gap: 10px; margin-top: 10px; }
+.after-list, .month-track { margin-top: 8px; }
+.after-row, .month-row { padding: 8px 0; }
+.loops-block { margin-top: 10px; }
+.loop-grid { gap: 6px; margin-top: 10px; }
+.loop-card { padding: 8px; }
+.page-footer { padding-top: 20px; }
+.bottom-nav { height: 60px; }
+.bottom-nav button { height: 50px; }
+
+@media (min-width: 640px) {
+  .live-summary { gap: 30px; }
+  .pulse-graph { height: 82px; }
+  .world-card-head { padding: 15px 16px 9px; }
+  .world-console { margin: 0 16px; }
+  .world-footer { padding: 11px 16px 14px; }
+  .agency-banner { padding: 14px 16px; }
+}
+
+@media (min-width: 980px) {
+  .page { padding: 24px 30px 20px; }
+  .appbar { height: 60px; }
+  .greeting { padding-bottom: 18px; }
+  .live-card { padding: 18px 19px 15px; }
+  .live-summary { margin-top: 19px; gap: 34px; }
+  .pulse-graph { height: 88px; }
+  .home-grid { gap: 12px; margin-top: 12px; }
+  .home-col { gap: 12px; }
+  .block { padding: 17px; }
+  .stat-grid { gap: 9px; margin-top: 10px; }
+  .stat-card { padding: 12px 13px; }
+  .section-top { padding-bottom: 19px; }
+  .world-layout, .world-side { gap: 12px; }
+  .world-card-head { padding: 16px 17px 9px; }
+  .world-console { margin: 0 17px; }
+  .world-footer { padding: 12px 17px 15px; }
+  .side-card { padding: 15px; }
+  .mission-card { padding: 13px 14px 11px; }
+  .agent-grid { gap: 9px; }
+  .agent-card { padding: 11px; }
+  .agent-portrait { width: 54px; height: 54px; }
+  .plan-summary { gap: 9px; margin-bottom: 11px; }
+  .plan-summary-card { padding: 12px 14px; }
+  .plan-grid { gap: 12px; margin-top: 12px; }
+  .loops-block { margin-top: 12px; }
+  .loop-grid { gap: 7px; }
+  .page-footer { padding-top: 22px; }
+}
+
+@media (min-width: 1200px) {
+  .page { padding-left: 38px; padding-right: 38px; }
+}
