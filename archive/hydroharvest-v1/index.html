@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0d3b2e" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="description" content="Simulador de invernadero NFT: caños de 12 m, materiales, inversión y producción estimada." />
+<title>HIDROPLAN · Simulador de invernadero NFT</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>" />
+<link rel="manifest" href="manifest.json" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js" } }
+</script>
+</head>
+<body class="at-title">
+
+<div id="scene-tint"></div>
+
+<!-- ══════════ TOP BAR ══════════ -->
+<header id="topbar" class="hidden">
+  <div class="metric-block">
+    <div class="metric-label">INVERSIÓN TOTAL</div>
+    <div class="metric-value" id="capex">$ 0</div>
+    <div class="metric-sub" id="project-line">0 caños · 0 plantas · 384 m²</div>
+  </div>
+  <div class="top-actions">
+    <button class="icon-btn" id="btn-fullscreen" aria-label="Pantalla completa">⛶</button>
+    <button class="icon-btn" id="btn-menu" aria-label="Menú">☰</button>
+  </div>
+</header>
+
+<div id="toasts"></div>
+
+<div id="zoom-controls" class="hidden">
+  <button id="zoom-in" aria-label="Acercar">＋</button>
+  <button id="zoom-out" aria-label="Alejar">−</button>
+</div>
+
+<div id="empty-hint" class="hidden">
+  <strong>Empezá por un caño NFT</strong>
+  <span>Tocá CONSTRUIR y colocá un caño de 12 m con sus plantas.</span>
+</div>
+
+<!-- ══════════ PLACEMENT BAR ══════════ -->
+<div id="placement-bar" class="hidden">
+  <div id="pb-info">
+    <span id="pb-icon">🌿</span>
+    <div class="pb-text"><div id="pb-name">Caño NFT 12 m</div><div id="pb-hint">Toca una celda del suelo</div></div>
+  </div>
+  <button id="pb-rotate" class="round-btn" aria-label="Rotar">↻</button>
+  <button id="pb-confirm" class="place-confirm" disabled>✓<span>COLOCAR</span></button>
+  <button id="pb-cancel" class="round-btn ghost" aria-label="Cancelar">✕</button>
+</div>
+
+<!-- ══════════ BOTTOM NAV ══════════ -->
+<nav id="bottom-nav" class="hidden">
+  <button data-nav="build"><span class="nav-icon">🏗️</span>CONSTRUIR</button>
+  <button data-nav="materials"><span class="nav-icon">🧾</span>MATERIALES</button>
+  <button data-nav="production"><span class="nav-icon">🌱</span>PRODUCCIÓN</button>
+  <button data-nav="systems"><span class="nav-icon">🧪</span>SISTEMAS</button>
+  <button data-nav="economy"><span class="nav-icon">💵</span>ECONOMÍA</button>
+</nav>
+
+<!-- ══════════ BOTTOM SHEET ══════════ -->
+<div id="sheet-scrim" class="hidden"></div>
+<section id="sheet" class="hidden" aria-live="polite">
+  <div class="grab"></div>
+  <div class="sheet-head">
+    <h2 id="sheet-title">Título</h2>
+    <button id="sheet-close" aria-label="Cerrar">✕</button>
+  </div>
+  <div id="sheet-body"></div>
+</section>
+
+<!-- ══════════ TITLE SCREEN ══════════ -->
+<div id="title-screen" class="screen">
+  <div class="title-glow"></div>
+  <div class="title-inner">
+    <div class="brand">VERDIA LAB · SIMULACIÓN HIDROPÓNICA</div>
+    <h1 class="game-title">HIDROPLAN</h1>
+    <div class="game-subtitle">SIMULADOR DE INVERNADERO NFT</div>
+    <div class="title-menu">
+      <button id="btn-new" class="big-btn primary">▶ &nbsp;NUEVO PROYECTO</button>
+      <button id="btn-continue" class="big-btn">💾 &nbsp;CONTINUAR</button>
+      <button id="btn-help-title" class="big-btn">❓ &nbsp;CÓMO FUNCIONA</button>
+    </div>
+    <div class="title-foot">Presupuestá caños NFT de 12 m · Materiales · Producción · Repago<br>Compará sistemas · Hecho para Android · arrastrá y pellizcá</div>
+  </div>
+</div>
+
+<!-- ══════════ HELP ══════════ -->
+<div id="help-modal" class="overlay hidden">
+  <div class="overlay-card wide">
+    <h2>❓ Cómo funciona</h2>
+    <div class="help-scroll">
+      <h3>🧪 Un simulador de presupuesto</h3>
+      <p>HIDROPLAN sirve para <b>planificar y presupuestar un invernadero NFT</b>: agregás caños de 12 m con sus plantas, reservorio y equipos, y ves en el momento cuánto cuesta construirlo, cuánto produce y cuánto margen deja.</p>
+      <h3>🧱 Módulos y materiales</h3>
+      <ul>
+        <li><b>Caño NFT 12 m</b> — PVC 110 mm, 60 plantas a 20 cm (densidad ajustable).</li>
+        <li><b>Caño NFT 6 m</b> — versión corta para pilotos o espacios reducidos.</li>
+        <li><b>Kit de reservorio</b> — tanque de 1000 L, bomba, filtro, temporizador y dosificador.</li>
+        <li><b>Mesa de almácigo</b>, mesa de trabajo, barra LED, extractor y decoración.</li>
+      </ul>
+      <p>Cada módulo incluye su <b>lista de materiales</b> con cantidades y precios estimados, y la mano de obra de montaje.</p>
+      <h3>👆 Cómo armarlo</h3>
+      <ul>
+        <li><b>CONSTRUIR</b> — elegí un módulo, tocá una celda del piso y confirmá con ✓. Podés repetir sin volver al menú.</li>
+        <li><b>Un dedo arrastrando</b> — mover la cámara. <b>Pellizcar</b> — zoom.</li>
+        <li><b>Tocar un módulo</b> — cambiar cultivo, plantas por caño, ver materiales, rotar o eliminar.</li>
+      </ul>
+      <h3>📊 Los números</h3>
+      <p><b>MATERIALES</b> suma la lista consolidada y el invernadero base. <b>PRODUCCIÓN</b> estima kilos e ingresos por cultivo, y cuánto agrega cada módulo nuevo. <b>ECONOMÍA</b> calcula inversión, costo mensual, margen y repago. <b>SISTEMAS</b> compara varios proyectos y proyecta qué pasa al replicarlos.</p>
+      <p>Editá precio de venta, rendimiento, ciclo, descarte, mano de obra, energía, agua y todos los supuestos desde las pestañas.</p>
+      <h3>🧪 Varios sistemas</h3>
+      <p>Cada <b>sistema</b> es un proyecto independiente con su plano, cultivo y supuestos. Creá un sistema nuevo o duplicá el actual desde <b>SISTEMAS</b> para comparar diseños, costos y rendimiento lado a lado.</p>
+      <h3>⚠️ Importante</h3>
+      <p>Los valores son <b>estimaciones orientativas</b> para planificar. No reemplazan un cálculo de ingeniería ni un presupuesto real de proveedores. Ajustá los precios a tu zona y verificá caudal de bomba, pendientes y calidad del agua.</p>
+      <h3>💾 Tu proyecto</h3>
+      <p>Se guarda automáticamente en el teléfono. Exportá el <b>.json</b> desde el menú para respaldarlo o pasarlo a otro dispositivo. La lista de materiales se exporta a <b>.csv</b>.</p>
+    </div>
+    <button id="btn-help-close" class="big-btn primary">ENTENDIDO</button>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

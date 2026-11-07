@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>HydroHarvest — Simulador de negocio hidropónico</title>
+<meta name="description" content="HydroHarvest es un simulador 3D de negocio hidropónico. Cultivá lechuga en NFT, tomates en bateas holandesas, frutillas en torres aeropónicas, entendé cada sistema, su ciclo semanal y su rentabilidad." />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<canvas id="scene"></canvas>
+
+<!-- ══════════ TOP HUD ══════════ -->
+<header id="hud" class="hidden-until-start">
+  <div class="hud-group hud-left">
+    <div class="logo"><span class="logo-leaf">🌱</span><div class="logo-text"><strong>HYDROHARVEST</strong><small>SIMULADOR DE NEGOCIO HIDROPÓNICO</small></div></div>
+    <div class="pill" id="day-pill" title="Semana, día y reloj laboral">
+      <span id="weather-icon">☀️</span>
+      <div class="day-pill-text"><strong id="day-label">W1 · D1</strong><small id="clock-label">06:00 · Soleado 27°C</small></div>
+    </div>
+    <div class="speed-group" role="group" aria-label="Velocidad de simulación">
+      <button class="speed-btn" id="btn-pause" title="Pausa (Espacio)">⏸</button>
+      <button class="speed-btn active" id="btn-s1" title="Velocidad normal (1)">▶</button>
+      <button class="speed-btn" id="btn-s2" title="Rápido (2)">▶▶</button>
+      <button class="speed-btn" id="btn-s3" title="Muy rápido (3)">▶▶▶</button>
+    </div>
+    <button class="hud-btn icon-only mobile-only" id="btn-mobile-speed" title="Cambiar velocidad">▶</button>
+  </div>
+
+  <div class="hud-group hud-right">
+    <div class="cash-block" id="cash-block" title="Caja disponible">
+      <small>CAJA</small><strong id="cash-label">$2.500</strong>
+    </div>
+    <div class="rep-block" title="Reputación — se gana entregando pedidos a tiempo">
+      <small>REPUTACIÓN</small><strong id="rep-label">★★★☆☆</strong>
+    </div>
+    <div class="networth-block" title="Patrimonio = caja + inventario + valor de camas">
+      <small>PATRIMONIO</small><strong id="networth-label">$2.500</strong>
+    </div>
+    <nav class="hud-buttons">
+      <button class="hud-btn accent" id="btn-build" title="Construir una cama nueva (B)">🛠️ <span>Construir</span></button>
+      <button class="hud-btn" id="btn-market" title="Vender producción a precio de mercado (M)">📈 <span>Mercado</span></button>
+      <button class="hud-btn" id="btn-contracts" title="Pedidos y contratos (C)">📋 <span>Pedidos</span><b class="badge hidden" id="contracts-badge">0</b></button>
+      <button class="hud-btn" id="btn-upgrades" title="Mejoras y equipamiento (U)">⚙️ <span>Mejoras</span></button>
+      <button class="hud-btn" id="btn-systems" title="Laboratorio de sistemas (Y)">🧪 <span>Sistemas</span></button>
+      <button class="hud-btn" id="btn-dashboard" title="Panel temporal, gráficos y eventos (P)">📊 <span>Panel</span></button>
+      <button class="hud-btn" id="btn-goals" title="Hitos y recompensas (G)">🎯 <span>Objetivos</span></button>
+      <button class="hud-btn icon-only" id="btn-advisor" title="Asesor IA: diagnóstico y presupuesto">🤖</button>
+      <button class="hud-btn icon-only active" id="btn-blueprint" title="Modo plano: medidas, tubos y contadores (T)">📐</button>
+      <button class="hud-btn icon-only" id="btn-mute" title="Sonido">🔊</button>
+      <button class="hud-btn icon-only" id="btn-help" title="Cómo jugar (H)">❔</button>
+      <button class="hud-btn icon-only" id="btn-menu" title="Menú">☰</button>
+    </nav>
+    <div id="god-badge" class="god-badge hidden">MODO DIOS</div>
+  </div>
+</header>
+
+<!-- ══════════ CONTROLES DE CÁMARA ══════════ -->
+<div id="cam-controls">
+  <button id="cam-left" title="Rotar a la izquierda (Q)">⟲</button>
+  <button id="cam-right" title="Rotar a la derecha (E)">⟳</button>
+  <button id="cam-in" title="Acercar">＋</button>
+  <button id="cam-out" title="Alejar">－</button>
+</div>
+
+<div id="bp-legend" class="bp-legend">
+  <div class="bp-title">PLANO TÉCNICO <span>1 cuadro = 1 m</span></div>
+  <div class="bp-row"><i class="bp-line supply"></i> Ida · agua y nutrientes</div>
+  <div class="bp-row"><i class="bp-line return"></i> Vuelta · drenaje al tanque</div>
+  <div class="bp-row"><i class="bp-line label"></i> Etiquetas: tubos · plantas · cosecha</div>
+</div>
+
+<!-- ══════════ BED PANEL ══════════ -->
+<aside id="bed-panel" class="hidden">
+  <div class="panel-head">
+    <div>
+      <small class="panel-kicker">UNIDAD DE CULTIVO</small>
+      <h2 id="bed-title">Canaleta NFT</h2>
+    </div>
+    <div class="panel-head-right">
+      <span class="status-dot" id="bed-status-dot" title="Estado"></span>
+      <button class="icon-btn" id="bed-close" title="Cerrar (Esc)">✕</button>
+    </div>
+  </div>
+
+  <div class="panel-specs" id="bed-specs"></div>
+
+  <div id="seed-section">
+    <p class="panel-sub">Elegí qué plantar <span class="dim">(descuenta el costo de semillas por cama)</span></p>
+    <div id="seed-options"></div>
+  </div>
+
+  <div id="grow-section" class="hidden">
+    <div class="crop-row">
+      <div class="crop-icon" id="crop-icon">🥬</div>
+      <div class="crop-meta">
+        <strong id="crop-name">Lechuga</strong>
+        <small id="crop-stage">Plantín · Sem 1/2</small>
+      </div>
+      <div class="crop-health"><small>SALUD</small><strong id="health-label">100</strong></div>
+    </div>
+    <div class="bar-block"><div class="bar-label"><span>CRECIMIENTO</span><span id="growth-pct">0%</span></div><div class="bar growth"><div id="growth-fill"></div></div></div>
+
+    <div class="timeline-block">
+      <div class="timeline-head"><span>CRONOGRAMA DEL CULTIVO</span><b id="harvest-eta">—</b></div>
+      <div class="cycle-track" id="cycle-track"></div>
+      <div class="cycle-labels" id="cycle-labels"></div>
+    </div>
+
+    <div class="bar-block"><div class="bar-label"><span>💧 SOLUCIÓN NUTRITIVA</span><span id="water-label">40 / 40 L</span></div><div class="bar water"><div id="water-fill"></div></div></div>
+    <div class="meter-row">
+      <div class="meter ph"><div class="bar-label"><span>pH</span><span id="ph-label">6,1</span></div><div class="meter-track"><div class="meter-ideal" id="ph-ideal"></div><div class="meter-pin" id="ph-pin"></div></div></div>
+      <div class="meter ec"><div class="bar-label"><span>EC <em>mS/cm</em></span><span id="ec-label">1,9</span></div><div class="meter-track"><div class="meter-ideal" id="ec-ideal"></div><div class="meter-pin" id="ec-pin"></div></div></div>
+    </div>
+    <p id="condition-hint" class="condition-hint">Condiciones perfectas. Las plantas están explotando.</p>
+    <div class="dose-row">
+      <button class="dose-btn" id="dose-water" title="Rellenar solución nutritiva (+30 L)">💧 Rellenar <small>$3</small></button>
+      <button class="dose-btn" id="dose-ec" title="Agregar nutrientes A+B (+0,4 EC)">🧪 Nutrientes <small>$2</small></button>
+      <button class="dose-btn" id="dose-phdown" title="Bajar pH 0,4">⬇️ pH− <small>$1</small></button>
+      <button class="dose-btn" id="dose-phup" title="Subir pH 0,4">⬆️ pH+ <small>$1</small></button>
+    </div>
+
+    <div class="tasks-block" id="tasks-block">
+      <div class="tasks-head"><span>ESTA SEMANA · <b id="task-week">SEMANA 1</b></span><button class="link-like" id="task-calendar">ciclo completo →</button></div>
+      <div class="task-list" id="task-list"></div>
+      <p class="tasks-note">Completá las tareas de cuidado para +salud y un pequeño empujón de crecimiento. El Auto-Dosificador tilda medición y relleno.</p>
+    </div>
+
+    <div class="panel-actions">
+      <button class="btn primary big" id="btn-harvest" disabled>Cosechar</button>
+      <button class="btn ghost" id="btn-clear" title="Sacar el cultivo y conservar la cama">🗑️ Limpiar</button>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════ BUILD BAR ══════════ -->
+<div id="build-bar" class="hidden">
+  <div class="build-hint">MODO CONSTRUCCIÓN — tocá un lugar libre del invernadero · <b>Esc</b> para cancelar <button class="mini-btn" id="build-cancel" style="margin-left:8px">✕ Cancelar</button></div>
+  <div class="build-cards" id="build-cards"></div>
+</div>
+
+<!-- ══════════ NEXT GOAL TRACKER ══════════ -->
+<button id="goals-mini" class="hidden-until-start" title="Abrir objetivos"><span>🎯</span><span id="goals-mini-text">Primer Brote — plantá tu primer cultivo ($75)</span></button>
+
+<!-- ══════════ MOBILE BOTTOM NAV ══════════ -->
+<nav id="mobile-nav" class="hidden-until-start" aria-label="Acciones de la granja">
+  <button data-mobile="build"><span class="mn-icon">🛠️</span><span>Construir</span></button>
+  <button data-mobile="market"><span class="mn-icon">📈</span><span>Mercado</span></button>
+  <button data-mobile="contracts"><span class="mn-icon">📋</span><span>Pedidos</span></button>
+  <button data-mobile="systems"><span class="mn-icon">🧪</span><span>Lab</span></button>
+  <button data-mobile="dashboard"><span class="mn-icon">📊</span><span>Panel</span></button>
+  <button data-mobile="advisor"><span class="mn-icon">🤖</span><span>Asesor</span></button>
+  <button data-mobile="goals"><span class="mn-icon">🎯</span><span>Objetivos</span></button>
+</nav>
+
+<!-- toasts + floating popups -->
+<div id="toasts"></div>
+<div id="popups"></div>
+
+<!-- ══════════ MODALS ══════════ -->
+<div class="modal hidden" id="modal-market" role="dialog" aria-modal="true">
+  <div class="modal-card wide">
+    <div class="modal-head"><div><small class="panel-kicker">MERCADO DE PRODUCTOS</small><h2>Precios de mercado <span class="live-dot"></span></h2></div><button class="icon-btn" data-close-modal>✕</button></div>
+    <p class="modal-sub">Los precios se mueven todos los días. Vendé ahora o guardá stock para un mejor día — o asegurá precios premium en <button class="link-like" id="market-to-contracts">Pedidos</button>.</p>
+    <div id="market-rows" class="market-rows"></div>
+    <div class="modal-foot"><div>Valor del inventario: <strong id="market-inventory-value">$0</strong></div><button class="btn primary" id="market-sell-all">Vender todo</button></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-contracts" role="dialog" aria-modal="true">
+  <div class="modal-card wide">
+    <div class="modal-head"><div><small class="panel-kicker">TABLERO DE PEDIDOS</small><h2>Pedidos</h2></div><button class="icon-btn" data-close-modal>✕</button></div>
+    <p class="modal-sub">Entregá los pedidos antes del vencimiento por un <strong>+35% premium</strong> y reputación. Si fallás, tu nombre se mancha.</p>
+    <h3 class="section-title">Ofertas disponibles</h3>
+    <div id="contract-offers" class="contract-list"></div>
+    <h3 class="section-title">Pedidos activos</h3>
+    <div id="contract-active" class="contract-list"></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-upgrades" role="dialog" aria-modal="true">
+  <div class="modal-card wide">
+    <div class="modal-head"><div><small class="panel-kicker">TIENDA DE EQUIPAMIENTO</small><h2>Mejoras</h2></div><button class="icon-btn" data-close-modal>✕</button></div>
+    <div id="upgrade-grid" class="upgrade-grid"></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-systems" role="dialog" aria-modal="true">
+  <div class="modal-card wide lab-card">
+    <div class="modal-head"><div><small class="panel-kicker">LABORATORIO I+D</small><h2>Sistemas y rentabilidad</h2></div><button class="icon-btn" data-close-modal>✕</button></div>
+    <div class="lab-tabs" id="lab-tabs">
+      <button class="lab-tab active" data-labtab="systems">FICHAS + 3D</button>
+      <button class="lab-tab" data-labtab="cycles">SEMANA A SEMANA</button>
+      <button class="lab-tab" data-labtab="profit">RENTABILIDAD</button>
+      <button class="lab-tab" data-labtab="timeline">CRONOGRAMA</button>
+      <button class="lab-tab" data-labtab="greenhouses">INVERNADEROS</button>
+    </div>
+    <div class="lab-pane" id="lab-systems"></div>
+    <div class="lab-pane hidden" id="lab-cycles"></div>
+    <div class="lab-pane hidden" id="lab-profit"></div>
+    <div class="lab-pane hidden" id="lab-timeline"></div>
+    <div class="lab-pane hidden" id="lab-greenhouses"></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-dashboard" role="dialog" aria-modal="true">
+  <div class="modal-card wide dash-card">
+    <div class="modal-head"><div><small class="panel-kicker">CENTRO DE CONTROL</small><h2>Panel temporal y eventos</h2></div><button class="icon-btn" data-close-modal>✕</button></div>
+    <div class="dash-kpis" id="dash-kpis"></div>
+    <div class="dash-grid">
+      <div class="dash-panel"><div class="lab-section-title">Caja a lo largo del tiempo</div><div id="dash-cash" class="chart-box"></div></div>
+      <div class="dash-panel"><div class="lab-section-title">Cosecha por día (kg)</div><div id="dash-harvest" class="chart-box"></div></div>
+    </div>
+    <div class="lab-section-title">Cronograma de camas y cosechas</div>
+    <div id="dash-gantt" class="gantt-wrap"></div>
+    <div class="scroll-hint">← DESLIZÁ EL CRONOGRAMA PARA VER TODAS LAS FECHAS →</div>
+    <div class="lab-section-title">Registro de eventos</div>
+    <div class="event-filters" id="dash-filters">
+      <button class="cycle-chip active" data-filter="all">Todo</button>
+      <button class="cycle-chip" data-filter="crop">Cultivo</button>
+      <button class="cycle-chip" data-filter="money">Plata</button>
+      <button class="cycle-chip" data-filter="system">Sistema</button>
+      <button class="cycle-chip" data-filter="weather">Clima</button>
+    </div>
+    <div id="dash-events" class="event-log"></div>
+    <button class="btn primary dash-cta" id="dash-advisor">🤖 Pedir diagnóstico al Asesor IA</button>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-advisor" role="dialog" aria-modal="true">
+  <div class="modal-card wide advisor-card">
+    <div class="modal-head"><div><small class="panel-kicker">ASESOR DE NEGOCIO</small><h2>Asesor IA <span class="ai-beta">BETA LOCAL</span></h2></div><button class="icon-btn" data-close-modal>✕</button></div>
+    <div class="advisor-top" id="advisor-kpis"></div>
+    <div class="advisor-grid">
+      <div class="advisor-chat">
+        <div id="advisor-log" class="advisor-log" aria-live="polite"></div>
+        <div class="advisor-chips" id="advisor-chips">
+          <button class="cycle-chip" data-q="¿Qué sistema me conviene?">¿Qué sistema me conviene?</button>
+          <button class="cycle-chip" data-q="¿Qué hago esta semana?">¿Qué hago esta semana?</button>
+          <button class="cycle-chip" data-q="¿Cómo está el agua y el circuito?">Agua y circuito</button>
+          <button class="cycle-chip" data-q="¿Cuándo cosecho?">Próxima cosecha</button>
+          <button class="cycle-chip" data-q="¿Cómo consigo más clientes?">Más clientes</button>
+        </div>
+        <form class="advisor-form" id="advisor-form">
+          <input id="advisor-input" type="text" autocomplete="off" placeholder="Preguntá sobre costos, agua, sistemas, clientes…" />
+          <button class="btn primary" type="submit">Enviar</button>
+        </form>
+      </div>
+      <div class="advisor-budget">
+        <div class="lab-section-title" style="margin-top:0">Simulador de presupuesto</div>
+        <label class="adv-field">Invernadero <select id="adv-greenhouse"></select></label>
+        <label class="adv-field">Sistema principal <select id="adv-system"></select></label>
+        <label class="adv-field">Camas / módulos <input id="adv-beds" type="number" min="1" max="200" value="4" inputmode="numeric" /></label>
+        <div id="advisor-budget-result"></div>
+        <button class="btn" id="adv-explain">Explicar este presupuesto</button>
+      </div>
+    </div>
+    <p class="advisor-note">Motor de recomendaciones local basado en los datos de tu partida, la lista de materiales y los costos del simulador. No envía información a internet.</p>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-goals" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <div class="modal-head"><div><small class="panel-kicker">HITOS</small><h2>Objetivos y recompensas</h2></div><button class="icon-btn" data-close-modal>✕</button></div>
+    <div id="goals-list" class="goals-list"></div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-help" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <div class="modal-head"><div><small class="panel-kicker">MANUAL DEL CULTIVADOR</small><h2>Cómo jugar</h2></div><button class="icon-btn" data-close-modal>✕</button></div>
+    <div class="help-body">
+      <h3>🌱 1 · Plantar</h3><p>Tocá una cama y elegí un cultivo. Hay seis sistemas bien distintos: <b>canaleta NFT</b>, <b>balsa DWC</b>, <b>bandeja ebb &amp; flow</b>, <b>bateas holandesas</b>, <b>torres aeropónicas</b> y <b>estantes Kratky</b> pasivos. Cada uno tiene su costo, consumo de agua, energía y cantidad de plantas.</p>
+      <h3>📐 2 · Modo plano</h3><p>El botón <b>📐</b> activa el plano técnico: grilla en metros, medidas del invernadero, contadores de tubos y plantas por cama, y etiquetas con días para cosechar. Es la vista para entender la geometría real de cada sistema.</p>
+      <h3>💧 3 · Cuidado semana a semana</h3><p>Cada cama muestra su <b>checklist semanal</b>: medir pH/EC, rellenar, revisar raíces y un chequeo propio del sistema. Completar tareas da salud y crecimiento. Mantené <b>pH 5,5–6,5</b> y <b>EC dentro de la banda del cultivo</b>. El <b>Auto-Dosificador</b> automatiza medición y relleno.</p>
+      <h3>📅 4 · Tiempo y cosecha</h3><p>Los cultivos duran <b>2 a 6 semanas</b> (1 semana = 7 días de juego). El panel de la cama muestra el cronograma con la semana actual y los días que faltan para cosechar. El <b>Panel temporal (P)</b> suma gráficos de caja, kilos cosechados, un Gantt de todas las camas y un registro de eventos.</p>
+      <h3>📈 5 · Vender y comparar</h3><p>Cosechá al depósito y vendé en el <b>Mercado</b> o cumplí <b>Pedidos</b> premium. La pestaña <b>Rentabilidad</b> del laboratorio compara resultados reales, margen, repago y $/m²/semana de cada sistema.</p>
+      <h3>🧪 6 · Explorar sistemas</h3><p>En el laboratorio, cada ficha tiene una <b>vista 3D giratoria</b>: arrastrá para rotar el sistema y entender cómo se arma. También podés rotar el invernadero con los botones <b>⟲ ⟳</b> o con <kbd>Q</kbd>/<kbd>E</kbd>.</p>
+      <h3>🤖 7 · Asesor IA</h3><p>El <b>Asesor IA</b> lee tu partida y te dice qué sistema conviene, cuánta agua y energía vas a consumir, qué cosechar primero y cómo escalar a más clientes. Su <b>simulador de presupuesto</b> combina un invernadero, un sistema y una cantidad de módulos para calcular inversión, costos semanales, ingreso estimado y repago. Es un motor de recomendaciones local: no manda tus datos a internet.</p>
+      <h3>🏗️ 8 · Modo Dios</h3><p>Activalo desde el menú para construir sin límites: caja infinita, compras gratis, sin quiebra y sin colisiones. Ideal para probar todos los sistemas y comparar. Podés apagarlo cuando quieras.</p>
+      <h3>📱 Toque y teclado</h3><p class="keys">Arrastrá para mover · pellizcá o rueda para zoom · tocá una cama · <kbd>Q</kbd><kbd>E</kbd> rotar. <kbd>Espacio</kbd> pausa · <kbd>1</kbd>–<kbd>6</kbd> velocidad / tarjeta de construcción · <kbd>B</kbd> construir · <kbd>M</kbd> mercado · <kbd>C</kbd> pedidos · <kbd>U</kbd> mejoras · <kbd>Y</kbd> sistemas · <kbd>P</kbd> panel · <kbd>T</kbd> plano · <kbd>G</kbd> objetivos · <kbd>H</kbd> ayuda · <kbd>Esc</kbd> cerrar/cancelar</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-menu" role="dialog" aria-modal="true">
+  <div class="modal-card narrow">
+    <div class="modal-head"><div><small class="panel-kicker">PAUSADO</small><h2>Menú</h2></div><button class="icon-btn" data-close-modal>✕</button></div>
+    <div class="menu-actions">
+      <button class="btn primary" id="menu-resume">▶ Reanudar</button>
+      <button class="btn" id="menu-save">💾 Guardar partida</button>
+      <button class="btn" id="menu-upgrades">⚙️ Mejoras</button>
+      <button class="btn" id="menu-dashboard">📊 Panel temporal</button>
+      <button class="btn" id="menu-advisor">🤖 Asesor IA y presupuesto</button>
+      <button class="btn" id="menu-blueprint">📐 Modo plano</button>
+      <button class="btn" id="menu-god">😇 Modo Dios</button>
+      <button class="btn" id="menu-help">❔ Cómo jugar</button>
+      <button class="btn" id="menu-mute">🔊 Sonido</button>
+      <button class="btn danger" id="menu-restart">↻ Reiniciar partida</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal hidden" id="modal-gameover" role="dialog" aria-modal="true">
+  <div class="modal-card narrow center">
+    <div class="gameover-stamp">EN BANCARROTA</div>
+    <p class="modal-sub">El banco se quedó con el invernadero. Tu viaje hidropónico termina… por ahora.</p>
+    <div class="gameover-stats" id="gameover-stats"></div>
+    <button class="btn primary big" id="gameover-restart">🌱 Empezar una granja nueva</button>
+  </div>
+</div>
+
+<!-- ══════════ TITLE SCREEN ══════════ -->
+<div id="title-screen">
+  <div class="title-inner">
+    <div class="title-badge">SANDBOX 3D · PLANO TÉCNICO · ASESOR IA</div>
+    <h1 class="title-logo">HYDRO<span>HARVEST</span></h1>
+    <p class="title-tag">Cultivá en agua. Ganale al mercado.<br/>Construí tu imperio hidropónico, tubo por tubo.</p>
+    <div class="build-select">
+      <div class="build-select-head">ELEGÍ TU BUILD INICIAL</div>
+      <div class="title-builds" id="title-builds"></div>
+    </div>
+    <div class="title-actions">
+      <button class="btn primary huge" id="btn-start-build" disabled>Elegí una build…</button>
+      <button class="btn ghost huge hidden" id="btn-continue">▶ Continuar granja guardada</button>
+    </div>
+    <div class="title-tips"><span>🧪 6 sistemas</span><span>📅 Ciclo semanal</span><span>📈 Rentabilidad real</span><span>📱 Mobile first</span></div>
+  </div>
+  <div class="title-foot">HydroHarvest — un sandbox de negocio hidropónico · la partida se guarda localmente en tu navegador</div>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script src="js/data.js"></script>
+<script src="js/world.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
