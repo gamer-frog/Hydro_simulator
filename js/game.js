@@ -1180,13 +1180,20 @@ function potentialFor(typeId, cropId) {
   const cyclesYr = 52 / c.cycleWeeks;
   const kgYr = bt.plants * c.yieldKg * cyclesYr * bt.spec.growth;
   const revYr = kgYr * c.basePrice;
-  const costYr = c.seedCost * cyclesYr + bt.spec.energy * 365;
+  const costs = {
+    seeds: c.seedCost * cyclesYr,
+    energy: bt.spec.energy * 365,
+    water: bt.water.consumptionLDay * WATER_COST_L * 365,
+    nutrients: 3.4 * 52,
+    labor: bt.spec.laborHrsWeek * LABOR_RATE * 0.5 * 52,
+  };
+  const costYr = Object.values(costs).reduce((sum, amount) => sum + amount, 0);
   const netYr = revYr - costYr;
   const netDay = netYr / 365;
   const capex = bt.cost;
   const area = bt.size ? bt.size.w * bt.size.d : 3;
   return {
-    bt, c, cyclesYr, kgYr, revYr, costYr, netYr, netDay, capex,
+    bt, c, cyclesYr, kgYr, revYr, costs, costYr, netYr, netDay, capex,
     payback: netDay > 0 ? capex / netDay : null,
     perM2Wk: (netYr / 52) / area,
   };
@@ -1536,14 +1543,16 @@ function renderLabProfit() {
     return { id, ...b };
   }).sort((a, b) => b.p.netDay - a.p.netDay);
   const topId = ranked[0].id;
+  const costLabels = { seeds: 'Semillas', energy: 'Energía', water: 'Agua', nutrients: 'Nutrientes', labor: 'Mano de obra' };
   const potRows = ranked.map(({ id, p }) => {
     const bt = BED_TYPES[id];
+    const costDetails = Object.entries(p.costs).map(([key, amount]) => `<div><span>${costLabels[key]}</span><b>${fmtMoney(amount)}</b></div>`).join('');
     return `<tr>
       <td>${bt.icon} <b>${bt.name}</b>${id === topId ? ' <span class="lab-best">MEJOR</span>' : ''}<br><small style="color:var(--text-dim)">${bt.spec.footprint} · ${bt.plants} sitios</small></td>
       <td>${p.c.icon} ${p.c.name}<br><small style="color:var(--text-dim)">${p.c.cycleWeeks} sem de ciclo</small></td>
       <td>${p.kgYr.toFixed(0)} kg</td>
       <td>${fmtMoney(p.revYr)}</td>
-      <td>${fmtMoney(p.costYr)}</td>
+      <td>${fmtMoney(p.costYr)}<details class="profit-breakdown"><summary>Ver desglose</summary><div class="profit-breakdown-list">${costDetails}</div></details></td>
       <td class="profit-positive">${fmtMoney(p.netYr)}</td>
       <td>${p.payback ? Math.round(p.payback) + ' días' : '—'}</td>
       <td class="profit-positive">${fmtPrice(p.perM2Wk)}</td>
@@ -1560,10 +1569,10 @@ function renderLabProfit() {
     <p class="lab-note">Los reales incluyen la inversión en camas, las semillas y la parte diaria de mantenimiento. Los sistemas sin camas muestran cero: construí uno para empezar a medir. El neto es facturación menos todos los costos, así que una cama nueva arranca en negativo hasta que se repaga.</p>
     <div class="lab-section-title">Potencial teórico — una cama, mejor cultivo</div>
     <div class="lab-scroll"><table class="lab-table">
-      <thead><tr><th>Sistema</th><th>Mejor cultivo</th><th>Kg/año</th><th>Facturado/año</th><th>Costos/año</th><th>Neto/año</th><th>Repago</th><th>$/m²/sem</th></tr></thead>
+      <thead><tr><th>Sistema</th><th>Mejor cultivo</th><th>Kg/año</th><th>Facturado/año</th><th>Operación/año</th><th>Neto/año</th><th>Repago</th><th>$/m²/sem</th></tr></thead>
       <tbody>${potRows}</tbody>
     </table></div>
-    <p class="lab-note"><b>Supuestos:</b> ocupación total, pH/EC/agua ideales, precios base actuales y 52 semanas de operación. Los costos son solo semillas + electricidad. Los resultados reales incluyen mano de obra, ciclos fallidos y vaivenes de precio: esa es la brecha entre potencial y realidad.</p>`;
+    <p class="lab-note"><b>Supuestos:</b> ocupación total, pH/EC/agua ideales, precios base actuales y 52 semanas de operación. Abrí <b>Ver desglose</b> en la columna Operación/año para comparar semillas, electricidad, agua, nutrientes y mano de obra estimada al 50% de la tarifa de referencia. No incluye estructura del invernadero, empaque, logística, impuestos ni pérdidas; el repago usa solo el costo de la cama. Por eso es una comparación orientativa, no una proyección financiera.</p>`;
 }
 
 /* ───────────────────────── PANEL TEMPORAL ───────────────────────── */
