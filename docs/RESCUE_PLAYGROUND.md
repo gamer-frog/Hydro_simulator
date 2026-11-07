@@ -26,3 +26,7 @@ Los módulos JavaScript recuperados pasan `node --check`. La partida y las prefe
 ## Procedencia
 
 Los archivos principales se copiaron sin alterar su contenido desde el árbol del checkpoint 23 de PLAYGROUND. La implementación modular del checkpoint 2 se conserva separada para evitar mezclar dos versiones de la aplicación.
+
+## Referencias Git rescatadas
+
+Se verificaron los refs remotos disponibles de `gamer-frog/PlayGround` contra `origin`. Las referencias que sí llegaron están bajo `rescued/playground/*`. No se pudieron crear las siguientes ramas: `opencode-checkpoints/{1,2,3,4,5,6}`, `opencode-deployments/{2,4,5,9,23}`, `opencode-resume/9cdd1166f0588ac380ab` y `opencode/{42152735535,42187724047,42201185979}`. Sus árboles contienen `.github/workflows/opencode.yml`; el permiso de GitHub App no permite crear o actualizar workflows. Los refs originales siguen disponibles localmente como `playground/*` mientras exista este clon. No se eliminaron ni modificaron workflows para forzar la publicación, a fin de preservar el contenido original.
