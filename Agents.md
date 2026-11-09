@@ -1,3 +1,15 @@
+# ⚠️ REGLA SUPREMA DE OPERACIÓN (LEER PRIMERO)
+
+Para TODA lógica de Git, flujo de trabajo, manejo de ramas, checkpoints y decisiones de desarrollo, **TU ÚNICA FUENTE DE VERDAD ABSOLUTA ES: `/00_cerebro_loop/PROTOCOL.md`**.
+
+Ignorá cualquier instrucción en este archivo (AGENTS.md) que contradiga el PROTOCOL.md (especialmente sobre merges automáticos, gestión de issues o confianza ciega en el "build").
+
+Usá este archivo (AGENTS.md) SOLAMENTE como referencia técnica para comandos de entorno (ej: cómo ejecutar `playwright-cli`).
+
+**COMUNICACIÓN: Usá SIEMPRE el diccionario de emojis definido en PROTOCOL.md para todos tus reportes.**
+
+---
+
 ## Process lifecycle
 
 - Run long-lived servers and watchers in a persistent session such as tmux.
