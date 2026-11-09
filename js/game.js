@@ -141,8 +141,8 @@ function applyBlueprint(on, silent) {
 }
 function greenhouseTemp() {
   if (!state) return 24;
-  const w = WEATHERS[state.weather];
-  let t = w.temp;
+  const w = WEATHERS[state.weather] || WEATHERS.sunny;
+  let t = w?.temp ?? 27;
   if (state.upgrades.hvac) t = t + (24 - t) * (0.22 * state.upgrades.hvac);
   if (state.upgrades.shade) t -= Math.max(0, t - 28) * 0.4;
   return Math.round(t);
@@ -320,7 +320,23 @@ function continueGame() {
   data.history = data.history || { cash: [{ day: data.day || 1, value: data.cash || 0 }], harvests: [] };
   if (!Array.isArray(data.history.cash)) data.history.cash = [{ day: data.day || 1, value: data.cash || 0 }];
   if (!Array.isArray(data.history.harvests)) data.history.harvests = [];
-  data.beds = (data.beds || []).map(b => Object.assign({ warned: {}, rot: 0, health: 100, taskDone: {} }, b));
+  data.beds = (data.beds || []).filter(b => b && BED_TYPES[b.type]).map((b, i) => {
+    if (!b.id) b.id = 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + i;
+    if (!Number.isFinite(b.x)) b.x = 1 + i * 3.4;
+    if (!Number.isFinite(b.z)) b.z = 2 + (i % 2) * 3;
+    if (!Number.isFinite(b.rot)) b.rot = 0;
+    if (!Number.isFinite(b.growth)) b.growth = 0;
+    if (!Number.isFinite(b.water)) b.water = 40;
+    if (!Number.isFinite(b.ph)) b.ph = 6.1;
+    if (!Number.isFinite(b.ec)) b.ec = 1.8;
+    if (b.cropId && !CROPS.some(c => c.id === b.cropId)) b.cropId = null;
+    return Object.assign({ warned: {}, rot: 0, health: 100, taskDone: {} }, b);
+  });
+  data.weather = WEATHERS[data.weather] ? data.weather : 'sunny';
+  data.reputation = Number.isFinite(data.reputation) ? data.reputation : 3;
+  if (!Number.isFinite(data.day)) data.day = 1;
+  if (!Number.isFinite(data.dayTime)) data.dayTime = 0;
+  data.cash = Number.isFinite(data.cash) ? data.cash : 0;
   data.beds.forEach(b => {
     if (!b.plantedDay && b.cropId) b.plantedDay = data.day - Math.floor(b.growth * cropById(b.cropId).growDays);
     b.taskDone = b.taskDone || {};
@@ -461,7 +477,7 @@ function advanceDay() {
   if (state.cash < 0 && !state.godMode) toast(`⚠️ Estás ${fmtMoney(-state.cash)} en rojo. Vendé producción o recortá costos.`, 'bad');
   const w = WEATHERS[state.weather];
   logEvent('weather', `Día ${state.day}: ${w.label} · ${greenhouseTemp()} °C en invernadero · caja ${state.godMode ? '∞' : fmtMoney(state.cash)}.`);
-  if (prevWeather !== state.weather) logEvent('weather', `Cambio de clima: ${WEATHERS[prevWeather].label} → ${w.label}.`);
+  if (prevWeather !== state.weather) logEvent('weather', `Cambio de clima: ${(WEATHERS[prevWeather] || WEATHERS.sunny).label} → ${w.label}.`);
   if (state.day % 7 === 0) {
     const week = Math.floor((state.day - 1) / 7) + 1;
     logEvent('system', `Cierre de semana ${week}: ${state.beds.length} camas, ${state.beds.filter(b => b.cropId).length} en producción, caja ${state.godMode ? '∞' : fmtMoney(state.cash)}.`);
@@ -1380,7 +1396,7 @@ function renderLabTimeline() {
   })() : '';
   const harvestKg = fmtNum(bt.layout.total * crop.yieldKg * bt.spec.growth);
   const start = Math.max(1, state.day - 2);
-  const harvestDays = state.beds.filter(b => b.cropId).map(b => (b.plantedDay || state.day) + Math.ceil(cropById(b.cropId).growDays / (BED_TYPES[b.type].spec.growth || 1)));
+  const harvestDays = state.beds.filter(b => b.cropId).map(b => (b.plantedDay || state.day) + Math.ceil(cropById(b.cropId).growDays / (BED_TYPES[b.type]?.spec?.growth || 1)));
   const end = Math.max(state.day + 18, ...harvestDays, state.day + 7);
   D.labTimeline.innerHTML = `
     <div class="cycle-controls">${sysChips}</div>
@@ -1604,7 +1620,7 @@ function renderDashboard() {
   D.dashCash.classList.toggle('empty', !D.dashCash.querySelector('svg'));
   D.dashHarvest.classList.toggle('empty', !D.dashHarvest.querySelector('svg'));
   const start = Math.max(1, state.day - 7);
-  const harvestDays = state.beds.filter(b => b.cropId).map(b => (b.plantedDay || state.day) + Math.ceil(cropById(b.cropId).growDays / (BED_TYPES[b.type].spec.growth || 1)));
+  const harvestDays = state.beds.filter(b => b.cropId).map(b => (b.plantedDay || state.day) + Math.ceil(cropById(b.cropId).growDays / (BED_TYPES[b.type]?.spec?.growth || 1)));
   const end = Math.max(state.day + 21, ...harvestDays);
   D.dashGantt.innerHTML = ganttHTML(state.beds, start, end);
   renderDashEvents();

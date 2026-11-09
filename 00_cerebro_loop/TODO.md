@@ -4,9 +4,7 @@
 
 ## Tareas en progreso
 
-- [ ] 🔄 Intento 1/3: Verificar la app rescatada en el navegador (flujo de inicio de partida y consola).
-  - Motivo del fallo: `playwright-cli` no tiene Chromium instalado (`Browser "chromium" is not installed`).
-  - Próximo intento: ejecutar `playwright-cli install-browser chromium`; si sigue fallando, usar `chromium --headless` del sistema con DevTools protocol para log de consola.
+(ninguna — Chromium de `playwright-cli` se instaló con éxito y la verificación en navegador quedó operativa)
 
 ## Requiere intervención humana
 
