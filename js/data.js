@@ -21,7 +21,7 @@ const CROPS = [
   { id:'cucumber',   name:'Pepino',            icon:'🥒', seedCost:13, cycleWeeks:4, yieldKg:2.20, basePrice:5.5,  beds:['bucket'],                             ec:[1.7,2.8], leaf:0x4caf50, fruit:0x2f7d32 },
   { id:'strawberry', name:'Frutilla',          icon:'🍓', seedCost:16, cycleWeeks:6, yieldKg:1.50, basePrice:12.0, beds:['tower'],                               ec:[1.6,2.5], leaf:0x3f9e4d, fruit:0xff4d6d },
 ].map(c => ({ ...c, growDays: c.cycleWeeks * 7 }));
-const cropById = id => CROPS.find(c => c.id === id);
+const cropById = id => CROPS.find(c => c.id === id) || (CROPS[0] || null);
 
 /* ── Seis sistemas, con geometría, materiales y circuito de agua ── */
 const BED_TYPES = {
