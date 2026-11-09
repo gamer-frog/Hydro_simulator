@@ -1,7 +1,7 @@
 # HANDOFF (Estado Actual)
 
 ## Última acción completada
-FUNDACIÓN: se creó la infraestructura del cerebro (`/00_cerebro_loop/`) y se actualizó `Agents.md` con la Regla Suprema. Todo commiteado y pusheado a main.
+FUNDACIÓN COMPLETADA: `/00_cerebro_loop/` creado (PROTOCOL.md, HANDOFF.md, ROADMAP.md, TODO.md, USER_REQUESTS.md, CEMETERY.md), `Agents.md` actualizado con la Regla Suprema, commit `3be9cf1` pusheado a main (`745d3a3` tras integrar main con merge consciente del workflow) y tag `save-001` pusheado.
 
 Antes de la fundación se completó el RESCATE: la app 3D HydroHarvest (hidroponía NFT) fue recuperada desde el repo PLAYGROUND checkpoint 23 a la raíz de este repositorio (`index.html`, `css/`, `js/`, `vendor/three.min.js`). La versión modular anterior quedó preservada en `archive/hydroharvest-v1/` y los historiales de conversaciones en `docs/history/`. Procedencia en `docs/RESCUE_PLAYGROUND.md`.
 
