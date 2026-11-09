@@ -4,7 +4,25 @@
 
 ## Pedidos activos
 
-(ninguno por ahora — el próximo paso está en HANDOFF.md: verificar en navegador la app rescatada y pushear los archivos rescate aún sin commit)
+- [ ] 📌 Pedido 2: La app no debe ser tanto "jueguito isometrico sin detalles": tiene que ser casi un **plano de AutoCAD** donde se pueda plantear un sistema serio. Realismo en plantas y en cuántas entran por caño.
+  - Fecha: 2026-11-09
+  - Prioridad: 🔴 Alta
+
+- [ ] 📌 Pedido 2a: Invernadero **4 × 6 m** y al lado otro **8 × 28 m** (dos invernaderos reales de diseño).
+  - Fecha: 2026-11-09
+  - Prioridad: 🔴 Alta
+
+- [ ] 📌 Pedido 2b: En el 4 × 6: técnica **NFT con caños largos de 6 m**, lechugas en cada caño, realismo de cuántas plantas entran por caño.
+  - Fecha: 2026-11-09
+  - Prioridad: 🔴 Alta
+
+- [ ] 📌 Pedido 2c: En el 8 × 28: igual, con **caños de hasta 12 m**; ver diseño del invernadero y cuántas plantas entran; **varias opciones** de diseño.
+  - Fecha: 2026-11-09
+  - Prioridad: 🔴 Alta
+
+- [ ] 📌 Pedido 2d: **La cámara no se mueve bien con el click en PC, se buggea todo.** Arreglar controles de cámara.
+  - Fecha: 2026-11-09
+  - Prioridad: 🔴 Alta (P0)
 
 ## Pedidos completados
 

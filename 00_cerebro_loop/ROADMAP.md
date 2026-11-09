@@ -4,6 +4,10 @@
 
 ## 🚀 Funcionalidades Principales
 
+- [ ] 📌 [P0] Arreglar cámara en PC: pan/rotación con click se buggea (Pedidos 2d). Éxito: arrastrar rota/panea sin saltos ni clicks fantasmas; click corto sigue seleccionando camas.
+- [ ] 📌 [B] Invernaderos reales de diseño: agregar **4 × 6 m** y **8 × 28 m** (Pedido 2a), con planos, capacidad y costos.
+- [ ] 📌 [B] NFT realista con caños largos: 6 m en el 4×6 (lechugas por caño), hasta 12 m en el 8×28 (Pedidos 2b/2c). Sitios por caño según espaciamiento realista de lechuga NFT (15–25 cm). Éxito: mostrar "N plantas por caño" y plantas totales del invernadero.
+- [ ] 📌 [B] Modo plano tipo AutoCAD: vista cenital con grilla métrica, cotas de caños/pasillos, paredes y tanque; varias opciones de diseño comparables (Pedido 2c).
 - [x] Rescatar la app HydroHarvest desde PLAYGROUND (checkpoint 23) a la raíz del repositorio. Éxito: `index.html`, `css/`, `js/`, `vendor/` presentes y `node --check` verde.
 - [x] Verificación en navegador del flujo jugable completo: iniciar partida, abrir la ayuda, seleccionar una cama, plantar un cultivo (criterio: consola sin errores rojos ni TypeErrors). ✅ Hecho con `playwright-cli` (Chromium instalado): arranque, click en cama, plantado de lechuga, misión "Primer Brote" cobrada, asesor de calor, checklist semanal. 0 errores.
 - [~] Captura de pantallas de estados clave de la app (inicio, partida en curso, modo plano, presupuesto) en `screenshots/`: hechas `partida-iniciada.png`, `plantado-lechuga.png`, `save-corrupto-recuperado.png` (carpeta ignorada por git, solo local).
