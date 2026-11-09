@@ -1,12 +1,12 @@
 # HANDOFF (Estado Actual)
 
 ## Última acción completada
-LOOP CHECKPOINT 2 (2026-11-09) — RESCATE de issue #7:
-- Rescatada la feature "desglose de costos operativos" desde `origin/opencode-checkpoints/7` (sesión de la issue #7): `potentialFor()` con `costs` (semillas/energía/agua/nutrientes/labor al 50%), tabla del laboratorio con "Ver desglose" plegable, CSS `.profit-breakdown*` y nota de supuestos ampliada. Reconstrucción compatible sobre los guards de main (sin merge). Verificado en navegador (pestaña RENTABILIDAD del laboratorio 🧪): columnas y desglose renderizan, 0 TypeErrors.
-- Analizadas refs nuevas: `opencode-checkpoints/{1,3,5,6}` (subconjuntos/iguales, nada que rescatar), `opencode/42336827893` (más viejo), `rescued/playground/*` (espejo ya rescatado). PENDIENTE: `opencode-resume/*` (3 refs).
+LOOP CHECKPOINT 3 (2026-11-09) — Balance de simulación:
+- Revisados los seis sistemas y cultivos contra rangos de referencia: BOM=costo verificado (6/6), modelos semanal del asesor y anual de `potentialFor` consistentes entre sí, agua por planta/día y labor dentro de rangos realistas. Excesos conscientes (energía torre/ebb, densidades de visualización, ciclos comprimidos) documentados en `docs/BALANCE_NOTES.md`. Sin cambios de código.
+- Rescates del día: issue #7 (desglose de costos) ya integrado; refs `opencode-resume/*` (15 refs) analizadas: todas sesiones viejas de PLAYGROUND (issues 3–15), anteriores al checkpoint 23 que ya vive en main → nada que rescatar. Detalle en `CEMETERY.md`.
 
 ## Estado del build/navegador
-🟢 Verde: app verificada en Chromium (playwright-cli, http://localhost:3002). Consola sin errores nuevos (los 3 TypeErrors del log son de las pruebas ANTERIORES a los guards, timestamps viejos). `node --check` verde para los tres módulos.
+🟢 Verde: consola sin errores nuevos (los 3 TypeErrors del log son de pruebas anteriores a los guards). `node --check` verde.
 
 ## Decisiones de diseño tomadas
 - Se recuperó el checkpoint 23 de PLAYGROUND como versión activa de la app (es-AR, móvil/táctil, Three.js incluido en `vendor/`).
@@ -16,7 +16,7 @@ LOOP CHECKPOINT 2 (2026-11-09) — RESCATE de issue #7:
 - Las camas con `type` inválido se filtran al cargar; a las camas sin `id` se les genera uno (prefijo `b`), y x/z/rot/water/ph/ec/growth fuera de rango → valores por defecto.
 
 ## PRÓXIMO PASO INMEDIATO
-🚀 Loop: analizar las 3 refs `origin/opencode-resume/*` (rescate pendiente, ver CEMETERY.md); si no hay nada, siguiente tarea [B] del ROADMAP: balance de simulación de los seis sistemas.
+🚀 Loop: siguiente tarea [C] del ROADMAP — pasada general de optional chaining / guards en accesos a estado de `js/game.js` (ítem "[ ] Revisar y agregar `?.` ... pasada general por el resto"), verificando en navegador antes de pushear.
 
 ## Contexto importante
 - El usuario pidió explícitamente rescatar la app de PLAYGROUND antes de su eliminación y conservar recursos/historial. HECHO y pusheado (commit `b60c491`).

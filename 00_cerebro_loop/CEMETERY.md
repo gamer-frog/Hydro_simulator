@@ -43,7 +43,7 @@
 
 - [x] 🔍 Refs `origin/opencode-checkpoints/{1,3,5,6}` y `origin/opencode/42336827893`: versiones iguales o más viejas que main; checkpoints 5 y 6 son subconjuntos de los cambios del 7. Sin código nuevo a rescatar (el modular viejo ya vive en `archive/hydroharvest-v1/`).
 - [x] 🔍 Refs `origin/rescued/playground/*`: espejo de los checkpoints de PLAYGROUND ya rescatados (checkpoint 23 es la versión activa; 2 archivado). Sin contenido nuevo.
-- [ ] 🔍 `origin/opencode-resume/*` (3 refs): pendiente de análisis rápido en próxima iteración.
+- [x] 🔍 Refs `origin/opencode-resume/*` (15 refs, locales + espejo de PLAYGROUND): todas corresponden a sesiones viejas (issues 3–15 de PLAYGROUND y "Install OpenCode issue listener" de este repo), anteriores al checkpoint 23 rescatado en main. Sin código nuevo.
 
 ## Notas
 
