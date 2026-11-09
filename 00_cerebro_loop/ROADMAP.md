@@ -7,7 +7,7 @@
 - [x] Rescatar la app HydroHarvest desde PLAYGROUND (checkpoint 23) a la raíz del repositorio. Éxito: `index.html`, `css/`, `js/`, `vendor/` presentes y `node --check` verde.
 - [x] Verificación en navegador del flujo jugable completo: iniciar partida, abrir la ayuda, seleccionar una cama, plantar un cultivo (criterio: consola sin errores rojos ni TypeErrors). ✅ Hecho con `playwright-cli` (Chromium instalado): arranque, click en cama, plantado de lechuga, misión "Primer Brote" cobrada, asesor de calor, checklist semanal. 0 errores.
 - [~] Captura de pantallas de estados clave de la app (inicio, partida en curso, modo plano, presupuesto) en `screenshots/`: hechas `partida-iniciada.png`, `plantado-lechuga.png`, `save-corrupto-recuperado.png` (carpeta ignorada por git, solo local).
-- [ ] Balance de simulación: revisar números de costos/rendimientos de los seis sistemas (NFT, DWC, ebb & flow, holandés, aeropónico, Kratky) contra valores de referencia razonables.
+- [x] Balance de simulación: revisar números de costos/rendimientos de los seis sistemas (NFT, DWC, ebb & flow, holandés, aeropónico, Kratky) contra valores de referencia razonables. ✅ Hecho: BOM=costo verificado en los 6, modelos semanal/anual consistentes, agua/labor plausible; decisiones de diseño documentadas en `docs/BALANCE_NOTES.md` (sin cambios de código).
 
 ## 🛠️ Deuda Técnica y Mantenimiento (Tareas [C])
 

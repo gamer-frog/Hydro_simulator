@@ -4,6 +4,12 @@
 
 ## Ramas rescatadas
 
+- [x] 💾 Branch `origin/opencode-checkpoints/7` (sesión de la issue #7) — FUNCIONALIDADES INTEGRALES:
+  - Rescatada el: 2026-11-09
+  - Cambios implementados: desglose de costos operativos en `potentialFor()` (semillas, energía, agua, nutrientes, mano de obra al 50%) y tabla "Potencial teórico" con desglose plegable "Ver desglose"; nuevos estilos `.profit-breakdown*` en `css/style.css`; nota de supuestos ampliada. Reconstruido de forma compatible sobre los guards de main, sin merge directo.
+  - Commit: (ver push en progreso)
+  - Estado: ✅ Éxito (verificado en navegador: desglose renderiza, 0 TypeErrors)
+
 - [x] 💾 Branch `checkpoints/23` de PLAYGROUND (remoto `opencode-checkpoints`):
   - Rescatada el: 2026-11-07
   - Cambios implementados: restauración completa de la app HydroHarvest (index.html, css/style.css, js/data.js, js/game.js, js/world.js, vendor/three.min.js) a la raíz de este repositorio, sin merge: copia de árbol verificada con `node --check`.
@@ -23,8 +29,6 @@
   - Motivo: checkpoint 23 la reemplaza (diff reciente y funcionalmente superior); su conversación quedó preservada en `docs/history/playground-checkpoint-22-conversation.json.gz`.
   - Tag graveyard: n/a (el historial preservado cumple ese rol)
 
-## Ramas analizadas sin necesidad de rescate (2026-11-09, Gauntlet Loop)
-
 - [x] 🔍 Branch `origin/opencode-checkpoints/8`:
   - Analizada el: 2026-11-09. 2 commits (`189e5df`, `2eadfb5`) no presentes en main, pero el árbol es **idéntico** a main salvo `.omgithub/checkpoint.json` y `.omgithub/conversation.json` (metadatos de la plataforma).
   - Conclusión: código ya rescatado en main vía `b60c491`. No hay tareas perdidas: su HANDOFF es el mismo de la fundación.
@@ -32,8 +36,14 @@
 
 - [x] 🔍 Branch `origin/opencode-deployments/8`:
   - Analizada el: 2026-11-09. Commits `d06cc34`, `5c479b1` ("Publish static build for issue #8"): solo workflow, `.omgithub/deployment.json` y chmod de scripts; árbol idéntico en código.
-  - Conclusión: es el artefacto de deployment del sitio (enlace de OMGithub). No contiene cambios de código a rescatar.
+  - Conclusión: es el artefacto de deployment del sitio. No contiene cambios de código a rescatar.
   - Estado: ⚠️ Se conserva: eliminarla rompería el deployment publicado. No es una rama de sesión huérfana.
+
+## Ramas analizadas sin necesidad de rescate (2026-11-09, Gauntlet Loop 2)
+
+- [x] 🔍 Refs `origin/opencode-checkpoints/{1,3,5,6}` y `origin/opencode/42336827893`: versiones iguales o más viejas que main; checkpoints 5 y 6 son subconjuntos de los cambios del 7. Sin código nuevo a rescatar (el modular viejo ya vive en `archive/hydroharvest-v1/`).
+- [x] 🔍 Refs `origin/rescued/playground/*`: espejo de los checkpoints de PLAYGROUND ya rescatados (checkpoint 23 es la versión activa; 2 archivado). Sin contenido nuevo.
+- [x] 🔍 Refs `origin/opencode-resume/*` (15 refs, locales + espejo de PLAYGROUND): todas corresponden a sesiones viejas (issues 3–15 de PLAYGROUND y "Install OpenCode issue listener" de este repo), anteriores al checkpoint 23 rescatado en main. Sin código nuevo.
 
 ## Notas
 
